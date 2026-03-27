@@ -1385,9 +1385,13 @@
   // ========== KEYBOARD SHORTCUTS ==========
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      closeModal();
+      // Close one layer at a time — modal first, then actions page
+      if (els.modalOverlay.classList.contains('active')) {
+        closeModal();
+      } else if (els.actionsPageOverlay && els.actionsPageOverlay.classList.contains('active')) {
+        closeActionsPage();
+      }
       closeSidebar();
-      if (typeof closeActionsPage === 'function') closeActionsPage();
     }
   });
 
@@ -1428,18 +1432,16 @@
   // Maps internal status to display class and label
   function getStatusClass(status) {
     const s = (status || 'pending').toLowerCase();
-    if (s === 'pending') return 'draft';      // Pending -> Draft (amber glow)
-    if (s === 'active' || s === 'scheduled') return 'active'; // Active -> ACTIVE (green glow)
-    if (s === 'draft') return 'draft';         // Draft stays Draft
+    if (s === 'pending' || s === 'active' || s === 'scheduled') return 'active'; // Scheduled posts -> ACTIVE (green glow)
+    if (s === 'draft') return 'draft';         // Only Save Draft -> Draft (amber glow)
     if (s === 'published') return 'published';
     return s;
   }
 
   function getStatusLabel(status) {
     const s = (status || 'pending').toLowerCase();
-    if (s === 'pending') return 'Draft';       // Pending displays as "Draft"
-    if (s === 'active' || s === 'scheduled') return 'ACTIVE'; // Active displays as "ACTIVE"
-    if (s === 'draft') return 'Draft';
+    if (s === 'pending' || s === 'active' || s === 'scheduled') return 'ACTIVE'; // Scheduled posts display as "ACTIVE"
+    if (s === 'draft') return 'Draft';         // Only drafts display as "Draft"
     if (s === 'published') return 'Published';
     return capitalize(s);
   }
@@ -1613,6 +1615,23 @@
     }
     if (els.actionsPageClose) {
       els.actionsPageClose.addEventListener('click', closeActionsPage);
+    }
+    // Sidebar nav within actions page
+    document.querySelectorAll('.actions-sidebar-nav .nav-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeActionsPage();
+        navigateTo(item.dataset.page);
+      });
+    });
+    // Sign out from actions page sidebar
+    const actionsSignOut = document.getElementById('actionsSignOutBtn');
+    if (actionsSignOut) {
+      actionsSignOut.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await supabase.auth.signOut();
+        window.location.href = 'signin.html';
+      });
     }
     if (els.actionsPageOverlay) {
       els.actionsPageOverlay.addEventListener('click', (e) => {
