@@ -25,3 +25,4 @@ myenv/
 # Build output
 dist/
 .cache/
+.github/
