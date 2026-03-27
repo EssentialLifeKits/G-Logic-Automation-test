@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connecting Instagram — G-Logic Automation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="index.css" />
+    <style>
+        .callback-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-primary);
+            padding: 24px;
+        }
+
+        .callback-card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: 40px 36px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .callback-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .callback-icon.loading {
+            background: rgba(221, 42, 123, 0.1);
+            animation: authPulse 2s infinite;
+        }
+
+        .callback-icon.success {
+            background: rgba(52, 211, 153, 0.1);
+        }
+
+        .callback-icon.error {
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        .callback-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .callback-message {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .callback-btn {
+            display: inline-block;
+            padding: 12px 28px;
+            background: var(--gradient-instagram);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .callback-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 28px rgba(221, 42, 123, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="callback-page">
+        <div class="callback-card">
+            <div class="callback-icon loading" id="callbackIcon">⏳</div>
+            <h1 class="callback-title" id="callbackTitle">Connecting Instagram...</h1>
+            <p class="callback-message" id="callbackMessage">
+                Please wait while we securely connect your account.
+            </p>
+            <a href="index.html" class="callback-btn" id="callbackBtn" style="display: none;">
+                Return to G-Logic Automation
+            </a>
+        </div>
+    </div>
+
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+
+    <script>
+        (async function () {
+            // Supabase edge function endpoint (where meta-token-exchange is deployed)
+            const SUPABASE_PROJECT_URL = 'https://iaqdmcuxlmcauqdmcbdf.supabase.co';
+            const SUPABASE_ANON_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhcWRtY3V4bG1jYXVxZG1jYmRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NTI2NjUsImV4cCI6MjA4ODMyODY2NX0.yaaFl_iX260LRfKXReSeejc6YMQM5SAwrE_tWrnMjVc';
+
+            const iconEl = document.getElementById('callbackIcon');
+            const titleEl = document.getElementById('callbackTitle');
+            const messageEl = document.getElementById('callbackMessage');
+            const btnEl = document.getElementById('callbackBtn');
+
+            function showSuccess(msg) {
+                iconEl.className = 'callback-icon success';
+                iconEl.textContent = '✅';
+                titleEl.textContent = 'Instagram Connected!';
+                messageEl.textContent = msg || 'Your Instagram Business account is now linked to G-Logic Automation.';
+                btnEl.style.display = 'inline-block';
+            }
+
+            function showError(msg) {
+                iconEl.className = 'callback-icon error';
+                iconEl.textContent = '❌';
+                titleEl.textContent = 'Connection Failed';
+                messageEl.textContent = msg || 'Something went wrong. Please try again.';
+                btnEl.style.display = 'inline-block';
+            }
+
+            // Parse the authorization code from the URL
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const error = params.get('error');
+            const errorDesc = params.get('error_description');
+            console.log('[G-Logic] Callback URL params:', { code: code ? code.substring(0, 20) + '...' : null, error, errorDesc });
+
+            if (error) {
+                showError(errorDesc || 'The authorization was denied or an error occurred.');
+                return;
+            }
+
+            if (!code) {
+                showError('No authorization code received from Meta. Please try connecting again.');
+                return;
+            }
+
+            // Get the current user session
+            const { data: { session } } = await supabase.auth.getSession();
+            console.log('[G-Logic] Session check:', session ? 'logged in as ' + session.user.email : 'NO SESSION');
+            if (!session) {
+                showError('You must be signed in to connect Instagram. Please sign in and try again.');
+                return;
+            }
+
+            // Send the code to our Edge Function (deployed on Supabase) for secure token exchange
+            try {
+                const response = await fetch(
+                    `${SUPABASE_PROJECT_URL}/functions/v1/meta-token-exchange`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.access_token}`,
+                            'apikey': SUPABASE_ANON_KEY,
+                        },
+                        body: JSON.stringify({
+                            code: code,
+                            redirect_uri: 'http://localhost:8000/meta-callback.html',
+                        }),
+                    }
+                );
+
+                let result;
+                let rawText = '';
+                try {
+                    rawText = await response.text();
+                    result = JSON.parse(rawText);
+                } catch (e) {
+                    result = {};
+                }
+
+                console.log('[G-Logic] Edge function HTTP status:', response.status);
+                console.log('[G-Logic] Edge function raw response:', rawText);
+
+                if (response.ok && result.success) {
+                    showSuccess(`Connected as @${result.ig_username || 'your account'}. You can now schedule posts for automatic publishing!`);
+                } else {
+                    const errorMsg = result.error || `HTTP ${response.status}: ${rawText || 'Empty response from server.'}`;
+                    console.error('[G-Logic] Connection failed. Full details:', JSON.stringify(result, null, 2));
+                    showError(errorMsg);
+                }
+            } catch (err) {
+                console.error('Token exchange fetch error:', err);
+                showError('Network error — could not reach Supabase Edge Function. Error: ' + err.message);
+            }
+        })();
+    </script>
+</body>
+
+</html>

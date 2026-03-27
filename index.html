@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>G-Logic Automation — Smart Instagram Scheduling</title>
+    <meta name="description"
+        content="G-Logic Automation is a professional Instagram scheduling tool for content creators. Plan, schedule, and optimize your posts for maximum engagement." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="index.css" />
+</head>
+
+<body>
+    <!-- Mobile Header -->
+    <header class="mobile-header" id="mobileHeader">
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="mobile-logo">
+            <img src="./logo.jpg" alt="Logo" class="logo-icon custom-logo-img" />
+            <span>G-Logic Automation</span>
+        </div>
+        <button class="mobile-today-btn" id="mobileTodayBtn">Today</button>
+    </header>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <img src="./logo.jpg" alt="Logo" class="logo-icon custom-logo-img" />
+            <span class="logo-text">G-Logic Automation</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-page="calendar" id="navCalendar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span>Calendar</span>
+            </a>
+            <a href="#" class="nav-item" data-page="analytics" id="navAnalytics">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M18 20V10M12 20V4M6 20v-6" />
+                </svg>
+                <span>Performance</span>
+            </a>
+            <a href="#" class="nav-item" data-page="resources" id="navResources">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+                </svg>
+                <span>Resources</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <a href="https://manychat.com" target="_blank" rel="noopener noreferrer" class="power-up-btn"
+                id="powerUpBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                <span>Automation Power-Up</span>
+                <small>Powered by ManyChat</small>
+            </a>
+            <div class="sidebar-user">
+                <img src="./logo.jpg" alt="ELK Logo" class="user-avatar brand-avatar"
+                    style="background: none; object-fit: contain; border-radius: 50%;" />
+                <div class="user-info">
+                    <span class="user-name">ESSENTIAL LIFE KITS</span>
+                    <span class="user-plan">Pro Plan</span>
+                </div>
+            </div>
+            <button class="sign-out-btn" id="signOutBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>Sign Out</span>
+            </button>
+            <!-- Connect to Instagram -->
+            <button class="connect-ig-btn" id="connectInstagramBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="2" y="2" width="20" height="20" rx="5" />
+                    <circle cx="12" cy="12" r="5" />
+                    <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" />
+                </svg>
+                <span id="igStatusText">Connect Instagram</span>
+                <span class="ig-status-dot" id="igStatusDot"></span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+
+        <!-- ============ CALENDAR PAGE ============ -->
+        <section class="page page-calendar active" id="pageCalendar">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <h1 class="page-title">Content Calendar</h1>
+                    <p class="page-subtitle" id="calendarSubtitle"></p>
+                </div>
+                <div class="top-bar-right">
+                    <span class="today-day-badge">
+                        <span class="today-dot"></span>
+                        <span class="today-day-name-common">Today</span>
+                    </span>
+                    <div class="view-toggle" id="viewToggle">
+                        <button class="view-btn active" data-view="month" id="viewMonthBtn">Month</button>
+                        <button class="view-btn" data-view="week" id="viewWeekBtn">Week</button>
+                    </div>
+                    <div class="month-nav">
+                        <button class="month-nav-btn" id="prevMonthBtn" aria-label="Previous month">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6" />
+                            </svg>
+                        </button>
+                        <button class="month-nav-btn" id="nextMonthBtn" aria-label="Next month">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                        </button>
+                    </div>
+                    <button class="btn-new-post" id="newPostBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        <span>+ New Post</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Calendar -->
+                <div class="calendar-container card" id="calendarContainer">
+                    <div class="calendar-scroll-wrapper">
+                        <div class="calendar-header" id="calendarHeader"></div>
+                        <div class="calendar-grid" id="calendarGrid"></div>
+                    </div>
+                </div>
+
+                <!-- Right Widgets -->
+                <div class="widgets-column">
+                    <!-- Best Time Analytics Widget -->
+                    <div class="card widget-best-time" id="widgetBestTime">
+                        <div class="widget-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                Best Times to Post
+                            </h3>
+                            <span class="widget-badge">AI Suggested</span>
+                        </div>
+                        <div class="best-times-list" id="bestTimesList"></div>
+                        <p class="best-time-note">Based on your simulated audience engagement data</p>
+                    </div>
+
+                    <!-- Upcoming Posts Widget -->
+                    <div class="card widget-upcoming" id="widgetUpcoming">
+                        <div class="widget-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                    <line x1="16" y1="13" x2="8" y2="13" />
+                                    <line x1="16" y1="17" x2="8" y2="17" />
+                                </svg>
+                                Upcoming Posts
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span
+                                    style="font-size: 0.8rem; background: var(--gradient-instagram); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; letter-spacing: -0.01em;">All
+                                    Scheduled Actions</span>
+                                <button class="actions-page-btn" id="actionsPageBtn" title="Open Actions Page">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="upcoming-controls" id="upcomingControls">
+                            <span class="upcoming-month-label">Jump to:</span>
+                            <select class="upcoming-month-jump" id="upcomingMonthJump">
+                                <option value="">All Months</option>
+                            </select>
+                        </div>
+                        <div class="upcoming-list" id="upcomingList"></div>
+                    </div>
+
+                    <!-- Hero CTA Section -->
+                    <div class="hero-cta-card" id="heroCta">
+                        <div class="hero-cta-glow"></div>
+                        <div class="hero-cta-content">
+                            <h3>🚀 Automate Your Growth</h3>
+                            <p>Stop leaving engagement on the table. Set up automated DM responses, story replies, and
+                                comment management in minutes.</p>
+                            <a href="https://manychat.com" target="_blank" rel="noopener noreferrer"
+                                class="hero-cta-button">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                                </svg>
+                                Try ManyChat Free
+                            </a>
+                            <small class="hero-cta-sub">Trusted by 1M+ Instagram creators worldwide</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ ANALYTICS PAGE ============ -->
+        <section class="page page-analytics" id="pageAnalytics">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <h1 class="page-title">Performance Analytics</h1>
+                    <p class="page-subtitle">Click any stat card to input your real numbers from Instagram Insights</p>
+                </div>
+                <div class="top-bar-right">
+                    <span class="today-day-badge">
+                        <span class="today-dot"></span>
+                        <span class="today-day-name-common">Today</span>
+                    </span>
+                </div>
+            </div>
+            <div class="analytics-grid">
+                <div class="card stat-card" id="statReach">
+                    <div class="stat-icon" style="--accent: #8134AF;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </div>
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Total Reach</div>
+                    <div class="stat-change neutral">0%</div>
+                    <div class="stat-edit-hint">Click to edit</div>
+                </div>
+                <div class="card stat-card" id="statEngagement">
+                    <div class="stat-icon" style="--accent: #DD2A7B;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path
+                                d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                        </svg>
+                    </div>
+                    <div class="stat-value">0%</div>
+                    <div class="stat-label">Engagement Rate</div>
+                    <div class="stat-change neutral">0%</div>
+                    <div class="stat-edit-hint">Click to edit</div>
+                </div>
+                <div class="card stat-card" id="statFollowers">
+                    <div class="stat-icon" style="--accent: #F58529;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                            <path d="M16 3.13a4 4 0 010 7.75" />
+                        </svg>
+                    </div>
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Followers</div>
+                    <div class="stat-change neutral">0</div>
+                    <div class="stat-edit-hint">Click to edit</div>
+                </div>
+                <div class="card stat-card" id="statPosts">
+                    <div class="stat-icon" style="--accent: #515BD4;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                        </svg>
+                    </div>
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Posts This Month</div>
+                    <div class="stat-change neutral">0</div>
+                    <div class="stat-edit-hint">Click to edit</div>
+                </div>
+
+                <!-- Engagement Chart (now Planning Density) -->
+                <div class="card chart-card" id="engagementChart">
+                    <div class="widget-header">
+                        <h3>Weekly Planning Density</h3>
+                        <div class="chart-legend">
+                            <span class="legend-dot" style="background:#DD2A7B;"></span> Posts per day
+                        </div>
+                    </div>
+                    <div class="chart-area" id="chartArea">
+                        <canvas id="engagementCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Posts -->
+                <div class="card top-posts-card" id="topPostsCard">
+                    <div class="widget-header">
+                        <h3>Recent Posts</h3>
+                    </div>
+                    <div class="top-posts-list" id="topPostsList"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ RESOURCES PAGE ============ -->
+        <section class="page page-resources" id="pageResources">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <h1 class="page-title">Resources</h1>
+                    <p class="page-subtitle">Tools & guides for creators</p>
+                </div>
+                <div class="top-bar-right">
+                    <span class="today-day-badge">
+                        <span class="today-dot"></span>
+                        <span class="today-day-name-common">Today</span>
+                    </span>
+                </div>
+            </div>
+            <div class="resources-grid">
+                <!-- ★ AFFILIATE SLOT #1 — ManyChat (Active) ★ -->
+                <div class="card resource-card" id="resourceManychat">
+                    <div class="resource-icon" style="background: linear-gradient(135deg, #0084FF, #44BEC7);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                        </svg>
+                    </div>
+                    <h3>ManyChat Automation</h3>
+                    <p>Automate your Instagram DMs, stories, and comment replies to boost engagement.</p>
+                    <a href="https://manychat.com" target="_blank" rel="noopener noreferrer" class="resource-link">Get
+                        Started →</a>
+                </div>
+                <div class="card resource-card" id="resourceHashtags">
+                    <div class="resource-icon" style="background: linear-gradient(135deg, #DD2A7B, #8134AF);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+                            <line x1="4" y1="9" x2="20" y2="9" />
+                            <line x1="4" y1="15" x2="20" y2="15" />
+                            <line x1="10" y1="3" x2="8" y2="21" />
+                            <line x1="16" y1="3" x2="14" y2="21" />
+                        </svg>
+                    </div>
+                    <h3>Hashtag Strategy Guide</h3>
+                    <p>Learn how to research and use hashtags effectively to increase your post discoverability.</p>
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="resource-link" data-slot="2">Read Guide
+                        →</a>
+                </div>
+                <div class="card resource-card" id="resourceReels">
+                    <div class="resource-icon" style="background: linear-gradient(135deg, #F58529, #DD2A7B);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+                            <polygon points="23 7 16 12 23 17 23 7" />
+                            <rect x="1" y="5" width="15" height="14" rx="2" />
+                        </svg>
+                    </div>
+                    <h3>Reels Best Practices</h3>
+                    <p>Maximize your Reels performance with proven content strategies and editing tips.</p>
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="resource-link" data-slot="3">Read Guide
+                        →</a>
+                </div>
+                <div class="card resource-card" id="resourceCaption">
+                    <div class="resource-icon" style="background: linear-gradient(135deg, #515BD4, #8134AF);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                    </div>
+                    <h3>Caption Writing Templates</h3>
+                    <p>Copy-and-paste caption templates for engagement, storytelling, and calls-to-action.</p>
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="resource-link" data-slot="4">View
+                        Templates →</a>
+                </div>
+                <div class="card resource-card" id="resourceSchedule">
+                    <div class="resource-icon" style="background: linear-gradient(135deg, #25D366, #128C7E);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                    </div>
+                    <h3>Posting Schedule Blueprint</h3>
+                    <p>A proven weekly posting schedule framework to maintain consistency and growth.</p>
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="resource-link" data-slot="5">Get
+                        Blueprint →</a>
+                </div>
+                <div class="card resource-card" id="resourceAnalytics">
+                    <div class="resource-icon" style="background: linear-gradient(135deg, #F58529, #FEDA75);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
+                            <path d="M18 20V10M12 20V4M6 20v-6" />
+                        </svg>
+                    </div>
+                    <h3>Analytics Mastery</h3>
+                    <p>Understand your Instagram Insights and make data-driven decisions for growth.</p>
+                    <a href="#" target="_blank" rel="noopener noreferrer" class="resource-link" data-slot="6">Learn More
+                        →</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ============ SCHEDULE POST MODAL ============ -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="scheduleModal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Schedule New Post</h2>
+                <button class="modal-close" id="modalClose" aria-label="Close modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-grid">
+                    <!-- Media Upload -->
+                    <div class="upload-section">
+                        <div class="upload-zone" id="uploadZone">
+                            <input type="file" id="fileInput" accept="image/*,video/*" hidden />
+                            <div class="upload-placeholder" id="uploadPlaceholder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                                    <circle cx="8.5" cy="8.5" r="1.5" />
+                                    <polyline points="21 15 16 10 5 21" />
+                                </svg>
+                                <span>Drop media here or click to upload</span>
+                                <small>Supports JPG, PNG, MP4 · Max 50MB</small>
+                                <small class="upload-ratio-hint">9:16 Portrait (1080×1920)</small>
+                            </div>
+                            <img id="uploadPreview" class="upload-preview" alt="Upload preview" />
+                            <button id="captureThumbBtn" class="capture-thumb-btn" style="display:none;" title="Scrub to a frame and click to use as thumbnail">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px;">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                                Capture Thumbnail
+                            </button>
+                            <img id="capturedThumbPreview" class="capture-thumb-preview" alt="Captured Thumbnail" />
+                            <button id="removeMediaBtn" class="remove-media-btn" style="display:none;" type="button" title="Remove Media">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <!-- Best Time Suggestion in Modal -->
+                        <div class="modal-best-times" id="modalBestTimes">
+                            <h4>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                Suggested Times
+                            </h4>
+                            <div class="modal-times-list" id="modalTimesList"></div>
+                        </div>
+                    </div>
+
+                    <!-- Post Details -->
+                    <div class="post-details">
+                        <div class="form-group">
+                            <div class="form-label-row">
+                                <label for="captionInput">Caption</label>
+                                <button class="copy-icon-btn" id="copyCaptionBtn" type="button" title="Copy caption">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <textarea id="captionInput"
+                                placeholder="Write your caption here... Use line breaks and emojis to make it engaging!"
+                                rows="6"></textarea>
+                            <div class="caption-counter"><span id="captionCount">0</span> / 2,200</div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dateInput">Date</label>
+                                <input type="date" id="dateInput" />
+                            </div>
+                            <div class="form-group">
+                                <label for="timeInput">Time</label>
+                                <input type="time" id="timeInput" value="09:00" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-label-row">
+                                <label for="hashtagInput">Hashtags</label>
+                                <button class="copy-icon-btn" id="copyHashtagBtn" type="button" title="Copy hashtags">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <input type="text" id="hashtagInput" placeholder="#photography #instagood #content" />
+                        </div>
+                        <div class="form-group">
+                            <label>Post Type</label>
+                            <div class="post-type-select">
+                                <button class="type-btn active" data-type="post" id="typePost">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                                        <circle cx="8.5" cy="8.5" r="1.5" />
+                                        <polyline points="21 15 16 10 5 21" />
+                                    </svg>
+                                    Post
+                                </button>
+                                <button class="type-btn" data-type="story" id="typeStory">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <circle cx="12" cy="12" r="4" />
+                                    </svg>
+                                    Story
+                                </button>
+                                <button class="type-btn" data-type="reel" id="typeReel">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <polygon points="23 7 16 12 23 17 23 7" />
+                                        <rect x="1" y="5" width="15" height="14" rx="2" />
+                                    </svg>
+                                    Reel
+                                </button>
+                                <button class="type-btn" data-type="carousel" id="typeCarousel">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <rect x="2" y="3" width="15" height="18" rx="2" />
+                                        <path d="M20 7v14a2 2 0 01-2 2H7" />
+                                    </svg>
+                                    Carousel
+                                </button>
+                                <button class="type-btn" data-type="live" id="typeLive">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                    Live
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="saveDraftBtn">Save Draft</button>
+                <button class="btn-primary btn-disabled" id="schedulePostBtn" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 11 12 14 22 4" />
+                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                    </svg>
+                    Schedule Post
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions Full Page -->
+    <div class="actions-page-overlay" id="actionsPageOverlay">
+        <div class="actions-page-panel" id="actionsPagePanel">
+            <div class="actions-page-header">
+                <div class="actions-page-header-left">
+                    <img src="./logo.jpg" alt="Logo" class="logo-icon custom-logo-img" style="width:36px;height:36px;border-radius:50%;object-fit:contain;" />
+                    <div>
+                        <h2>All Scheduled Actions</h2>
+                        <span style="font-size:0.7rem;color:var(--text-tertiary);font-weight:500;">G-Logic Automation</span>
+                    </div>
+                </div>
+                <button class="actions-page-close" id="actionsPageClose" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <!-- Live Metrics Bar -->
+            <div class="actions-metrics-bar" id="actionsMetricsBar"></div>
+            <!-- Scrollable Post List -->
+            <div class="actions-page-body" id="actionsPageBody"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span id="toastMessage">Post scheduled successfully!</span>
+    </div>
+
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script src="auth.js"></script>
+    <script src="instagram-oauth.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

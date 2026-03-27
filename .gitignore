@@ -1,0 +1,27 @@
+# ============================================================
+# G-Logic Automation — .gitignore
+# ============================================================
+
+# CRITICAL: Never commit these files
+.env.local
+.env
+.env.*
+!.env.example
+
+# Secrets & keys
+*.pem
+*.key
+secrets/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Local dev
+node_modules/
+myenv/
+
+# Build output
+dist/
+.cache/
