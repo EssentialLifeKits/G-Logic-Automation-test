@@ -1455,11 +1455,13 @@
       const d = new Date(p.date + 'T00:00:00');
       return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
     }).length;
-    const activeCount = state.posts.filter(p => (p.status || 'pending').toLowerCase() === 'active').length;
-    const draftCount = state.posts.filter(p => {
+    // Active = pending + active + scheduled (matches getStatusClass/getStatusLabel logic)
+    const activeCount = state.posts.filter(p => {
       const s = (p.status || 'pending').toLowerCase();
-      return s === 'pending' || s === 'draft';
+      return s === 'pending' || s === 'active' || s === 'scheduled';
     }).length;
+    // Drafts = only posts explicitly saved as draft
+    const draftCount = state.posts.filter(p => (p.status || 'pending').toLowerCase() === 'draft').length;
     const byType = {};
     state.posts.forEach(p => { byType[p.type] = (byType[p.type] || 0) + 1; });
 
