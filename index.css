@@ -3005,6 +3005,63 @@ img {
   color: rgba(248, 113, 113, 0.7);
 }
 
+/* Admin Portal button in sidebar — only visible to admin users */
+.admin-portal-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #c084fc;
+  background: rgba(192, 132, 252, 0.08);
+  border: 1px solid rgba(192, 132, 252, 0.22);
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+  margin-top: 8px;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-portal-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(192,132,252,0.08) 0%, rgba(129,52,175,0.04) 100%);
+  opacity: 0;
+  transition: opacity var(--duration) var(--ease);
+}
+
+.admin-portal-btn:hover {
+  color: #e879f9;
+  background: rgba(192, 132, 252, 0.15);
+  border-color: rgba(192, 132, 252, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(192, 132, 252, 0.2), 0 0 0 1px rgba(192, 132, 252, 0.1);
+}
+
+.admin-portal-btn:hover::before {
+  opacity: 1;
+}
+
+.admin-portal-btn svg {
+  width: 16px;
+  height: 16px;
+  color: #c084fc;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-portal-btn span {
+  position: relative;
+  z-index: 1;
+}
+
 /* Connect to Instagram button in sidebar */
 .connect-ig-btn {
   display: flex;

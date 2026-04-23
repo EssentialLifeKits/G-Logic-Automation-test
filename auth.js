@@ -5,14 +5,27 @@
 (function () {
     'use strict';
 
+    // ========== ADMIN CONFIG ==========
+    // Add the admin email address(es) here. Only these users will see the Admin Portal button.
+    const ADMIN_EMAILS = [
+        'admin@g-logicautomation.com',
+        'ebizzalmac@gmail.com',  // Primary admin — update to your actual admin email
+    ];
+
+    function isAdminUser(email) {
+        return ADMIN_EMAILS.includes((email || '').toLowerCase().trim());
+    }
+
     // ========== HELPERS ==========
     const $ = (sel) => document.querySelector(sel);
     const isSignInPage = !!$('#authForm');
     const isAppPage = !!$('#mainContent');
+    const isAdminPage = !!$('#adminPortalPage');
 
     // ========== SESSION GUARD ==========
     // On app pages (index.html): redirect to signin if no session
     // On signin page: redirect to index if already logged in
+    // On admin page: redirect to signin if no session, redirect to index if not admin
     // EXCEPTION: Never redirect during password recovery flow
     let isPasswordRecovery = false;
 
@@ -26,9 +39,34 @@
             return null;
         }
 
+        if (isAdminPage && !session) {
+            window.location.href = 'signin.html';
+            return null;
+        }
+
+        if (isAdminPage && session && !isAdminUser(session.user?.email)) {
+            // Non-admin tried to access admin.html — boot them back to app
+            window.location.href = 'index.html';
+            return null;
+        }
+
         if (isSignInPage && session) {
             window.location.href = 'index.html';
             return null;
+        }
+
+        // Show admin portal button only to admin users on the app page
+        if (isAppPage && session) {
+            const adminBtn = $('#adminPortalBtn');
+            if (adminBtn && isAdminUser(session.user?.email)) {
+                adminBtn.style.display = '';
+            }
+        }
+
+        // Populate admin user email label if on admin page
+        if (isAdminPage && session) {
+            const adminEmailEl = $('#adminUserEmail');
+            if (adminEmailEl) adminEmailEl.textContent = session.user?.email || '';
         }
 
         return session;
@@ -227,10 +265,20 @@
     });
 
     // ========== APP PAGE LOGIC (Sign Out) ==========
-    if (isAppPage) {
+    if (isAppPage || isAdminPage) {
+        // Main app sign-out button
         const signOutBtn = $('#signOutBtn');
         if (signOutBtn) {
             signOutBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await supabase.auth.signOut();
+                window.location.href = 'signin.html';
+            });
+        }
+        // Admin page sign-out button
+        const adminSignOutBtn = $('#adminSignOutBtn');
+        if (adminSignOutBtn) {
+            adminSignOutBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 await supabase.auth.signOut();
                 window.location.href = 'signin.html';
