@@ -8,8 +8,7 @@
     // ========== ADMIN CONFIG ==========
     // Add the admin email address(es) here. Only these users will see the Admin Portal button.
     const ADMIN_EMAILS = [
-        'admin@g-logicautomation.com',
-        'ebizzalmac@gmail.com',  // Primary admin — update to your actual admin email
+        'essentiallifekits@gmail.com',  // Primary admin (Erik)
     ];
 
     function isAdminUser(email) {
