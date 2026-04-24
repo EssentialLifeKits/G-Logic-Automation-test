@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="index.css?v=2" />
 </head>
 
 <body>
@@ -337,49 +337,71 @@
                     </span>
                 </div>
             </div>
-            <div class="resources-grid" id="resourcesGrid">
-                <!-- Cards rendered dynamically from admin config or defaults -->
+            <div class="resources-grid" id="resourcesGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+
+                <!-- Card 1: ManyChat -->
+                <div class="card resource-card">
+                    <div class="resource-icon" style="background:linear-gradient(135deg,#0084FF,#44BEC7);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    </div>
+                    <h3>ManyChat Automation</h3>
+                    <p>Automate your Instagram DMs, stories, and comment replies to boost engagement.</p>
+                    <a href="https://manychat.com" target="_blank" rel="noopener noreferrer" class="resource-link">Get Started &#8594;</a>
+                </div>
+
+                <!-- Card 2: Hashtag -->
+                <div class="card resource-card">
+                    <div class="resource-icon" style="background:linear-gradient(135deg,#DD2A7B,#8134AF);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+                    </div>
+                    <h3>Hashtag Strategy Guide</h3>
+                    <p>Learn how to research and use hashtags effectively to increase your post discoverability.</p>
+                    <a href="#" class="resource-link">Read Guide &#8594;</a>
+                </div>
+
+                <!-- Card 3: Reels -->
+                <div class="card resource-card">
+                    <div class="resource-icon" style="background:linear-gradient(135deg,#F58529,#DD2A7B);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                    </div>
+                    <h3>Reels Best Practices</h3>
+                    <p>Maximize your Reels performance with proven content strategies and editing tips.</p>
+                    <a href="#" class="resource-link">Read Guide &#8594;</a>
+                </div>
+
+                <!-- Card 4: Captions -->
+                <div class="card resource-card">
+                    <div class="resource-icon" style="background:linear-gradient(135deg,#515BD4,#8134AF);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    </div>
+                    <h3>Caption Writing Templates</h3>
+                    <p>Copy-and-paste caption templates for engagement, storytelling, and calls-to-action.</p>
+                    <a href="#" class="resource-link">View Templates &#8594;</a>
+                </div>
+
+                <!-- Card 5: Schedule -->
+                <div class="card resource-card">
+                    <div class="resource-icon" style="background:linear-gradient(135deg,#25D366,#128C7E);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <h3>Posting Schedule Blueprint</h3>
+                    <p>A proven weekly posting schedule framework to maintain consistency and growth.</p>
+                    <a href="#" class="resource-link">Get Blueprint &#8594;</a>
+                </div>
+
+                <!-- Card 6: Analytics -->
+                <div class="card resource-card">
+                    <div class="resource-icon" style="background:linear-gradient(135deg,#F58529,#FEDA75);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    </div>
+                    <h3>Analytics Mastery</h3>
+                    <p>Understand your Instagram Insights and make data-driven decisions for growth.</p>
+                    <a href="#" class="resource-link">Learn More &#8594;</a>
+                </div>
+
             </div>
-            <script>
-            (function () {
-              var STORAGE_KEY = 'glogic_resources';
-              var DEFAULTS = [
-                { title:'ManyChat Automation',       desc:'Automate your Instagram DMs, stories, and comment replies to boost engagement.',            link:'https://manychat.com', linkText:'Get Started →',    from:'#0084FF', to:'#44BEC7', iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' },
-                { title:'Hashtag Strategy Guide',    desc:'Learn how to research and use hashtags effectively to increase your post discoverability.', link:'#',                   linkText:'Read Guide →',    from:'#DD2A7B', to:'#8134AF', iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>' },
-                { title:'Reels Best Practices',      desc:'Maximize your Reels performance with proven content strategies and editing tips.',          link:'#',                   linkText:'Read Guide →',    from:'#F58529', to:'#DD2A7B', iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>' },
-                { title:'Caption Writing Templates', desc:'Copy-and-paste caption templates for engagement, storytelling, and calls-to-action.',       link:'#',                   linkText:'View Templates →',from:'#515BD4', to:'#8134AF', iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' },
-                { title:'Posting Schedule Blueprint',desc:'A proven weekly posting schedule framework to maintain consistency and growth.',            link:'#',                   linkText:'Get Blueprint →', from:'#25D366', to:'#128C7E', iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
-                { title:'Analytics Mastery',         desc:'Understand your Instagram Insights and make data-driven decisions for growth.',             link:'#',                   linkText:'Learn More →',    from:'#F58529', to:'#FEDA75', iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>' },
-              ];
-              var ICON_MAP = {
-                bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-                hashtag:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>',
-                video:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
-                edit:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
-                clock:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
-                chart:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>',
-                camera:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
-                star:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
-                link:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
-                book:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
-              };
-              var data;
-              try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e) {}
-              if (!Array.isArray(data) || !data.length) data = DEFAULTS;
-              var grid = document.getElementById('resourcesGrid');
-              if (grid) {
-                grid.innerHTML = data.map(function(r) {
-                  var svg = ICON_MAP[r.icon] || r.iconSvg || ICON_MAP.bolt;
-                  return '<div class="card resource-card">'\
-                    + '<div class="resource-icon" style="background:linear-gradient(135deg,'+r.from+','+r.to+');">'+svg+'</div>'\
-                    + '<h3>'+r.title+'</h3>'\
-                    + '<p>'+r.desc+'</p>'\
-                    + '<a href="'+r.link+'" target="_blank" rel="noopener noreferrer" class="resource-link">'+r.linkText+'</a>'\
-                    + '</div>';
-                }).join('');
-              }
-            })();
-            </script>
+
+            <!-- Admin sync: handled by window.glogicResources in app.js after page loads -->
 
         </section>
     </main>

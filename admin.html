@@ -591,6 +591,70 @@
     }
     .arm-save-status.ok { color:#34d399; }
     .arm-save-status.err { color:#f87171; }
+
+    /* openNewWindow checkbox */
+    .arm-checkbox-row {
+      display: flex; align-items: center; gap: 8px;
+      cursor: pointer; user-select: none;
+      font-size: 0.8rem; color: rgba(255,255,255,0.65);
+      padding: 6px 0;
+    }
+    .arm-checkbox-row input[type=checkbox] {
+      width: 15px; height: 15px; accent-color: #c084fc; cursor: pointer; flex-shrink: 0;
+    }
+    .arm-checkbox-new-window-badge {
+      font-size: 0.65rem; padding: 1px 6px; border-radius: 100px;
+      background: rgba(192,132,252,0.15); color: #c084fc;
+      border: 1px solid rgba(192,132,252,0.25); margin-left: 4px;
+    }
+
+    /* Enhanced color swatch — bigger, shows current color clearly */
+    .arm-color-swatch {
+      width: 34px !important; height: 34px !important;
+      border-radius: 8px !important; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.2) !important;
+      cursor: pointer; overflow: hidden; padding: 0;
+      position: relative; transition: border-color .2s;
+    }
+    .arm-color-swatch:hover { border-color: rgba(192,132,252,0.5) !important; }
+    .arm-color-swatch input[type=color] {
+      width: 150%; height: 150%; margin: -25%;
+      border: none; padding: 0; cursor: pointer; background: none;
+    }
+
+    /* Color palette preset grid */
+    .arm-palette-label {
+      font-size: 0.65rem; color: rgba(255,255,255,0.3);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin: 8px 0 4px;
+    }
+    .arm-palette-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4px;
+      padding: 8px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+      margin-bottom: 6px;
+    }
+    .arm-palette-swatch {
+      aspect-ratio: 1;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: transform .12s ease, box-shadow .12s ease, outline .1s;
+      position: relative;
+    }
+    .arm-palette-swatch:hover {
+      transform: scale(1.3);
+      box-shadow: 0 3px 12px rgba(0,0,0,0.5);
+      z-index: 5;
+    }
+    .arm-palette-swatch.pal-selected {
+      outline: 2px solid #c084fc;
+      outline-offset: 2px;
+    }
   </style>
 </head>
 
@@ -861,7 +925,7 @@
     });
 
     /* ── Resources Manager ── */
-    var STORAGE_KEY = 'glogic_resources';
+    var STORAGE_KEY = 'glogic_resources_v2';
 
     var ICONS = {
       bolt:    '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
@@ -877,28 +941,57 @@
     };
 
     var DEFAULTS = [
-      { id:'r1', title:'ManyChat Automation',       desc:'Automate your Instagram DMs, stories, and comment replies to boost engagement.',            link:'https://manychat.com', linkText:'Get Started →',    from:'#0084FF', to:'#44BEC7', icon:'bolt'    },
-      { id:'r2', title:'Hashtag Strategy Guide',    desc:'Learn how to research and use hashtags effectively to increase your post discoverability.', link:'#',                   linkText:'Read Guide →',    from:'#DD2A7B', to:'#8134AF', icon:'hashtag' },
-      { id:'r3', title:'Reels Best Practices',      desc:'Maximize your Reels performance with proven content strategies and editing tips.',          link:'#',                   linkText:'Read Guide →',    from:'#F58529', to:'#DD2A7B', icon:'video'   },
-      { id:'r4', title:'Caption Writing Templates', desc:'Copy-and-paste caption templates for engagement, storytelling, and calls-to-action.',       link:'#',                   linkText:'View Templates →',from:'#515BD4', to:'#8134AF', icon:'edit'    },
-      { id:'r5', title:'Posting Schedule Blueprint',desc:'A proven weekly posting schedule framework to maintain consistency and growth.',            link:'#',                   linkText:'Get Blueprint →', from:'#25D366', to:'#128C7E', icon:'clock'   },
-      { id:'r6', title:'Analytics Mastery',         desc:'Understand your Instagram Insights and make data-driven decisions for growth.',             link:'#',                   linkText:'Learn More →',    from:'#F58529', to:'#FEDA75', icon:'chart'   },
+      { id:'r1', title:'ManyChat Automation',        desc:'Automate your Instagram DMs, stories, and comment replies to boost engagement.',            link:'https://manychat.com', linkText:'Get Started →',    from:'#0084FF', to:'#44BEC7', icon:'bolt',    openNewWindow:true  },
+      { id:'r2', title:'Hashtag Strategy Guide',     desc:'Learn how to research and use hashtags effectively to increase your post discoverability.', link:'#',                   linkText:'Read Guide →',    from:'#DD2A7B', to:'#8134AF', icon:'hashtag', openNewWindow:false },
+      { id:'r3', title:'Reels Best Practices',       desc:'Maximize your Reels performance with proven content strategies and editing tips.',          link:'#',                   linkText:'Read Guide →',    from:'#F58529', to:'#DD2A7B', icon:'video',   openNewWindow:false },
+      { id:'r4', title:'Caption Writing Templates',  desc:'Copy-and-paste caption templates for engagement, storytelling, and calls-to-action.',       link:'#',                   linkText:'View Templates →',from:'#515BD4', to:'#8134AF', icon:'edit',    openNewWindow:false },
+      { id:'r5', title:'Posting Schedule Blueprint', desc:'A proven weekly posting schedule framework to maintain consistency and growth.',            link:'#',                   linkText:'Get Blueprint →', from:'#25D366', to:'#128C7E', icon:'clock',   openNewWindow:false },
+      { id:'r6', title:'Analytics Mastery',          desc:'Understand your Instagram Insights and make data-driven decisions for growth.',             link:'#',                   linkText:'Learn More →',    from:'#F58529', to:'#FEDA75', icon:'chart',   openNewWindow:false },
     ];
 
     var resources;
     try { resources = JSON.parse(localStorage.getItem(STORAGE_KEY)) || DEFAULTS.map(function(d){return Object.assign({},d);}); }
     catch(e) { resources = DEFAULTS.map(function(d){return Object.assign({},d);}); }
+    /* Backfill openNewWindow on any stored records that predate this field */
+    resources = resources.map(function(r, i) {
+      if (typeof r.openNewWindow === 'undefined') {
+        r.openNewWindow = (DEFAULTS[i] && DEFAULTS[i].openNewWindow) || false;
+      }
+      return r;
+    });
+
+    /* 48-color preset palette — brand + social + spectrum */
+    var PALETTE_COLORS = [
+      '#DD2A7B','#F58529','#8134AF','#515BD4','#FEDA75','#34D399','#0084FF','#44BEC7',
+      '#E1306C','#833AB4','#C13584','#25D366','#128C7E','#1877F2','#0A66C2','#FF4500',
+      '#FF6B35','#FFC300','#FFD700','#FF69B4','#00CED1','#20B2AA','#4169E1','#1E90FF',
+      '#9370DB','#FF1493','#00FF7F','#7FFF00','#00FFFF','#C084FC','#6366F1','#F4E04D',
+      '#FFFFFF','#D0D0D0','#808080','#404040','#1A1A1A','#000000','#8B4513','#D2691E',
+      '#FF0000','#FF8C00','#FFFF00','#00FF00','#0000FF','#4B0082','#EE82EE','#FFC0CB',
+    ];
+
+    function paletteHTML(field, currentColor) {
+      var swatches = PALETTE_COLORS.map(function(c) {
+        var sel = c.toLowerCase() === (currentColor||'').toLowerCase() ? ' pal-selected' : '';
+        return '<div class="arm-palette-swatch'+sel+'" data-pal-color="'+c+'" data-pal-field="'+field+'" style="background:'+c+';" title="'+c+'"></div>';
+      }).join('');
+      return '<div class="arm-palette-label">Quick Colors — click to apply</div>'
+           + '<div class="arm-palette-grid" data-palette="'+field+'">'+swatches+'</div>';
+    }
 
     /* ── Render preview cards ── */
     function renderPreviews() {
       var grid = document.getElementById('armPreviewGrid');
       if (!grid) return;
       grid.innerHTML = resources.map(function(r) {
+        var windowBadge = r.openNewWindow
+          ? '<span style="font-size:0.6rem;color:rgba(255,255,255,0.35);margin-left:4px;" title="Opens in new window">↗</span>'
+          : '';
         return '<div class="arm-preview-card">'
           + '<div class="arm-preview-icon" style="background:linear-gradient(135deg,'+r.from+','+r.to+')">'+( ICONS[r.icon]||ICONS.bolt )+'</div>'
           + '<div class="arm-preview-title">'+escA(r.title)+'</div>'
           + '<div class="arm-preview-desc">'+escA(r.desc)+'</div>'
-          + '<span class="arm-preview-link">'+escA(r.linkText)+'</span>'
+          + '<span class="arm-preview-link">'+escA(r.linkText)+windowBadge+'</span>'
           + '</div>';
       }).join('');
     }
@@ -914,10 +1007,12 @@
       var grid = document.getElementById('armEditGrid');
       if (!grid) return;
       grid.innerHTML = resources.map(function(r, idx) {
+        var winBadge = r.openNewWindow ? '<span class="arm-checkbox-new-window-badge">↗ New Tab</span>' : '';
         return '<div class="arm-edit-card" data-idx="'+idx+'">'
           + '<div class="arm-card-row">'
             + '<div class="arm-card-thumb" style="background:linear-gradient(135deg,'+r.from+','+r.to+')">'+( ICONS[r.icon]||ICONS.bolt )+'</div>'
             + '<span class="arm-card-name">'+escA(r.title)+'</span>'
+            + winBadge
             + '<div class="arm-edit-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>'
           + '</div>'
           + '<div class="arm-fields">'
@@ -929,16 +1024,21 @@
             + '<input class="arm-field-input" data-field="link" value="'+escA(r.link)+'" />'
             + '<div class="arm-field-label">Link Text</div>'
             + '<input class="arm-field-input" data-field="linkText" value="'+escA(r.linkText)+'" />'
-            + '<div class="arm-field-label">Gradient</div>'
-            + '<div class="arm-color-row"><span class="arm-color-label">From</span><label class="arm-color-swatch"><input type="color" data-field="from" value="'+r.from+'" /></label><input class="arm-color-hex" data-hex="from" maxlength="7" value="'+r.from+'" /></div>'
-            + '<div class="arm-color-row" style="margin-top:6px"><span class="arm-color-label">To</span><label class="arm-color-swatch"><input type="color" data-field="to" value="'+r.to+'" /></label><input class="arm-color-hex" data-hex="to" maxlength="7" value="'+r.to+'" /></div>'
+            + '<div class="arm-field-label">Link Behavior</div>'
+            + '<label class="arm-checkbox-row"><input type="checkbox" data-field="openNewWindow"'+(r.openNewWindow?' checked':'')+' /><span>Open link in new window / tab</span></label>'
+            + '<div class="arm-field-label">Gradient — From Color</div>'
+            + '<div class="arm-color-row"><span class="arm-color-label">From</span><label class="arm-color-swatch" title="Click to open color wheel"><input type="color" data-field="from" value="'+r.from+'" /></label><input class="arm-color-hex" data-hex="from" maxlength="7" value="'+r.from+'" /></div>'
+            + paletteHTML('from', r.from)
+            + '<div class="arm-field-label">Gradient — To Color</div>'
+            + '<div class="arm-color-row"><span class="arm-color-label">To</span><label class="arm-color-swatch" title="Click to open color wheel"><input type="color" data-field="to" value="'+r.to+'" /></label><input class="arm-color-hex" data-hex="to" maxlength="7" value="'+r.to+'" /></div>'
+            + paletteHTML('to', r.to)
             + '<div class="arm-field-label">Icon</div>'
             + '<select class="arm-icon-select" data-field="icon">'+iconOptions(r.icon)+'</select>'
           + '</div>'
           + '</div>';
       }).join('');
 
-      /* Wire events */
+      /* Wire: accordion toggle */
       grid.querySelectorAll('.arm-card-row').forEach(function(row) {
         row.addEventListener('click', function() {
           var card = row.closest('.arm-edit-card');
@@ -946,23 +1046,49 @@
         });
       });
 
+      /* Wire: text / select fields */
       grid.querySelectorAll('.arm-field-input, .arm-field-textarea, .arm-icon-select').forEach(function(el) {
         el.addEventListener('input', function() { handleFieldChange(el); });
       });
 
-      grid.querySelectorAll('input[type=color]').forEach(function(el) {
-        el.addEventListener('input', function() {
+      /* Wire: openNewWindow checkbox */
+      grid.querySelectorAll('input[type=checkbox][data-field="openNewWindow"]').forEach(function(el) {
+        el.addEventListener('change', function() {
           var card = el.closest('.arm-edit-card');
           var idx  = parseInt(card.dataset.idx);
+          resources[idx].openNewWindow = el.checked;
+          /* update the badge in the card row */
+          var badge = card.querySelector('.arm-checkbox-new-window-badge');
+          if (el.checked) {
+            if (!badge) {
+              var nameEl = card.querySelector('.arm-card-name');
+              var b = document.createElement('span');
+              b.className = 'arm-checkbox-new-window-badge';
+              b.textContent = '↗ New Tab';
+              nameEl.parentNode.insertBefore(b, nameEl.nextSibling);
+            }
+          } else {
+            if (badge) badge.remove();
+          }
+        });
+      });
+
+      /* Wire: native color picker */
+      grid.querySelectorAll('input[type=color]').forEach(function(el) {
+        el.addEventListener('input', function() {
+          var card  = el.closest('.arm-edit-card');
+          var idx   = parseInt(card.dataset.idx);
           var field = el.dataset.field;
-          resources[idx][field] = el.value;
-          /* sync hex text input */
+          var color = el.value;
+          resources[idx][field] = color;
           var hexInput = card.querySelector('[data-hex="'+field+'"]');
-          if (hexInput) hexInput.value = el.value;
+          if (hexInput) hexInput.value = color;
+          syncPaletteSelected(card, field, color);
           refreshCard(idx);
         });
       });
 
+      /* Wire: hex text input */
       grid.querySelectorAll('.arm-color-hex').forEach(function(el) {
         el.addEventListener('input', function() {
           var v = el.value.trim();
@@ -971,10 +1097,37 @@
           var idx   = parseInt(card.dataset.idx);
           var field = el.dataset.hex;
           resources[idx][field] = v;
-          var colorInput = card.querySelector('input[data-field="'+field+'"]');
+          var colorInput = card.querySelector('input[type=color][data-field="'+field+'"]');
           if (colorInput) colorInput.value = v;
+          syncPaletteSelected(card, field, v);
           refreshCard(idx);
         });
+      });
+
+      /* Wire: palette swatch clicks */
+      grid.querySelectorAll('.arm-palette-swatch').forEach(function(swatch) {
+        swatch.addEventListener('click', function() {
+          var color = swatch.dataset.palColor;
+          var field = swatch.dataset.palField;
+          var card  = swatch.closest('.arm-edit-card');
+          var idx   = parseInt(card.dataset.idx);
+          resources[idx][field] = color;
+          var colorInput = card.querySelector('input[type=color][data-field="'+field+'"]');
+          if (colorInput) colorInput.value = color;
+          var hexInput = card.querySelector('[data-hex="'+field+'"]');
+          if (hexInput) hexInput.value = color;
+          syncPaletteSelected(card, field, color);
+          refreshCard(idx);
+        });
+      });
+    }
+
+    /* Highlight the selected swatch in a palette, deselect others */
+    function syncPaletteSelected(card, field, color) {
+      var palette = card.querySelector('.arm-palette-grid[data-palette="'+field+'"]');
+      if (!palette) return;
+      palette.querySelectorAll('.arm-palette-swatch').forEach(function(s) {
+        s.classList.toggle('pal-selected', s.dataset.palColor.toLowerCase() === color.toLowerCase());
       });
     }
 
@@ -996,7 +1149,15 @@
         pc.querySelector('.arm-preview-icon').innerHTML = ICONS[r.icon]||ICONS.bolt;
         pc.querySelector('.arm-preview-title').textContent = r.title;
         pc.querySelector('.arm-preview-desc').textContent  = r.desc;
-        pc.querySelector('.arm-preview-link').textContent  = r.linkText;
+        var linkEl = pc.querySelector('.arm-preview-link');
+        linkEl.textContent = r.linkText;
+        if (r.openNewWindow) {
+          var badge = document.createElement('span');
+          badge.style.cssText = 'font-size:0.6rem;color:rgba(255,255,255,0.35);margin-left:4px;';
+          badge.title = 'Opens in new window';
+          badge.textContent = '↗';
+          linkEl.appendChild(badge);
+        }
       }
       /* update thumb in edit row */
       var editCards = document.querySelectorAll('#armEditGrid .arm-edit-card');

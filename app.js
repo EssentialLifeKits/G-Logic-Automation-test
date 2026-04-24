@@ -1642,6 +1642,52 @@
     }
   }
 
+  // ========== RESOURCES — ADMIN SYNC ==========
+  (function initResourceCards() {
+    const RKEY = 'glogic_resources_v2';
+    const ICONS = {
+      bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+      hashtag:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>',
+      video:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
+      edit:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+      clock:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+      chart:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>',
+      camera:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+      star:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+      link:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
+      book:'<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
+    };
+    function renderResources(data) {
+      const g = document.getElementById('resourcesGrid');
+      if (!g) return;
+      if (!Array.isArray(data) || data.length !== 6) return; // never wipe static cards unless we have exactly 6
+      const html = data.map(r => {
+        const svg = ICONS[r.icon] || ICONS.bolt;
+        const tgt = r.openNewWindow ? ' target="_blank" rel="noopener noreferrer"' : '';
+        const title = String(r.title || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const desc  = String(r.desc  || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const ltext = String(r.linkText || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const link  = String(r.link  || '#');
+        const from  = String(r.from  || '#DD2A7B');
+        const to    = String(r.to    || '#8134AF');
+        return `<div class="card resource-card">
+          <div class="resource-icon" style="background:linear-gradient(135deg,${from},${to});">${svg}</div>
+          <h3>${title}</h3><p>${desc}</p>
+          <a href="${link}"${tgt} class="resource-link">${ltext}</a>
+        </div>`;
+      }).join('');
+      if (html.trim()) g.innerHTML = html; // only update if output is non-empty
+    }
+    function loadResources() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(RKEY));
+        renderResources(saved);
+      } catch(e) { /* keep static cards on any error */ }
+    }
+    loadResources();
+    window.addEventListener('storage', e => { if (e.key === RKEY) loadResources(); });
+  })();
+
   // ========== TODAY DAY NAME ==========
   function initTodayDayName() {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
