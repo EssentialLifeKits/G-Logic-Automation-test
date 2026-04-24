@@ -408,21 +408,189 @@
 
     /* ── Mobile responsive ── */
     @media (max-width: 768px) {
-      .admin-sidebar {
-        width: 240px;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-      }
-
-      .admin-sidebar.open {
-        transform: translateX(0);
-      }
-
-      .admin-main {
-        margin-left: 0;
-        padding: 80px 20px 40px;
-      }
+      .admin-sidebar { width: 240px; transform: translateX(-100%); transition: transform 0.3s ease; }
+      .admin-sidebar.open { transform: translateX(0); }
+      .admin-main { margin-left: 0; padding: 80px 20px 40px; }
     }
+
+    /* ══════════════ RESOURCES MANAGER EDITOR ══════════════ */
+    .arm-live-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #34d399; margin: 20px 0 14px;
+    }
+    .arm-live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #34d399; box-shadow: 0 0 6px #34d399;
+      animation: armPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes armPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* Preview grid — identical to app's resources-grid */
+    .arm-preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .arm-preview-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 22px 20px;
+      transition: border-color .2s;
+    }
+    .arm-preview-card:hover { border-color: rgba(255,255,255,0.12); }
+    .arm-preview-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 12px;
+    }
+    .arm-preview-icon svg { width: 22px; height: 22px; }
+    .arm-preview-title {
+      font-size: 0.9rem; font-weight: 700;
+      color: #fff; margin: 0 0 6px; letter-spacing: -0.01em;
+    }
+    .arm-preview-desc {
+      font-size: 0.76rem; color: rgba(255,255,255,0.45);
+      line-height: 1.5; margin: 0 0 12px;
+    }
+    .arm-preview-link {
+      font-size: 0.78rem; font-weight: 600;
+      background: linear-gradient(135deg,#f58529,#dd2a7b);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Divider */
+    .arm-divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 4px 0 18px; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+    .arm-divider::before,.arm-divider::after {
+      content:''; flex:1; height:1px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* Edit grid — 2 columns of 3 rows */
+    .arm-edit-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .arm-edit-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .arm-edit-card:hover { border-color: rgba(192,132,252,0.2); }
+
+    /* Compact row (always visible) */
+    .arm-card-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; cursor: pointer;
+    }
+    .arm-card-thumb {
+      width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .arm-card-thumb svg { width: 16px; height: 16px; }
+    .arm-card-name {
+      flex:1; font-size:0.82rem; font-weight:600;
+      color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .arm-edit-toggle {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink:0;
+      border: 1px solid rgba(192,132,252,0.25);
+      background: rgba(192,132,252,0.08);
+      display:flex; align-items:center; justify-content:center;
+      color: var(--admin-purple); transition: all .2s;
+    }
+    .arm-edit-card.editing .arm-edit-toggle { transform:rotate(45deg); background:rgba(192,132,252,0.2); }
+    .arm-edit-toggle svg { width:12px; height:12px; }
+
+    /* Expanded edit fields */
+    .arm-fields {
+      display: none;
+      padding: 0 14px 14px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      gap: 8px;
+      flex-direction: column;
+    }
+    .arm-edit-card.editing .arm-fields { display: flex; }
+
+    .arm-field-label {
+      font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.35);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin: 10px 0 4px;
+    }
+    .arm-field-input, .arm-field-textarea {
+      width: 100%; box-sizing: border-box;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 0.8rem; padding: 8px 10px;
+      outline: none; transition: border-color .2s;
+      resize: none;
+    }
+    .arm-field-input:focus, .arm-field-textarea:focus {
+      border-color: rgba(192,132,252,0.4);
+    }
+    .arm-field-row { display:flex; gap:8px; }
+    .arm-field-row .arm-field-input { flex:1; }
+
+    /* Color pickers row */
+    .arm-color-row { display:flex; align-items:center; gap:8px; }
+    .arm-color-label { font-size:0.68rem; color:rgba(255,255,255,0.35); width:40px; flex-shrink:0; }
+    .arm-color-swatch {
+      width: 28px; height: 28px; border-radius: 6px; flex-shrink:0;
+      border: 1px solid rgba(255,255,255,0.1);
+      cursor: pointer; overflow: hidden; padding:0;
+    }
+    .arm-color-swatch input[type=color] {
+      width:140%; height:140%; margin:-20%; border:none;
+      padding:0; cursor:pointer; background:none;
+    }
+    .arm-color-hex {
+      flex:1; background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08); border-radius:6px;
+      color:#fff; font-size:0.76rem; padding:5px 8px;
+      font-family:monospace; outline:none;
+    }
+    .arm-color-hex:focus { border-color:rgba(192,132,252,0.4); }
+
+    /* Icon selector */
+    .arm-icon-select {
+      width:100%; background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08); border-radius:8px;
+      color:#fff; font-size:0.8rem; padding:8px 10px;
+      outline:none; cursor:pointer;
+    }
+    .arm-icon-select:focus { border-color:rgba(192,132,252,0.4); }
+    .arm-icon-select option { background:#1a1a2e; }
+
+    /* Save button */
+    .arm-save-btn {
+      width:100%; padding:14px; border-radius:10px;
+      background: linear-gradient(135deg,#22c55e,#16a34a);
+      color:#fff; font-size:0.9rem; font-weight:700;
+      border:none; cursor:pointer; letter-spacing:0.01em;
+      transition: all .2s; box-shadow: 0 4px 20px rgba(34,197,94,0.3);
+    }
+    .arm-save-btn:hover { transform:translateY(-1px); box-shadow:0 6px 28px rgba(34,197,94,0.4); }
+    .arm-save-btn:active { transform:translateY(0); }
+    .arm-save-status {
+      text-align:center; font-size:0.8rem; margin-top:10px;
+      min-height:20px; transition:all .3s;
+    }
+    .arm-save-status.ok { color:#34d399; }
+    .arm-save-status.err { color:#f87171; }
   </style>
 </head>
 
@@ -562,18 +730,18 @@
               </svg>
             </div>
           </div>
-          <div class="admin-section-body">
-            <div class="admin-coming-soon">
-              <div class="admin-coming-soon-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
-                </svg>
-              </div>
-              <h4>Resources Editor</h4>
-              <p>Inline editing of resource cards — title, description, URL, icon color — will be managed here.</p>
-              <span class="admin-wip-tag">⚙️ In Development</span>
-            </div>
+          <div class="admin-section-body" id="adminResourcesBody">
+            <!-- Live Preview label -->
+            <div class="arm-live-label"><span class="arm-live-dot"></span>Live Preview — As Users See It</div>
+            <!-- 2x3 live preview grid -->
+            <div class="arm-preview-grid" id="armPreviewGrid"></div>
+            <!-- Divider -->
+            <div class="arm-divider">Edit Cards</div>
+            <!-- 2x3 edit grid -->
+            <div class="arm-edit-grid" id="armEditGrid"></div>
+            <!-- Save -->
+            <button class="arm-save-btn" id="armSaveBtn">✓ Save Changes to Resources Page</button>
+            <div class="arm-save-status" id="armSaveStatus"></div>
           </div>
         </div>
 
@@ -678,21 +846,191 @@
   <script src="auth.js"></script>
 
   <script>
-    /* ── Admin Portal — Accordion toggle logic ── */
+    /* ══════════════════════════════════════════════
+       ADMIN — Accordion + Resources Manager Editor
+    ══════════════════════════════════════════════ */
+
+    /* ── Accordion ── */
     document.querySelectorAll('.admin-section-header').forEach(function (header) {
       header.addEventListener('click', function () {
         var card = header.closest('.admin-section-card');
         var isOpen = card.classList.contains('open');
-        // Close all
-        document.querySelectorAll('.admin-section-card.open').forEach(function (c) {
-          c.classList.remove('open');
-        });
-        // Open clicked one if it was closed
-        if (!isOpen) {
-          card.classList.add('open');
-        }
+        document.querySelectorAll('.admin-section-card.open').forEach(function (c) { c.classList.remove('open'); });
+        if (!isOpen) { card.classList.add('open'); }
       });
     });
+
+    /* ── Resources Manager ── */
+    var STORAGE_KEY = 'glogic_resources';
+
+    var ICONS = {
+      bolt:    '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+      hashtag: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>',
+      video:   '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
+      edit:    '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+      clock:   '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+      chart:   '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>',
+      camera:  '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+      star:    '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+      link:    '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
+      book:    '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
+    };
+
+    var DEFAULTS = [
+      { id:'r1', title:'ManyChat Automation',       desc:'Automate your Instagram DMs, stories, and comment replies to boost engagement.',            link:'https://manychat.com', linkText:'Get Started →',    from:'#0084FF', to:'#44BEC7', icon:'bolt'    },
+      { id:'r2', title:'Hashtag Strategy Guide',    desc:'Learn how to research and use hashtags effectively to increase your post discoverability.', link:'#',                   linkText:'Read Guide →',    from:'#DD2A7B', to:'#8134AF', icon:'hashtag' },
+      { id:'r3', title:'Reels Best Practices',      desc:'Maximize your Reels performance with proven content strategies and editing tips.',          link:'#',                   linkText:'Read Guide →',    from:'#F58529', to:'#DD2A7B', icon:'video'   },
+      { id:'r4', title:'Caption Writing Templates', desc:'Copy-and-paste caption templates for engagement, storytelling, and calls-to-action.',       link:'#',                   linkText:'View Templates →',from:'#515BD4', to:'#8134AF', icon:'edit'    },
+      { id:'r5', title:'Posting Schedule Blueprint',desc:'A proven weekly posting schedule framework to maintain consistency and growth.',            link:'#',                   linkText:'Get Blueprint →', from:'#25D366', to:'#128C7E', icon:'clock'   },
+      { id:'r6', title:'Analytics Mastery',         desc:'Understand your Instagram Insights and make data-driven decisions for growth.',             link:'#',                   linkText:'Learn More →',    from:'#F58529', to:'#FEDA75', icon:'chart'   },
+    ];
+
+    var resources;
+    try { resources = JSON.parse(localStorage.getItem(STORAGE_KEY)) || DEFAULTS.map(function(d){return Object.assign({},d);}); }
+    catch(e) { resources = DEFAULTS.map(function(d){return Object.assign({},d);}); }
+
+    /* ── Render preview cards ── */
+    function renderPreviews() {
+      var grid = document.getElementById('armPreviewGrid');
+      if (!grid) return;
+      grid.innerHTML = resources.map(function(r) {
+        return '<div class="arm-preview-card">'
+          + '<div class="arm-preview-icon" style="background:linear-gradient(135deg,'+r.from+','+r.to+')">'+( ICONS[r.icon]||ICONS.bolt )+'</div>'
+          + '<div class="arm-preview-title">'+escA(r.title)+'</div>'
+          + '<div class="arm-preview-desc">'+escA(r.desc)+'</div>'
+          + '<span class="arm-preview-link">'+escA(r.linkText)+'</span>'
+          + '</div>';
+      }).join('');
+    }
+
+    /* ── Render edit cards ── */
+    function iconOptions(cur) {
+      return Object.keys(ICONS).map(function(k){
+        return '<option value="'+k+'"'+(k===cur?' selected':'')+'>'+k.charAt(0).toUpperCase()+k.slice(1)+'</option>';
+      }).join('');
+    }
+
+    function renderEditors() {
+      var grid = document.getElementById('armEditGrid');
+      if (!grid) return;
+      grid.innerHTML = resources.map(function(r, idx) {
+        return '<div class="arm-edit-card" data-idx="'+idx+'">'
+          + '<div class="arm-card-row">'
+            + '<div class="arm-card-thumb" style="background:linear-gradient(135deg,'+r.from+','+r.to+')">'+( ICONS[r.icon]||ICONS.bolt )+'</div>'
+            + '<span class="arm-card-name">'+escA(r.title)+'</span>'
+            + '<div class="arm-edit-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>'
+          + '</div>'
+          + '<div class="arm-fields">'
+            + '<div class="arm-field-label">Title</div>'
+            + '<input class="arm-field-input" data-field="title" value="'+escA(r.title)+'" />'
+            + '<div class="arm-field-label">Description</div>'
+            + '<textarea class="arm-field-textarea" rows="2" data-field="desc">'+escA(r.desc)+'</textarea>'
+            + '<div class="arm-field-label">Link URL</div>'
+            + '<input class="arm-field-input" data-field="link" value="'+escA(r.link)+'" />'
+            + '<div class="arm-field-label">Link Text</div>'
+            + '<input class="arm-field-input" data-field="linkText" value="'+escA(r.linkText)+'" />'
+            + '<div class="arm-field-label">Gradient</div>'
+            + '<div class="arm-color-row"><span class="arm-color-label">From</span><label class="arm-color-swatch"><input type="color" data-field="from" value="'+r.from+'" /></label><input class="arm-color-hex" data-hex="from" maxlength="7" value="'+r.from+'" /></div>'
+            + '<div class="arm-color-row" style="margin-top:6px"><span class="arm-color-label">To</span><label class="arm-color-swatch"><input type="color" data-field="to" value="'+r.to+'" /></label><input class="arm-color-hex" data-hex="to" maxlength="7" value="'+r.to+'" /></div>'
+            + '<div class="arm-field-label">Icon</div>'
+            + '<select class="arm-icon-select" data-field="icon">'+iconOptions(r.icon)+'</select>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+
+      /* Wire events */
+      grid.querySelectorAll('.arm-card-row').forEach(function(row) {
+        row.addEventListener('click', function() {
+          var card = row.closest('.arm-edit-card');
+          card.classList.toggle('editing');
+        });
+      });
+
+      grid.querySelectorAll('.arm-field-input, .arm-field-textarea, .arm-icon-select').forEach(function(el) {
+        el.addEventListener('input', function() { handleFieldChange(el); });
+      });
+
+      grid.querySelectorAll('input[type=color]').forEach(function(el) {
+        el.addEventListener('input', function() {
+          var card = el.closest('.arm-edit-card');
+          var idx  = parseInt(card.dataset.idx);
+          var field = el.dataset.field;
+          resources[idx][field] = el.value;
+          /* sync hex text input */
+          var hexInput = card.querySelector('[data-hex="'+field+'"]');
+          if (hexInput) hexInput.value = el.value;
+          refreshCard(idx);
+        });
+      });
+
+      grid.querySelectorAll('.arm-color-hex').forEach(function(el) {
+        el.addEventListener('input', function() {
+          var v = el.value.trim();
+          if (!/^#[0-9a-fA-F]{6}$/.test(v)) return;
+          var card  = el.closest('.arm-edit-card');
+          var idx   = parseInt(card.dataset.idx);
+          var field = el.dataset.hex;
+          resources[idx][field] = v;
+          var colorInput = card.querySelector('input[data-field="'+field+'"]');
+          if (colorInput) colorInput.value = v;
+          refreshCard(idx);
+        });
+      });
+    }
+
+    function handleFieldChange(el) {
+      var card  = el.closest('.arm-edit-card');
+      var idx   = parseInt(card.dataset.idx);
+      var field = el.dataset.field;
+      resources[idx][field] = el.value;
+      refreshCard(idx);
+    }
+
+    /* Refresh single preview card and edit card header */
+    function refreshCard(idx) {
+      var r = resources[idx];
+      var previewCards = document.querySelectorAll('#armPreviewGrid .arm-preview-card');
+      if (previewCards[idx]) {
+        var pc = previewCards[idx];
+        pc.querySelector('.arm-preview-icon').style.background = 'linear-gradient(135deg,'+r.from+','+r.to+')';
+        pc.querySelector('.arm-preview-icon').innerHTML = ICONS[r.icon]||ICONS.bolt;
+        pc.querySelector('.arm-preview-title').textContent = r.title;
+        pc.querySelector('.arm-preview-desc').textContent  = r.desc;
+        pc.querySelector('.arm-preview-link').textContent  = r.linkText;
+      }
+      /* update thumb in edit row */
+      var editCards = document.querySelectorAll('#armEditGrid .arm-edit-card');
+      if (editCards[idx]) {
+        var ec   = editCards[idx];
+        var thumb = ec.querySelector('.arm-card-thumb');
+        thumb.style.background = 'linear-gradient(135deg,'+r.from+','+r.to+')';
+        thumb.innerHTML = ICONS[r.icon]||ICONS.bolt;
+        ec.querySelector('.arm-card-name').textContent = r.title;
+      }
+    }
+
+    function escA(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    /* ── Save ── */
+    document.getElementById('armSaveBtn').addEventListener('click', function() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(resources));
+        var st = document.getElementById('armSaveStatus');
+        st.textContent = '✓ Saved! Changes will appear on the Resources page instantly.';
+        st.className = 'arm-save-status ok';
+        setTimeout(function(){ st.textContent=''; st.className='arm-save-status'; }, 4000);
+      } catch(e) {
+        var st = document.getElementById('armSaveStatus');
+        st.textContent = '✗ Save failed: ' + e.message;
+        st.className = 'arm-save-status err';
+      }
+    });
+
+    /* ── Init ── */
+    renderPreviews();
+    renderEditors();
   </script>
 
 </body>
