@@ -30,9 +30,11 @@
     const META_APP_ID = '934627165786609';
 
     // The page Meta redirects to after the user authorizes your app.
-    // ⚠️ This MUST exactly match a URI registered in your Meta App Dashboard.
-    // (Meta for Developers → Your App → Facebook Login → Settings → Valid OAuth Redirect URIs)
-    const REDIRECT_URI = 'http://localhost:8000/meta-callback.html';
+    // Dynamically set to the current origin so it works on both localhost AND Vercel.
+    // ⚠️ BOTH of these must be registered in Meta App Dashboard:
+    //   http://localhost:8000/meta-callback.html
+    //   https://YOUR-VERCEL-URL.vercel.app/meta-callback.html
+    const REDIRECT_URI = window.location.origin + '/meta-callback.html';
 
     // Required Instagram permissions (do NOT remove any of these)
     const SCOPES = [
