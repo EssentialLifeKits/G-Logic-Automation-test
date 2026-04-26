@@ -194,10 +194,11 @@ async function main() {
         try {
             // Get the user's access token from accounts table
             const { data: account, error: acctError } = await supabase
-                .from('accounts')
-                .select('access_token, ig_user_id, token_expires_at')
+                .from('user_social_accounts')
+                .select('access_token, provider_id, token_expires_at')
                 .eq('user_id', post.user_id)
                 .eq('provider', 'instagram')
+                .eq('is_active', true)
                 .single();
 
             if (acctError || !account) {
@@ -222,12 +223,12 @@ async function main() {
             if (mediaType === 'VIDEO') {
                 const videoUrl = post.video_url || post.image_url;
                 if (!videoUrl) throw new Error('No video URL found for this post.');
-                igMediaId = await publishVideo(account.ig_user_id, account.access_token, videoUrl, fullCaption);
+                igMediaId = await publishVideo(account.provider_id, account.access_token, videoUrl, fullCaption);
             } else {
                 // Default: IMAGE
                 const imageUrl = post.image_url;
                 if (!imageUrl) throw new Error('No image URL found for this post.');
-                igMediaId = await publishImage(account.ig_user_id, account.access_token, imageUrl, fullCaption);
+                igMediaId = await publishImage(account.provider_id, account.access_token, imageUrl, fullCaption);
             }
 
             // Update post status to published
