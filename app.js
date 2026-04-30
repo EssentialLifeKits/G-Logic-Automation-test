@@ -764,11 +764,16 @@
     const hasDate = !!els.dateInput.value;
     const hasTime = !!els.timeInput.value;
     const hasType = !!selectedType;
-    const isValid = hasMedia && hasCaption && hasDate && hasTime && hasType;
+    const isUploading = uploadedFile?._uploading === true;
+    const isValid = hasMedia && hasCaption && hasDate && hasTime && hasType && !isUploading;
 
     els.schedulePostBtn.classList.toggle('btn-disabled', !isValid);
     els.schedulePostBtn.classList.toggle('btn-glow', isValid);
     els.schedulePostBtn.disabled = !isValid;
+
+    if (isUploading) {
+      els.schedulePostBtn.innerHTML = '<span style="display:inline-block;margin-right:6px;">⏳</span> Preparing media...';
+    }
   }
 
   // Caption counter & validation
@@ -880,11 +885,48 @@
       reader.readAsDataURL(file);
     }
 
-    // Upload to Supabase Storage in the background
+    // Upload to Supabase Storage — lock Schedule button until complete
     if (isSupabaseConfigured) {
+      uploadedFile._uploading = true;
+
+      // Show uploading indicator in the upload zone
+      const uploadIndicator = document.createElement('div');
+      uploadIndicator.id = 'uploadProgressIndicator';
+      uploadIndicator.style.cssText = 'position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#E1306C,#833AB4);border-radius:0 0 12px 12px;animation:uploadPulse 1.2s ease-in-out infinite;';
+      els.uploadZone.style.position = 'relative';
+      const existing = document.getElementById('uploadProgressIndicator');
+      if (existing) existing.remove();
+      els.uploadZone.appendChild(uploadIndicator);
+
+      // Add pulse animation if not already present
+      if (!document.getElementById('uploadPulseStyle')) {
+        const style = document.createElement('style');
+        style.id = 'uploadPulseStyle';
+        style.textContent = '@keyframes uploadPulse{0%,100%{opacity:1}50%{opacity:0.4}}';
+        document.head.appendChild(style);
+      }
+
+      // Disable Schedule button while uploading
+      els.schedulePostBtn.classList.add('btn-disabled');
+      els.schedulePostBtn.disabled = true;
+
       uploadedFile._uploadPromise = uploadMediaToSupabase(file).then(url => {
+        uploadedFile._uploading = false;
+        const indicator = document.getElementById('uploadProgressIndicator');
+        if (indicator) indicator.remove();
+
         if (url) {
           uploadedFile._supabaseUrl = url;
+          // Re-run validation to re-enable Schedule button now that upload is ready
+          validateForm();
+        } else {
+          showToast('Media upload failed — please try again.');
+          uploadedFile = null;
+          els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
+          els.uploadPreview.src = '';
+          els.uploadPreview.classList.remove('visible');
+          els.uploadPlaceholder.style.display = '';
+          validateForm();
         }
         return url;
       });
@@ -982,15 +1024,12 @@
   els.schedulePostBtn.addEventListener('click', async () => {
     if (els.schedulePostBtn.disabled) return;
 
-    let supabaseUrl = uploadedFile?._supabaseUrl || '';
-    if (uploadedFile && uploadedFile._uploadPromise && !supabaseUrl) {
-      els.schedulePostBtn.innerHTML = '<span style="display:inline-block;margin-right:8px;font-size:0.9em;">⏳</span> Uploading...';
-      els.schedulePostBtn.disabled = true;
-      try {
-        supabaseUrl = await uploadedFile._uploadPromise;
-      } catch (e) {
-        console.error('Upload failed before saving post', e);
-      }
+    const supabaseUrl = uploadedFile?._supabaseUrl || '';
+
+    // Guard: never save a post without a media URL (upload must be complete before button is enabled)
+    if (!selectedType || (selectedType !== 'live' && !supabaseUrl && uploadedFile && !uploadedFile._existing)) {
+      showToast('Media is still being prepared — please try again in a moment.');
+      return;
     }
 
     const caption = els.captionInput.value.trim();
