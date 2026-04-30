@@ -154,6 +154,54 @@ async function publishVideo(igUserId, accessToken, videoUrl, caption) {
     return publishData.id;
 }
 
+/**
+ * Publish a STORY to Instagram (image or video)
+ */
+async function publishStory(igUserId, accessToken, mediaUrl, isVideo) {
+    console.log(`  📖 Publishing STORY for @${igUserId}...`);
+
+    const body = isVideo
+        ? { video_url: mediaUrl, media_type: 'STORIES', access_token: accessToken }
+        : { image_url: mediaUrl, media_type: 'STORIES', access_token: accessToken };
+
+    const createRes = await fetch(`${GRAPH_BASE}/${igUserId}/media`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    const createData = await createRes.json();
+    if (createData.error) throw new Error(`Story container failed: ${createData.error.message}`);
+
+    const creationId = createData.id;
+
+    // Poll for video stories
+    if (isVideo) {
+        let statusCode = 'IN_PROGRESS';
+        let attempts = 0;
+        while (statusCode !== 'FINISHED' && attempts < MAX_POLL_ATTEMPTS) {
+            await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+            attempts++;
+            const statusRes = await fetch(`${GRAPH_BASE}/${creationId}?fields=status_code&access_token=${accessToken}`);
+            const statusData = await statusRes.json();
+            if (statusData.error) throw new Error(`Story status check failed: ${statusData.error.message}`);
+            statusCode = statusData.status_code;
+            if (statusCode === 'ERROR') throw new Error('Story video processing failed.');
+        }
+        if (statusCode !== 'FINISHED') throw new Error('Story video processing timed out.');
+    }
+
+    const publishRes = await fetch(`${GRAPH_BASE}/${igUserId}/media_publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creation_id: creationId, access_token: accessToken }),
+    });
+    const publishData = await publishRes.json();
+    if (publishData.error) throw new Error(`Story publish failed: ${publishData.error.message}`);
+
+    console.log(`  🎉 Story published! IG Media ID: ${publishData.id}`);
+    return publishData.id;
+}
+
 // ========== MAIN PUBLISHING LOGIC ==========
 async function main() {
     console.log('==============================================');
@@ -220,12 +268,19 @@ async function main() {
             let igMediaId;
             const mediaType = (post.media_type || 'IMAGE').toUpperCase();
 
-            if (mediaType === 'VIDEO') {
+            if (mediaType === 'STORY_VIDEO') {
+                const videoUrl = post.video_url || post.image_url;
+                if (!videoUrl) throw new Error('No video URL found for this story.');
+                igMediaId = await publishStory(account.provider_id, account.access_token, videoUrl, true);
+            } else if (mediaType === 'STORY') {
+                const imageUrl = post.image_url;
+                if (!imageUrl) throw new Error('No image URL found for this story.');
+                igMediaId = await publishStory(account.provider_id, account.access_token, imageUrl, false);
+            } else if (mediaType === 'VIDEO') {
                 const videoUrl = post.video_url || post.image_url;
                 if (!videoUrl) throw new Error('No video URL found for this post.');
                 igMediaId = await publishVideo(account.provider_id, account.access_token, videoUrl, fullCaption);
             } else {
-                // Default: IMAGE
                 const imageUrl = post.image_url;
                 if (!imageUrl) throw new Error('No image URL found for this post.');
                 igMediaId = await publishImage(account.provider_id, account.access_token, imageUrl, fullCaption);

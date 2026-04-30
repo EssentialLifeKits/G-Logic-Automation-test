@@ -1028,7 +1028,7 @@
         hashtags,
         image_url: isLive ? '' : (thumbnailUrl || supabaseUrl || existingPost?.image_url || ''),
         video_url: isLive ? '' : (isVideo ? (supabaseUrl || existingPost?.video_url || '') : ''),
-        media_type: isLive ? 'NONE' : (isVideo ? 'VIDEO' : 'IMAGE'),
+        media_type: isLive ? 'NONE' : (selectedType === 'story' ? (isVideo ? 'STORY_VIDEO' : 'STORY') : (isVideo ? 'VIDEO' : 'IMAGE')),
       };
       await updatePost(editingPostId, updatedData);
       renderCalendar();
@@ -1050,7 +1050,7 @@
         hashtags,
         image_url: isLive ? '' : (isVideo ? thumbnailUrl : supabaseUrl),
         video_url: isLive ? '' : (isVideo ? supabaseUrl : ''),
-        media_type: isLive ? 'NONE' : (isVideo ? 'VIDEO' : 'IMAGE'),
+        media_type: isLive ? 'NONE' : (selectedType === 'story' ? (isVideo ? 'STORY_VIDEO' : 'STORY') : (isVideo ? 'VIDEO' : 'IMAGE')),
       };
 
       // Insert to Supabase
@@ -1379,7 +1379,7 @@
   }
 
   function getPostsByDate(dateStr) {
-    return state.posts.filter(p => p.date === dateStr);
+    return state.posts.filter(p => p.date === dateStr && (p.status || 'pending').toLowerCase() !== 'published');
   }
 
   // ========== KEYBOARD SHORTCUTS ==========
