@@ -108,46 +108,67 @@ Deno.serve(async (request) => {
         const tokenExpiresAt = new Date(Date.now() + (longData.expires_in || 5184000) * 1000).toISOString();
 
         // ===== STEP 3: Facebook Pages =====
-        // Run /me, /me/permissions, and /me/accounts in parallel for diagnostics
         const [meRes, permsRes, pagesRes] = await Promise.all([
             fetch(`https://graph.facebook.com/v21.0/me?fields=id,name&access_token=${longLivedToken}`),
             fetch(`https://graph.facebook.com/v21.0/me/permissions?access_token=${longLivedToken}`),
-            fetch(`https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,instagram_business_account&limit=50&access_token=${longLivedToken}`),
+            fetch(`https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,instagram_business_account&limit=100&access_token=${longLivedToken}`),
         ]);
         const [meData, permsData, pagesData] = await Promise.all([meRes.json(), permsRes.json(), pagesRes.json()]);
         console.log('Step 3 /me:', JSON.stringify(meData));
-        console.log('Step 3 /me/permissions:', JSON.stringify(permsData));
         console.log('Step 3 /me/accounts:', JSON.stringify(pagesData));
 
-        if (pagesData.error) {
-            return new Response(JSON.stringify({
-                error: `Meta API error (Step 3): ${pagesData.error.message}`,
-                meta_error: pagesData.error,
-                debug: 'Failed at /me/accounts — token may lack pages_show_list permission'
-            }), {
-                status: 400,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
+        let pages = (!pagesData.error && Array.isArray(pagesData.data)) ? pagesData.data : [];
+
+        // Fallback 1: Try with explicit user ID (helps with New Pages Experience)
+        if (pages.length === 0 && meData.id) {
+            console.log('Step 3 fallback: trying /{user_id}/accounts...');
+            const fallback1Res = await fetch(
+                `https://graph.facebook.com/v21.0/${meData.id}/accounts` +
+                `?fields=id,name,access_token,instagram_business_account&limit=100` +
+                `&access_token=${longLivedToken}`
+            );
+            const fallback1Data = await fallback1Res.json();
+            console.log('Step 3 fallback1 result:', JSON.stringify(fallback1Data));
+            if (Array.isArray(fallback1Data.data) && fallback1Data.data.length > 0) {
+                pages = fallback1Data.data;
+            }
         }
 
-        if (!pagesData.data?.length) {
-            // Build a readable permissions list for diagnosis
+        // Fallback 2: Try businesses endpoint (New Pages Experience via Business Manager)
+        if (pages.length === 0) {
+            console.log('Step 3 fallback2: trying /me/businesses...');
+            const bizRes = await fetch(
+                `https://graph.facebook.com/v21.0/me/businesses` +
+                `?fields=owned_pages{id,name,access_token,instagram_business_account}&limit=50` +
+                `&access_token=${longLivedToken}`
+            );
+            const bizData = await bizRes.json();
+            console.log('Step 3 fallback2 result:', JSON.stringify(bizData));
+            if (Array.isArray(bizData.data)) {
+                for (const biz of bizData.data) {
+                    if (biz.owned_pages?.data?.length) {
+                        pages = pages.concat(biz.owned_pages.data);
+                    }
+                }
+            }
+        }
+
+        if (pages.length === 0) {
             const grantedPerms = (permsData.data || [])
                 .filter(p => p.status === 'granted')
                 .map(p => p.permission);
             return new Response(JSON.stringify({
-                error: 'No Facebook Pages found. Link your Instagram to a Facebook Page first.',
+                error: 'No Facebook Pages found. Make sure your Instagram Business account is linked to a Facebook Page and you have Admin access to that Page.',
                 debug_fb_user: meData,
                 debug_granted_permissions: grantedPerms,
-                debug_pages_response: pagesData,
-                hint: 'pages_show_list must be granted AND the Facebook account must admin at least one Page'
+                hint: 'Go to your Facebook Page → Settings → Page Access → confirm you have Full Control'
             }), {
                 status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
         }
 
-        const page = pagesData.data[0];
+        const page = pages[0];
         console.log('Step 3 using page:', page.id, page.name);
 
         // ===== STEP 4: Instagram Business Account =====

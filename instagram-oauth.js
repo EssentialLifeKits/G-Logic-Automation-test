@@ -42,6 +42,7 @@
         'pages_read_engagement',       // Read page info to find the IG account
         'instagram_basic',             // Read basic IG profile info
         'pages_show_list',             // List Facebook Pages owned by user
+        'pages_manage_metadata',       // Required for New Pages Experience page discovery
     ].join(',');
 
     // Meta Graph API version (update periodically)
