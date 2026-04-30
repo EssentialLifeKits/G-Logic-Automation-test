@@ -187,11 +187,30 @@ Deno.serve(async (_req) => {
     const db = createSupabaseClient();
     const now = new Date().toISOString();
 
-    // Fetch due posts
     const MAX_RETRIES = 5;
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+
+    // Recover posts stuck in 'processing' for over 10 min (cron crashed mid-publish)
+    try {
+        const stuck = await db.select('posts', {
+            select: 'id,retry_count',
+            status: 'eq.processing',
+            updated_at: `lte.${tenMinutesAgo}`,
+        });
+        for (const s of (stuck || [])) {
+            const newCount = (s.retry_count || 0) + 1;
+            await db.update('posts', s.id, {
+                status: newCount >= MAX_RETRIES ? 'permanently_failed' : 'failed',
+                publish_error: 'Publishing timed out — will retry automatically.',
+                retry_count: newCount,
+                updated_at: new Date().toISOString(),
+            });
+        }
+    } catch (_) { /* non-fatal */ }
+
+    // Fetch due posts — never pick up 'processing' (actively being published)
     let duePosts;
     try {
-        // Pick up pending posts that are due AND failed posts that haven't hit the retry limit
         const [pending, failed] = await Promise.all([
             db.select('posts', {
                 select: '*',
@@ -225,6 +244,12 @@ Deno.serve(async (_req) => {
         console.log(`\n─── Post ${post.id} ───`);
         console.log(`  Type: ${post.media_type || 'IMAGE'}`);
         console.log(`  Scheduled: ${post.scheduled_time}`);
+
+        // Lock the post immediately so no other cron cycle picks it up
+        await db.update('posts', post.id, {
+            status: 'processing',
+            updated_at: new Date().toISOString(),
+        });
 
         try {
             const account = await db.selectSingle('user_social_accounts', {
