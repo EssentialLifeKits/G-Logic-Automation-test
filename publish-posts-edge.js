@@ -188,14 +188,25 @@ Deno.serve(async (_req) => {
     const now = new Date().toISOString();
 
     // Fetch due posts
+    const MAX_RETRIES = 5;
     let duePosts;
     try {
-        duePosts = await db.select('posts', {
-            select: '*',
-            status: 'eq.pending',
-            scheduled_time: `lte.${now}`,
-            order: 'scheduled_time.asc',
-        });
+        // Pick up pending posts that are due AND failed posts that haven't hit the retry limit
+        const [pending, failed] = await Promise.all([
+            db.select('posts', {
+                select: '*',
+                status: 'eq.pending',
+                scheduled_time: `lte.${now}`,
+                order: 'scheduled_time.asc',
+            }),
+            db.select('posts', {
+                select: '*',
+                status: 'eq.failed',
+                retry_count: `lt.${MAX_RETRIES}`,
+                order: 'scheduled_time.asc',
+            }),
+        ]);
+        duePosts = [...(pending || []), ...(failed || [])];
     } catch (err) {
         console.error('❌ Failed to query posts:', err.message);
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });
@@ -263,13 +274,18 @@ Deno.serve(async (_req) => {
         } catch (err) {
             console.error(`  ❌ Post ${post.id} FAILED: ${err.message}`);
 
+            const newRetryCount = (post.retry_count || 0) + 1;
+            const permanentlyFailed = newRetryCount >= MAX_RETRIES;
+
             await db.update('posts', post.id, {
-                status: 'failed',
+                status: permanentlyFailed ? 'permanently_failed' : 'failed',
                 publish_error: err.message,
+                retry_count: newRetryCount,
                 updated_at: new Date().toISOString(),
             });
 
-            results.push({ id: post.id, status: 'failed', error: err.message });
+            console.log(`  🔁 Retry ${newRetryCount}/${MAX_RETRIES}${permanentlyFailed ? ' — permanently failed' : ' — will retry next cycle'}`);
+            results.push({ id: post.id, status: permanentlyFailed ? 'permanently_failed' : 'failed', error: err.message });
         }
     }
 

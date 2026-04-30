@@ -39,6 +39,10 @@
         status: row.status || 'pending',
         hashtags: row.hashtags || '',
         image_url: row.image_url || '',
+        video_url: row.video_url || '',
+        media_type: row.media_type || 'IMAGE',
+        publish_error: row.publish_error || '',
+        retry_count: row.retry_count || 0,
       }));
     } catch (e) { console.error('Supabase load exception:', e); return null; }
   }
@@ -1471,17 +1475,21 @@
   // Maps internal status to display class and label
   function getStatusClass(status) {
     const s = (status || 'pending').toLowerCase();
-    if (s === 'pending' || s === 'active' || s === 'scheduled') return 'active'; // Scheduled posts -> ACTIVE (green glow)
-    if (s === 'draft') return 'draft';         // Only Save Draft -> Draft (amber glow)
+    if (s === 'pending' || s === 'active' || s === 'scheduled') return 'active';
+    if (s === 'draft') return 'draft';
     if (s === 'published') return 'published';
+    if (s === 'failed') return 'failed';
+    if (s === 'permanently_failed') return 'failed';
     return s;
   }
 
   function getStatusLabel(status) {
     const s = (status || 'pending').toLowerCase();
-    if (s === 'pending' || s === 'active' || s === 'scheduled') return 'ACTIVE'; // Scheduled posts display as "ACTIVE"
-    if (s === 'draft') return 'Draft';         // Only drafts display as "Draft"
+    if (s === 'pending' || s === 'active' || s === 'scheduled') return 'ACTIVE';
+    if (s === 'draft') return 'Draft';
     if (s === 'published') return 'Published';
+    if (s === 'failed') return 'Retrying';
+    if (s === 'permanently_failed') return 'Failed';
     return capitalize(s);
   }
 
@@ -1605,6 +1613,8 @@
             </div>
           </div>
           <span class="actions-entry-status status-${statusStr}">${statusLabel}</span>
+          ${p.status === 'failed' ? `<div style="width:100%;margin-top:6px;padding:6px 10px;background:rgba(231,76,60,0.12);border-left:3px solid #e74c3c;border-radius:4px;font-size:0.74rem;color:#e74c3c;line-height:1.4;">⚠️ ${escapeHtml(p.publish_error || 'Unknown error')} <span style="opacity:0.7;">· Retry ${p.retry_count || 0}/5 — retrying automatically</span></div>` : ''}
+          ${p.status === 'permanently_failed' ? `<div style="width:100%;margin-top:6px;padding:6px 10px;background:rgba(192,57,43,0.15);border-left:3px solid #c0392b;border-radius:4px;font-size:0.74rem;color:#c0392b;line-height:1.4;">❌ ${escapeHtml(p.publish_error || 'Unknown error')} <span style="opacity:0.7;">· Max retries reached — delete and reschedule</span></div>` : ''}
         </div>`;
       });
       html += `</div>`;
@@ -1737,16 +1747,71 @@
     });
   }
 
+  // ========== FAILURE BANNER ==========
+  function renderFailureBanner() {
+    const failed = state.posts.filter(p => p.status === 'failed' || p.status === 'permanently_failed');
+    let banner = document.getElementById('postFailureBanner');
+
+    if (failed.length === 0) {
+      if (banner) banner.remove();
+      return;
+    }
+
+    const permanent = failed.filter(p => p.status === 'permanently_failed');
+    const retrying = failed.filter(p => p.status === 'failed');
+
+    let msg = '';
+    if (retrying.length > 0) msg += `${retrying.length} post${retrying.length > 1 ? 's' : ''} failed — retrying automatically. `;
+    if (permanent.length > 0) msg += `${permanent.length} post${permanent.length > 1 ? 's' : ''} could not be published after 5 attempts.`;
+
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'postFailureBanner';
+      banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,#c0392b,#e74c3c);color:#fff;font-size:0.82rem;font-weight:600;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,0.3);';
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = '×';
+      closeBtn.style.cssText = 'background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;padding:0 4px;line-height:1;opacity:0.8;';
+      closeBtn.onclick = () => banner.remove();
+      const viewBtn = document.createElement('button');
+      viewBtn.textContent = 'View Posts →';
+      viewBtn.style.cssText = 'background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;font-size:0.78rem;font-weight:700;border-radius:6px;padding:4px 10px;cursor:pointer;';
+      viewBtn.onclick = () => { banner.remove(); openActionsPage(); };
+      const textEl = document.createElement('span');
+      textEl.id = 'postFailureBannerText';
+      textEl.style.flex = '1';
+      const warningIcon = '⚠️ ';
+      textEl.textContent = warningIcon + msg;
+      banner.append(textEl, viewBtn, closeBtn);
+      document.body.prepend(banner);
+    } else {
+      const textEl = document.getElementById('postFailureBannerText');
+      if (textEl) textEl.textContent = '⚠️ ' + msg;
+    }
+  }
+
+  // ========== BACKGROUND SYNC ==========
+  async function syncPostsFromSupabase() {
+    if (!isSupabaseConfigured) return;
+    const sbPosts = await loadPostsFromSupabase();
+    if (!sbPosts) return;
+    state.posts = sbPosts;
+    state.nextId = Math.max(...sbPosts.map(p => (typeof p.id === 'number' ? p.id : 0)), 0) + 1;
+    savePosts();
+    renderCalendar();
+    renderUpcoming();
+    renderActionsPage();
+    renderTopPosts();
+    renderFailureBanner();
+  }
+
   // ========== INIT ==========
   async function init() {
-    // Try to load posts from Supabase first
     if (isSupabaseConfigured) {
       const sbPosts = await loadPostsFromSupabase();
       if (sbPosts && sbPosts.length > 0) {
-        // Only override localStorage when Supabase actually has posts
         state.posts = sbPosts;
         state.nextId = Math.max(...sbPosts.map(p => (typeof p.id === 'number' ? p.id : 0)), 0) + 1;
-        savePosts(); // sync localStorage to match
+        savePosts();
       }
     }
 
@@ -1761,6 +1826,10 @@
     initActionsPage();
     initTodayDayName();
     validateForm();
+    renderFailureBanner();
+
+    // Poll Supabase every 60 seconds to sync post statuses (picks up published/failed from cron)
+    setInterval(syncPostsFromSupabase, 60000);
   }
 
   init();
