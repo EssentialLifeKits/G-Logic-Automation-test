@@ -939,7 +939,7 @@
 
   // Handle Thumbnail Capture Button
   if (els.captureThumbBtn) {
-    els.captureThumbBtn.addEventListener('click', (e) => {
+    els.captureThumbBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       const videoEl = els.uploadZone.querySelector('video');
