@@ -961,13 +961,39 @@
         const tempCtx = tempCanvas.getContext('2d');
         tempCtx.drawImage(videoEl, 0, 0, tempCanvas.width, tempCanvas.height);
         
-        userSelectedThumbnail = tempCanvas.toDataURL('image/jpeg', 0.8);
-        
+        const base64 = tempCanvas.toDataURL('image/jpeg', 0.8);
+        userSelectedThumbnail = base64; // show preview immediately
+
         if (els.capturedThumbPreview) {
-          els.capturedThumbPreview.src = userSelectedThumbnail;
+          els.capturedThumbPreview.src = base64;
           els.capturedThumbPreview.style.display = 'block';
         }
-        showToast('Thumbnail captured!');
+        showToast('Thumbnail captured — uploading...');
+
+        // Upload thumbnail to Supabase Storage to get a real public URL
+        if (isSupabaseConfigured) {
+          try {
+            const userId = await getCurrentUserId();
+            if (userId) {
+              // Convert base64 to Blob
+              const res = await fetch(base64);
+              const blob = await res.blob();
+              const fileName = `${userId}/thumb_${Date.now()}.jpg`;
+              const { data: upData, error: upErr } = await supabase.storage
+                .from('media_uploads')
+                .upload(fileName, blob, { contentType: 'image/jpeg', cacheControl: '3600', upsert: false });
+              if (!upErr && upData) {
+                const { data: urlData } = supabase.storage.from('media_uploads').getPublicUrl(upData.path);
+                if (urlData?.publicUrl) {
+                  userSelectedThumbnail = urlData.publicUrl;
+                  showToast('Thumbnail saved!');
+                }
+              }
+            }
+          } catch (thumbErr) {
+            console.warn('Thumbnail upload failed, using base64 fallback:', thumbErr);
+          }
+        }
       } catch (err) {
         console.warn('Could not capture video thumbnail:', err);
         showToast('Error capturing thumbnail');

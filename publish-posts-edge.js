@@ -88,18 +88,16 @@ async function publishImage(igUserId, accessToken, imageUrl, caption) {
     return publishData.id;
 }
 
-async function publishVideo(igUserId, accessToken, videoUrl, caption) {
+async function publishVideo(igUserId, accessToken, videoUrl, caption, coverUrl) {
     console.log(`  🎬 Publishing VIDEO/REEL for IG user ${igUserId}...`);
+
+    const videoBody = { video_url: videoUrl, caption, media_type: 'REELS', access_token: accessToken };
+    if (coverUrl && coverUrl.startsWith('http')) videoBody.cover_url = coverUrl;
 
     const createRes = await fetch(`${GRAPH_BASE}/${igUserId}/media`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            video_url: videoUrl,
-            caption,
-            media_type: 'REELS',
-            access_token: accessToken,
-        }),
+        body: JSON.stringify(videoBody),
     });
     const createData = await createRes.json();
     if (createData.error) throw new Error(`Reel container failed: ${createData.error.message}`);
@@ -280,7 +278,7 @@ Deno.serve(async (_req) => {
             } else if (mediaType === 'VIDEO') {
                 const videoUrl = post.video_url || post.image_url;
                 if (!videoUrl) throw new Error('No video URL found.');
-                igMediaId = await publishVideo(account.provider_id, account.access_token, videoUrl, fullCaption);
+                igMediaId = await publishVideo(account.provider_id, account.access_token, videoUrl, fullCaption, post.image_url);
             } else {
                 if (!post.image_url) throw new Error('No image URL found.');
                 igMediaId = await publishImage(account.provider_id, account.access_token, post.image_url, fullCaption);
