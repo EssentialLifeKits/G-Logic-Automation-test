@@ -175,6 +175,7 @@
     uploadZone: $('#uploadZone'),
     fileInput: $('#fileInput'),
     uploadPreview: $('#uploadPreview'),
+    addTextBtn: $('#addTextBtn'),
     captureThumbBtn: $('#captureThumbBtn'),
     capturedThumbPreview: $('#capturedThumbPreview'),
     removeMediaBtn: $('#removeMediaBtn'),
@@ -561,6 +562,413 @@
     });
   }
 
+  // ========== TEXT OVERLAY EDITOR ==========
+  const TOE_FONTS = {
+    modern:     { family: "'Montserrat','Helvetica Neue',sans-serif",  cls: 'toe-font-modern' },
+    classic:    { family: "'Playfair Display',Georgia,serif",          cls: 'toe-font-classic' },
+    strong:     { family: "'Anton',Impact,sans-serif",                  cls: 'toe-font-strong' },
+    neon:       { family: "'Bebas Neue',Impact,sans-serif",             cls: 'toe-font-neon' },
+    typewriter: { family: "'Special Elite','Courier New',monospace",   cls: 'toe-font-typewriter' },
+  };
+
+  let toeTextElements = [];   // { id, text, font, color, size, bg, align, x, y }
+  let toeActiveId = null;
+  let toeFont = 'modern';
+  let toeColor = '#ffffff';
+  let toeSize = 42;
+  let toeBg = 'none';         // none | semi | solid
+  let toeAlign = 'center';
+  let toeSourceMedia = null;  // the img or video element in the stage
+  let toeDragState = null;
+
+  const toeOverlay    = document.getElementById('toeOverlay');
+  const toeStage      = document.getElementById('toeStage');
+  const toeTextLayer  = document.getElementById('toeTextLayer');
+  const toeCanvas     = document.getElementById('toeCanvas');
+  const toeProcessing = document.getElementById('toeProcessing');
+  const toeProcLabel  = document.getElementById('toeProcessingLabel');
+
+  function toeGetEl(id) { return document.getElementById('toe-el-' + id); }
+
+  function toeApplyStyle(el, item) {
+    const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
+    el.style.fontFamily = fontConf.family;
+    el.style.fontSize   = item.size + 'px';
+    el.style.color      = item.color;
+    el.style.textAlign  = item.align;
+    el.style.left       = item.x + '%';
+    el.style.top        = item.y + '%';
+    // Background
+    el.classList.remove('toe-bg-none','toe-bg-semi','toe-bg-solid');
+    el.classList.add('toe-bg-' + (item.bg || 'none'));
+    // Font class
+    Object.values(TOE_FONTS).forEach(f => el.classList.remove(f.cls));
+    el.classList.add(fontConf.cls);
+  }
+
+  function toeRenderAll() {
+    toeTextLayer.innerHTML = '';
+    toeTextElements.forEach(item => {
+      const wrap = document.createElement('div');
+      wrap.className = 'toe-text-el' + (item.id === toeActiveId ? ' active-text' : '');
+      wrap.id = 'toe-el-' + item.id;
+      wrap.contentEditable = 'true';
+      wrap.textContent = item.text;
+      toeApplyStyle(wrap, item);
+
+      // Delete button
+      const del = document.createElement('button');
+      del.className = 'toe-delete-btn';
+      del.innerHTML = '×';
+      del.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        toeTextElements = toeTextElements.filter(t => t.id !== item.id);
+        if (toeActiveId === item.id) toeActiveId = null;
+        toeRenderAll();
+      });
+      wrap.appendChild(del);
+
+      // Click to activate
+      wrap.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('toe-delete-btn')) return;
+        toeActiveId = item.id;
+        toeRenderAll();
+        toeUpdateToolbarToActive();
+        // Begin drag
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startPX = item.x;
+        const startPY = item.y;
+        const rect = toeStage.getBoundingClientRect();
+        const onMove = (mv) => {
+          const dx = ((mv.clientX - startX) / rect.width)  * 100;
+          const dy = ((mv.clientY - startY) / rect.height) * 100;
+          item.x = Math.max(5, Math.min(95, startPX + dx));
+          item.y = Math.max(5, Math.min(95, startPY + dy));
+          const el2 = toeGetEl(item.id);
+          if (el2) { el2.style.left = item.x + '%'; el2.style.top = item.y + '%'; }
+        };
+        const onUp = () => {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+
+      // Save text on input
+      wrap.addEventListener('input', () => {
+        item.text = wrap.innerText;
+      });
+
+      toeTextLayer.appendChild(wrap);
+    });
+  }
+
+  function toeUpdateToolbarToActive() {
+    const item = toeTextElements.find(t => t.id === toeActiveId);
+    if (!item) return;
+    toeFont  = item.font;
+    toeColor = item.color;
+    toeSize  = item.size;
+    toeBg    = item.bg;
+    toeAlign = item.align;
+    // Update UI
+    document.querySelectorAll('.toe-font-btn').forEach(b => b.classList.toggle('active', b.dataset.font === toeFont));
+    document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.toggle('active', b.dataset.color === toeColor));
+    document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === toeAlign));
+    document.getElementById('toeSizeSlider').value = toeSize;
+    const bgBtn = document.getElementById('toeBgBtn');
+    bgBtn.textContent = toeBg === 'none' ? 'Bg: Off' : toeBg === 'semi' ? 'Bg: Dark' : 'Bg: Solid';
+  }
+
+  function toeAddTextElement() {
+    const id = Date.now();
+    toeTextElements.push({ id, text: 'Tap to edit', font: toeFont, color: toeColor, size: toeSize, bg: toeBg, align: toeAlign, x: 50, y: 50 });
+    toeActiveId = id;
+    toeRenderAll();
+    // Focus for editing
+    setTimeout(() => {
+      const el = toeGetEl(id);
+      if (el) { el.focus(); document.execCommand('selectAll', false, null); }
+    }, 50);
+  }
+
+  function toeUpdateActive(prop, val) {
+    const item = toeTextElements.find(t => t.id === toeActiveId);
+    if (!item) return;
+    item[prop] = val;
+    toeApplyStyle(toeGetEl(item.id), item);
+  }
+
+  function toeOpen(mediaFile) {
+    // Clear previous state
+    toeTextElements = [];
+    toeActiveId = null;
+    toeFont = 'modern'; toeColor = '#ffffff'; toeSize = 42; toeBg = 'none'; toeAlign = 'center';
+    toeTextLayer.innerHTML = '';
+
+    // Remove old media from stage
+    toeStage.querySelectorAll('img,video').forEach(e => e.remove());
+
+    // Add media preview to stage
+    const isVid = mediaFile.type?.startsWith('video/') || mediaFile._isVideo;
+    if (isVid) {
+      const vid = document.createElement('video');
+      vid.src = URL.createObjectURL(mediaFile);
+      vid.controls = true;
+      vid.muted = true;
+      vid.loop = true;
+      vid.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
+      toeStage.insertBefore(vid, toeTextLayer);
+      toeSourceMedia = vid;
+      vid.play().catch(() => {});
+    } else {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(mediaFile);
+      img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
+      toeStage.insertBefore(img, toeTextLayer);
+      toeSourceMedia = img;
+    }
+
+    // Reset toolbar UI
+    document.querySelectorAll('.toe-font-btn').forEach(b => b.classList.toggle('active', b.dataset.font === 'modern'));
+    document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.toggle('active', b.dataset.color === '#ffffff'));
+    document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === 'center'));
+    document.getElementById('toeSizeSlider').value = 42;
+    document.getElementById('toeBgBtn').textContent = 'Bg: Off';
+
+    toeOverlay.style.display = 'flex';
+    toeOverlay.style.flexDirection = 'column';
+
+    // Auto-add first text element
+    toeAddTextElement();
+  }
+
+  function toeClose() {
+    toeOverlay.style.display = 'none';
+    toeStage.querySelectorAll('img,video').forEach(e => { URL.revokeObjectURL(e.src); e.remove(); });
+  }
+
+  // Burn text onto image → returns a Blob
+  async function toeBurnImage(imgEl) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        canvas.width  = img.naturalWidth  || img.width  || 1080;
+        canvas.height = img.naturalHeight || img.height || 1350;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        // Draw each text element
+        toeTextElements.forEach(item => {
+          const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
+          ctx.font = `${item.size * 2}px ${fontConf.family}`;
+          ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
+          const x = (item.x / 100) * canvas.width;
+          const y = (item.y / 100) * canvas.height;
+          const lines = item.text.split('\n');
+          const lineH = item.size * 2 * 1.3;
+          // Background
+          if (item.bg !== 'none') {
+            ctx.fillStyle = item.bg === 'solid' ? '#000' : 'rgba(0,0,0,0.55)';
+            lines.forEach((line, i) => {
+              const tw = ctx.measureText(line).width;
+              const bx = item.align === 'center' ? x - tw/2 - 12 : item.align === 'right' ? x - tw - 12 : x - 12;
+              ctx.fillRect(bx, y + i * lineH - item.size * 2 - 4, tw + 24, lineH);
+            });
+          }
+          // Neon glow
+          if (item.font === 'neon') {
+            ctx.shadowColor = item.color;
+            ctx.shadowBlur = 20;
+          } else {
+            ctx.shadowBlur = 0;
+          }
+          ctx.fillStyle = item.color;
+          lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineH));
+          ctx.shadowBlur = 0;
+        });
+        canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.92);
+      };
+      img.src = imgEl.src;
+    });
+  }
+
+  // Burn text onto video → returns a Blob via MediaRecorder
+  async function toeBurnVideo(vidEl) {
+    return new Promise((resolve, reject) => {
+      vidEl.pause();
+      vidEl.currentTime = 0;
+      const canvas = document.createElement('canvas');
+      canvas.width  = vidEl.videoWidth  || 1080;
+      canvas.height = vidEl.videoHeight || 1920;
+      const ctx = canvas.getContext('2d');
+
+      const stream = canvas.captureStream(30);
+      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
+      const chunks = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
+
+      let rafId;
+      const drawFrame = () => {
+        ctx.drawImage(vidEl, 0, 0, canvas.width, canvas.height);
+        // Draw text overlays
+        toeTextElements.forEach(item => {
+          const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
+          ctx.font = `${item.size * 2}px ${fontConf.family}`;
+          ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
+          const x = (item.x / 100) * canvas.width;
+          const y = (item.y / 100) * canvas.height;
+          const lines = item.text.split('\n');
+          const lineH = item.size * 2 * 1.3;
+          if (item.bg !== 'none') {
+            ctx.fillStyle = item.bg === 'solid' ? '#000' : 'rgba(0,0,0,0.55)';
+            lines.forEach((line, i) => {
+              const tw = ctx.measureText(line).width;
+              const bx = item.align === 'center' ? x - tw/2 - 12 : item.align === 'right' ? x - tw - 12 : x - 12;
+              ctx.fillRect(bx, y + i * lineH - item.size * 2 - 4, tw + 24, lineH);
+            });
+          }
+          if (item.font === 'neon') { ctx.shadowColor = item.color; ctx.shadowBlur = 20; }
+          else { ctx.shadowBlur = 0; }
+          ctx.fillStyle = item.color;
+          lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineH));
+          ctx.shadowBlur = 0;
+        });
+        if (!vidEl.paused && !vidEl.ended) rafId = requestAnimationFrame(drawFrame);
+      };
+
+      vidEl.onended = () => {
+        cancelAnimationFrame(rafId);
+        recorder.stop();
+      };
+
+      recorder.start();
+      vidEl.play().then(() => { rafId = requestAnimationFrame(drawFrame); }).catch(reject);
+    });
+  }
+
+  // Wire up toolbar events
+  document.querySelectorAll('.toe-font-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      toeFont = btn.dataset.font;
+      document.querySelectorAll('.toe-font-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      toeUpdateActive('font', toeFont);
+    });
+  });
+
+  document.querySelectorAll('.toe-color-swatch').forEach(btn => {
+    if (!btn.dataset.color) return;
+    btn.addEventListener('click', () => {
+      toeColor = btn.dataset.color;
+      document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      toeUpdateActive('color', toeColor);
+    });
+  });
+
+  const toeColorPicker = document.getElementById('toeColorPicker');
+  if (toeColorPicker) {
+    toeColorPicker.addEventListener('input', () => {
+      toeColor = toeColorPicker.value;
+      document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.remove('active'));
+      document.getElementById('toeColorCustom').classList.add('active');
+      toeUpdateActive('color', toeColor);
+    });
+  }
+
+  const toeSizeSlider = document.getElementById('toeSizeSlider');
+  if (toeSizeSlider) {
+    toeSizeSlider.addEventListener('input', () => {
+      toeSize = parseInt(toeSizeSlider.value);
+      toeUpdateActive('size', toeSize);
+    });
+  }
+
+  const toeBgBtn = document.getElementById('toeBgBtn');
+  if (toeBgBtn) {
+    toeBgBtn.addEventListener('click', () => {
+      const modes = ['none','semi','solid'];
+      toeBg = modes[(modes.indexOf(toeBg) + 1) % modes.length];
+      toeBgBtn.textContent = toeBg === 'none' ? 'Bg: Off' : toeBg === 'semi' ? 'Bg: Dark' : 'Bg: Solid';
+      toeUpdateActive('bg', toeBg);
+    });
+  }
+
+  document.querySelectorAll('.toe-align-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      toeAlign = btn.dataset.align;
+      document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      toeUpdateActive('align', toeAlign);
+    });
+  });
+
+  document.getElementById('toeAddTextBtn')?.addEventListener('click', toeAddTextElement);
+  document.getElementById('toeCancelBtn')?.addEventListener('click', toeClose);
+
+  document.getElementById('toeDoneBtn')?.addEventListener('click', async () => {
+    if (toeTextElements.length === 0) { toeClose(); return; }
+    const isVid = toeSourceMedia?.tagName === 'VIDEO';
+    toeProcessing.style.display = 'flex';
+    toeProcLabel.textContent = isVid ? 'Processing video... please wait' : 'Processing image...';
+    try {
+      let blob;
+      if (isVid) {
+        blob = await toeBurnVideo(toeSourceMedia);
+      } else {
+        blob = await toeBurnImage(toeSourceMedia);
+      }
+      // Create a new File object from the blob
+      const ext = isVid ? 'webm' : 'jpg';
+      const newFile = new File([blob], `overlay_${Date.now()}.${ext}`, { type: blob.type });
+      newFile._isVideo = isVid;
+      // Replace uploadedFile and trigger re-upload
+      uploadedFile = newFile;
+      uploadedFile._uploading = true;
+      // Show in upload zone
+      if (isVid) {
+        const videoEl = els.uploadZone.querySelector('video') || document.createElement('video');
+        videoEl.src = URL.createObjectURL(blob);
+        videoEl.controls = true; videoEl.muted = true;
+        videoEl.style.cssText = 'max-width:100%;border-radius:12px;';
+        els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
+        els.uploadZone.appendChild(videoEl);
+        els.uploadPreview.style.display = 'none';
+      } else {
+        els.uploadPreview.src = URL.createObjectURL(blob);
+        els.uploadPreview.classList.add('visible');
+        els.uploadPreview.style.display = '';
+      }
+      // Upload to Supabase
+      uploadedFile._uploadPromise = uploadMediaToSupabase(newFile).then(url => {
+        uploadedFile._uploading = false;
+        const indicator = document.getElementById('uploadProgressIndicator');
+        if (indicator) indicator.remove();
+        if (url) {
+          uploadedFile._supabaseUrl = url;
+          showToast('Text overlay applied!');
+          validateForm();
+        } else {
+          showToast('Upload failed — try again.');
+          uploadedFile = null;
+          validateForm();
+        }
+        return url;
+      });
+      toeClose();
+      validateForm();
+    } catch (err) {
+      console.error('Text burn error:', err);
+      showToast('Error applying text — try again.');
+      toeProcessing.style.display = 'none';
+    }
+  });
+
   // ========== SCHEDULER MODAL ==========
   let selectedType = 'post';
   let uploadedFile = null;
@@ -583,7 +991,7 @@
     els.uploadPreview.classList.remove('visible');
     if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
-    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
+    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none'; if (els.addTextBtn) els.addTextBtn.style.display = 'none';
     els.uploadPlaceholder.style.display = '';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
     uploadedFile = null;
@@ -619,7 +1027,7 @@
     els.uploadPreview.classList.remove('visible');
     if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
-    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
+    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none'; if (els.addTextBtn) els.addTextBtn.style.display = 'none';
     els.uploadPlaceholder.style.display = 'none';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
     uploadedFile = { _existing: true }; // Mark as having existing media
@@ -631,7 +1039,7 @@
       videoEl.controls = true;
       videoEl.setAttribute('playsinline', '');
       els.uploadZone.appendChild(videoEl);
-      if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
+      if (els.removeMediaBtn) els.removeMediaBtn.style.display = ''; if (els.addTextBtn) els.addTextBtn.style.display = '';
       
       videoEl.addEventListener('seeked', () => {
         if (els.captureThumbBtn) els.captureThumbBtn.style.display = '';
@@ -645,7 +1053,7 @@
         }
       }
     } else if (post.image_url) {
-      if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
+      if (els.removeMediaBtn) els.removeMediaBtn.style.display = ''; if (els.addTextBtn) els.addTextBtn.style.display = '';
       els.uploadPreview.src = post.image_url;
       els.uploadPreview.classList.add('visible');
       els.uploadPreview.style.display = '';
@@ -724,7 +1132,7 @@
     els.uploadPreview.style.display = 'none';
     if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
-    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
+    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none'; if (els.addTextBtn) els.addTextBtn.style.display = 'none';
     els.uploadPlaceholder.style.display = '';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
     uploadedFile = null;
@@ -863,7 +1271,7 @@
       // Remove any previous video preview
       els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
       els.uploadZone.appendChild(videoEl);
-      if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
+      if (els.removeMediaBtn) els.removeMediaBtn.style.display = ''; if (els.addTextBtn) els.addTextBtn.style.display = '';
       if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
       
       videoEl.addEventListener('seeked', () => {
@@ -876,7 +1284,7 @@
       els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
       if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
       if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
-      if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
+      if (els.removeMediaBtn) els.removeMediaBtn.style.display = ''; if (els.addTextBtn) els.addTextBtn.style.display = '';
       userSelectedThumbnail = '';
       els.uploadPreview.style.display = '';
       const reader = new FileReader();
@@ -1002,6 +1410,16 @@
   }
 
   // Remove Media Button logic
+  // Add Text button — open the text overlay editor
+  if (els.addTextBtn) {
+    els.addTextBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!uploadedFile) return;
+      toeOpen(uploadedFile);
+    });
+  }
+
   if (els.removeMediaBtn) {
     els.removeMediaBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -1013,7 +1431,7 @@
       
       if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
       if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
-      if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
+      if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none'; if (els.addTextBtn) els.addTextBtn.style.display = 'none';
       
       els.uploadPlaceholder.style.display = '';
       els.uploadZone.querySelectorAll('video').forEach(v => v.remove());

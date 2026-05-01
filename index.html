@@ -9,7 +9,7 @@
         content="G-Logic Automation is a professional Instagram scheduling tool for content creators. Plan, schedule, and optimize your posts for maximum engagement." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&family=Montserrat:wght@700&family=Bebas+Neue&family=Special+Elite&family=Anton&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="index.css?v=2" />
 </head>
@@ -435,6 +435,10 @@
                                 <small class="upload-ratio-hint">9:16 Portrait (1080×1920)</small>
                             </div>
                             <img id="uploadPreview" class="upload-preview" alt="Upload preview" />
+                            <button id="addTextBtn" class="add-text-btn" style="display:none;" type="button" title="Add text overlay to your media">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px;"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+                                Add Text
+                            </button>
                             <button id="captureThumbBtn" class="capture-thumb-btn" style="display:none;" title="Scrub to a frame and click to use as thumbnail">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px;">
                                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -641,6 +645,69 @@
         <span id="toastMessage">Post scheduled successfully!</span>
     </div>
 
+    <!-- ===== TEXT OVERLAY EDITOR ===== -->
+    <div class="toe-overlay" id="toeOverlay" style="display:none;">
+        <div class="toe-topbar">
+            <button class="toe-cancel-btn" id="toeCancelBtn">Cancel</button>
+            <span class="toe-title-label">Text Overlay</span>
+            <button class="toe-done-btn" id="toeDoneBtn">Done</button>
+        </div>
+        <div class="toe-stage" id="toeStage">
+            <!-- media preview rendered here -->
+            <canvas id="toeCanvas" style="display:none;"></canvas>
+            <div class="toe-text-layer" id="toeTextLayer"></div>
+            <div class="toe-processing" id="toeProcessing" style="display:none;">
+                <div class="toe-processing-inner">
+                    <div class="toe-spinner"></div>
+                    <span id="toeProcessingLabel">Processing video...</span>
+                </div>
+            </div>
+        </div>
+        <div class="toe-toolbar">
+            <!-- Row 1: Fonts -->
+            <div class="toe-font-row">
+                <button class="toe-font-btn active" data-font="modern">Modern</button>
+                <button class="toe-font-btn" data-font="classic">Classic</button>
+                <button class="toe-font-btn" data-font="strong">Strong</button>
+                <button class="toe-font-btn" data-font="neon">Neon</button>
+                <button class="toe-font-btn" data-font="typewriter">Type</button>
+            </div>
+            <!-- Row 2: Colors + Background + Align -->
+            <div class="toe-controls-row">
+                <div class="toe-colors">
+                    <button class="toe-color-swatch active" data-color="#ffffff" style="background:#ffffff;" title="White"></button>
+                    <button class="toe-color-swatch" data-color="#000000" style="background:#000000;" title="Black"></button>
+                    <button class="toe-color-swatch" data-color="#E1306C" style="background:#E1306C;" title="Pink"></button>
+                    <button class="toe-color-swatch" data-color="#FFD700" style="background:#FFD700;" title="Gold"></button>
+                    <button class="toe-color-swatch" data-color="#00CED1" style="background:#00CED1;" title="Cyan"></button>
+                    <button class="toe-color-swatch" data-color="#FF6B35" style="background:#FF6B35;" title="Orange"></button>
+                    <button class="toe-color-swatch" data-color="#A8FF3E" style="background:#A8FF3E;" title="Lime"></button>
+                    <button class="toe-color-swatch toe-color-custom" id="toeColorCustom" title="Custom color">
+                        <input type="color" id="toeColorPicker" value="#ffffff">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;pointer-events:none;"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/></svg>
+                    </button>
+                </div>
+                <div class="toe-right-controls">
+                    <button class="toe-bg-btn" id="toeBgBtn" title="Toggle background">Bg: Off</button>
+                    <button class="toe-align-btn active" data-align="center" title="Center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <button class="toe-align-btn" data-align="left" title="Left">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <button class="toe-align-btn" data-align="right" title="Right">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Row 3: Size + Add -->
+            <div class="toe-size-row">
+                <span class="toe-size-label">Size</span>
+                <input type="range" id="toeSizeSlider" min="16" max="100" value="42" class="toe-size-slider">
+                <button class="toe-add-text-btn" id="toeAddTextBtn">+ Add Text</button>
+            </div>
+        </div>
+    </div>
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
