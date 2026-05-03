@@ -3282,6 +3282,15 @@ img {
   background: rgba(225, 48, 108, 0.28);
   border-color: #E1306C;
 }
+.add-text-btn.is-disabled {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.72);
+}
+.add-text-btn.is-disabled:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+}
 
 /* ========== TEXT OVERLAY EDITOR ========== */
 .toe-overlay {

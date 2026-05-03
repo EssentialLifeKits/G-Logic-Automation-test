@@ -956,6 +956,7 @@
         } else {
           showToast('Upload failed — try again.');
           uploadedFile = null;
+          setAddTextButtonState(false);
           validateForm();
         }
         return url;
@@ -974,6 +975,20 @@
   let uploadedFile = null;
   let editingPostId = null; // Track which post is being edited
   let userSelectedThumbnail = ''; // User's manually captured thumbnail
+  const addTextButtonDefaultHtml = els.addTextBtn?.innerHTML || '';
+
+  function setAddTextButtonState(visible, disabled = false) {
+    if (!els.addTextBtn) return;
+    els.addTextBtn.style.display = visible ? '' : 'none';
+    els.addTextBtn.classList.toggle('is-disabled', disabled);
+    els.addTextBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    els.addTextBtn.title = disabled
+      ? 'Re-upload this media to add text overlays safely'
+      : 'Add text overlay to your media';
+    els.addTextBtn.innerHTML = disabled
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px;"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg> Re-upload to add text'
+      : addTextButtonDefaultHtml;
+  }
 
   function openScheduler(date, suggestedTime) {
     editingPostId = null; // New post mode
@@ -991,7 +1006,8 @@
     els.uploadPreview.classList.remove('visible');
     if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
-    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none'; if (els.addTextBtn) els.addTextBtn.style.display = 'none';
+    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
+    setAddTextButtonState(false);
     els.uploadPlaceholder.style.display = '';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
     uploadedFile = null;
@@ -1027,7 +1043,8 @@
     els.uploadPreview.classList.remove('visible');
     if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
-    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none'; if (els.addTextBtn) els.addTextBtn.style.display = 'none';
+    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
+    setAddTextButtonState(false);
     els.uploadPlaceholder.style.display = 'none';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
     uploadedFile = { _existing: true }; // Mark as having existing media
@@ -1039,7 +1056,8 @@
       videoEl.controls = true;
       videoEl.setAttribute('playsinline', '');
       els.uploadZone.appendChild(videoEl);
-      if (els.removeMediaBtn) els.removeMediaBtn.style.display = ''; if (els.addTextBtn) els.addTextBtn.style.display = '';
+      if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
+      setAddTextButtonState(true, true);
       
       videoEl.addEventListener('seeked', () => {
         if (els.captureThumbBtn) els.captureThumbBtn.style.display = '';
@@ -1053,7 +1071,8 @@
         }
       }
     } else if (post.image_url) {
-      if (els.removeMediaBtn) els.removeMediaBtn.style.display = ''; if (els.addTextBtn) els.addTextBtn.style.display = '';
+      if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
+      setAddTextButtonState(true, true);
       els.uploadPreview.src = post.image_url;
       els.uploadPreview.classList.add('visible');
       els.uploadPreview.style.display = '';
@@ -1132,7 +1151,8 @@
     els.uploadPreview.style.display = 'none';
     if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
-    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none'; if (els.addTextBtn) els.addTextBtn.style.display = 'none';
+    if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
+    setAddTextButtonState(false);
     els.uploadPlaceholder.style.display = '';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
     uploadedFile = null;
@@ -1226,6 +1246,7 @@
   els.uploadZone.addEventListener('click', (e) => {
     if (e.target.closest('#uploadPreview')) return;
     if (e.target.closest('#removeMediaBtn')) return;
+    if (e.target.closest('#addTextBtn')) return;
     if (e.target.closest('.capture-thumb-btn')) return;
     if (e.target.closest('video')) return;
     els.fileInput.click();
@@ -1271,7 +1292,8 @@
       // Remove any previous video preview
       els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
       els.uploadZone.appendChild(videoEl);
-      if (els.removeMediaBtn) els.removeMediaBtn.style.display = ''; if (els.addTextBtn) els.addTextBtn.style.display = '';
+      if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
+      setAddTextButtonState(true);
       if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
       
       videoEl.addEventListener('seeked', () => {
@@ -1284,7 +1306,8 @@
       els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
       if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
       if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
-      if (els.removeMediaBtn) els.removeMediaBtn.style.display = ''; if (els.addTextBtn) els.addTextBtn.style.display = '';
+      if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
+      setAddTextButtonState(true);
       userSelectedThumbnail = '';
       els.uploadPreview.style.display = '';
       const reader = new FileReader();
@@ -1338,6 +1361,7 @@
           els.uploadPreview.src = '';
           els.uploadPreview.classList.remove('visible');
           els.uploadPlaceholder.style.display = '';
+          setAddTextButtonState(false);
           validateForm();
         }
         return url;
@@ -1416,6 +1440,10 @@
       e.preventDefault();
       e.stopPropagation();
       if (!uploadedFile) return;
+      if (uploadedFile._existing || els.addTextBtn.classList.contains('is-disabled')) {
+        showToast('Re-upload this media to add text overlays.');
+        return;
+      }
       toeOpen(uploadedFile);
     });
   }
@@ -1431,7 +1459,8 @@
       
       if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
       if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
-      if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none'; if (els.addTextBtn) els.addTextBtn.style.display = 'none';
+      if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
+      setAddTextButtonState(false);
       
       els.uploadPlaceholder.style.display = '';
       els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
