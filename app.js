@@ -564,12 +564,32 @@
 
   // ========== TEXT OVERLAY EDITOR ==========
   const TOE_FONTS = {
-    modern:     { family: "'Montserrat','Helvetica Neue',sans-serif",  cls: 'toe-font-modern' },
-    classic:    { family: "'Playfair Display',Georgia,serif",          cls: 'toe-font-classic' },
-    strong:     { family: "'Anton',Impact,sans-serif",                  cls: 'toe-font-strong' },
-    neon:       { family: "'Bebas Neue',Impact,sans-serif",             cls: 'toe-font-neon' },
-    typewriter: { family: "'Special Elite','Courier New',monospace",   cls: 'toe-font-typewriter' },
+    classic:    { label:'Classic', family:"Inter, 'Helvetica Neue', Arial, sans-serif", cls:'toe-font-classic', category:'basic', weight:500 },
+    sansMedium: { label:'TikTokSans-Medium', family:"Inter, 'Helvetica Neue', Arial, sans-serif", cls:'toe-font-modern', category:'trending', weight:600 },
+    sansRegular:{ label:'TikTokSans-Regular', family:"Inter, 'Helvetica Neue', Arial, sans-serif", cls:'toe-font-modern', category:'basic', weight:400 },
+    satishy:    { label:'Satishy', family:"'Dancing Script', cursive", cls:'toe-font-script', category:'trending', weight:700 },
+    script:     { label:'Script', family:"'Pacifico', cursive", cls:'toe-font-script', category:'handwritten', weight:400 },
+    serene:     { label:'Serene', family:"'Playfair Display', Georgia, serif", cls:'toe-font-classic', category:'basic', weight:600 },
+    serif:      { label:'Serif', family:"Georgia, 'Times New Roman', serif", cls:'toe-font-classic', category:'basic', weight:600 },
+    slab:       { label:'Slab', family:"'Roboto Slab', Georgia, serif", cls:'toe-font-classic', category:'retro', weight:700 },
+    technic:    { label:'Technic', family:"'Oswald', Impact, sans-serif", cls:'toe-font-strong', category:'retro', weight:600 },
+    telegraph:  { label:'Telegraph', family:"'Special Elite', 'Courier New', monospace", cls:'toe-font-typewriter', category:'retro', weight:400 },
+    modern:     { label:'Modern', family:"'Montserrat','Helvetica Neue',sans-serif", cls:'toe-font-modern', category:'basic', weight:600 },
+    strong:     { label:'Strong', family:"'Anton',Impact,sans-serif", cls:'toe-font-strong', category:'decorative', weight:400 },
+    neon:       { label:'Neon', family:"'Bebas Neue',Impact,sans-serif", cls:'toe-font-neon', category:'decorative', weight:400 },
+    typewriter: { label:'Typewriter', family:"'Special Elite','Courier New',monospace", cls:'toe-font-typewriter', category:'retro', weight:400 },
+    marker:     { label:'Marker', family:"'Permanent Marker', cursive", cls:'toe-font-marker', category:'handwritten', weight:400 },
+    caveat:     { label:'Caveat', family:"'Caveat', cursive", cls:'toe-font-script', category:'handwritten', weight:700 },
+    bangers:    { label:'Bangers', family:"'Bangers', Impact, sans-serif", cls:'toe-font-comic', category:'comic', weight:400 },
+    comic:      { label:'Comic', family:"'Comic Neue', 'Comic Sans MS', cursive", cls:'toe-font-comic', category:'comic', weight:700 },
+    chewy:      { label:'Chewy', family:"'Chewy', cursive", cls:'toe-font-cute', category:'cute', weight:400 },
+    fredoka:    { label:'Fredoka', family:"'Fredoka', Inter, sans-serif", cls:'toe-font-cute', category:'cute', weight:600 },
+    lucky:      { label:'Luckiest', family:"'Luckiest Guy', Impact, sans-serif", cls:'toe-font-decorative', category:'decorative', weight:400 },
+    bubbles:    { label:'Bubbles', family:"'Rubik Bubbles', cursive", cls:'toe-font-decorative', category:'decorative', weight:400 },
   };
+  const TOE_FONT_CATEGORIES = ['all','trending','basic','handwritten','retro','comic','cute','decorative'];
+  const TOE_FAVORITES_KEY = 'glogic_toe_favorite_presets';
+  const TOE_THEME_KEY = 'glogic_toe_theme';
 
   const TOE_PRESET_CATEGORIES = ['favorite','trending','basic','background','glow','shadow','stroke','red','blue','yellow','pink','green'];
   const TOE_PRESET_LIBRARY = {
@@ -660,15 +680,17 @@
 
   let toeTextElements = [];   // { id, text, font, color, size, bg, align, x, y }
   let toeActiveId = null;
-  let toeFont = 'modern';
+  let toeFont = 'classic';
   let toeColor = '#ffffff';
-  let toeSize = 42;
+  let toeSize = 32;
   let toeBg = 'none';         // none | semi | solid
   let toeAlign = 'center';
   let toeSourceMedia = null;  // the img or video element in the stage
   let toeDragState = null;
   let toePresetCategory = 'trending';
   let toeStyleTarget = 'fill';
+  let toeFontCategory = 'all';
+  let toeRenderedPresets = new Map();
 
   const toeOverlay    = document.getElementById('toeOverlay');
   const toeStage      = document.getElementById('toeStage');
@@ -687,10 +709,84 @@
     toeCenterGuides.classList.toggle('show-y', showY);
   }
 
+  function toeSetTheme(theme) {
+    const nextTheme = theme === 'light' ? 'light' : 'brand';
+    if (!toeOverlay) return;
+    toeOverlay.classList.toggle('theme-light', nextTheme === 'light');
+    toeOverlay.classList.toggle('theme-brand', nextTheme === 'brand');
+    document.querySelectorAll('[data-toe-theme]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.toeTheme === nextTheme);
+    });
+    try { localStorage.setItem(TOE_THEME_KEY, nextTheme); } catch (_) {}
+  }
+
+  function toeGetSavedTheme() {
+    try { return localStorage.getItem(TOE_THEME_KEY) || 'brand'; }
+    catch (_) { return 'brand'; }
+  }
+
+  function toeFontKeysForCategory(category = toeFontCategory) {
+    const keys = Object.keys(TOE_FONTS);
+    if (category === 'all') return keys;
+    return keys.filter(key => TOE_FONTS[key].category === category);
+  }
+
+  function toeRenderFontOptions() {
+    const categorySelect = document.getElementById('toeFontCategorySelect');
+    const fontSelect = document.getElementById('toeFontSelect');
+    if (!fontSelect) return;
+    const validCategory = TOE_FONT_CATEGORIES.includes(toeFontCategory) ? toeFontCategory : 'all';
+    const keys = toeFontKeysForCategory(validCategory);
+    if (!keys.includes(toeFont)) toeFont = keys[0] || 'classic';
+    if (categorySelect) categorySelect.value = validCategory;
+    fontSelect.innerHTML = keys.map(key => {
+      const font = TOE_FONTS[key];
+      return `<option value="${key}" style="font-family:${font.family};font-weight:${font.weight || 500};">${font.label}</option>`;
+    }).join('');
+    fontSelect.value = toeFont;
+  }
+
+  function toeLoadFavoritePresets() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(TOE_FAVORITES_KEY) || '[]');
+      return Array.isArray(saved) ? saved : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function toeSaveFavoritePresets(items) {
+    try { localStorage.setItem(TOE_FAVORITES_KEY, JSON.stringify(items.slice(0, 40))); }
+    catch (_) {}
+  }
+
+  function toePresetFavoriteId(category, preset) {
+    return preset.favoriteId || `${category}:${preset.originalKey || preset.key}`;
+  }
+
+  function toeIsFavoritePreset(category, preset) {
+    const id = toePresetFavoriteId(category, preset);
+    return toeLoadFavoritePresets().some(item => item.favoriteId === id);
+  }
+
+  function toeToggleFavoritePreset(renderedKey) {
+    const preset = toeRenderedPresets.get(renderedKey);
+    if (!preset || preset.key === 'none') return;
+    const favoriteId = toePresetFavoriteId(preset.sourceCategory || toePresetCategory, preset);
+    const saved = toeLoadFavoritePresets();
+    const exists = saved.some(item => item.favoriteId === favoriteId);
+    const next = exists
+      ? saved.filter(item => item.favoriteId !== favoriteId)
+      : [{ ...preset, key: preset.originalKey || preset.key, favoriteId, sourceCategory: preset.sourceCategory || toePresetCategory }, ...saved];
+    toeSaveFavoritePresets(next);
+    toeRenderPresetGrids();
+  }
+
   function toeApplyStyle(el, item) {
     if (!el) return;
     const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
     el.style.fontFamily = fontConf.family;
+    el.style.fontWeight = fontConf.weight || 500;
     el.style.fontSize   = item.size + 'px';
     el.style.color      = item.color;
     el.style.textAlign  = item.align;
@@ -797,7 +893,8 @@
     toeBg    = item.bg;
     toeAlign = item.align;
     // Update UI
-    document.querySelectorAll('.toe-font-btn').forEach(b => b.classList.toggle('active', b.dataset.font === toeFont));
+    if (!toeFontKeysForCategory(toeFontCategory).includes(toeFont)) toeFontCategory = 'all';
+    toeRenderFontOptions();
     document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.toggle('active', b.dataset.color === toeColor));
     document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === toeAlign));
     const sizeSlider = document.getElementById('toeSizeSlider');
@@ -844,7 +941,7 @@
     }
     if (!item) return;
     if (preset.key === 'none') {
-      Object.assign(item, { color:'#ffffff', bg:'none', bgColor:'', shadow:'', shadowColor:'', stroke:'', font:'modern' });
+      Object.assign(item, { color:'#ffffff', bg:'none', bgColor:'', shadow:'', shadowColor:'', stroke:'', font:'classic' });
     } else {
       Object.assign(item, preset.style || {});
     }
@@ -855,20 +952,33 @@
     toeUpdateToolbarToActive();
   }
 
-  function toePresetTileMarkup(preset) {
+  function toePresetTileMarkup(preset, renderedKey) {
     const label = preset.label || 'ART';
-    return `<button class="toe-preset-tile ${preset.cls || ''}" type="button" data-preset-key="${preset.key}">
+    const isFavorite = preset.key !== 'none' && toeIsFavoritePreset(preset.sourceCategory || toePresetCategory, preset);
+    const star = isFavorite ? '★' : '☆';
+    const favoriteClass = isFavorite ? ' is-favorite' : '';
+    return `<button class="toe-preset-tile ${preset.cls || ''}" type="button" data-preset-key="${renderedKey}">
       <span class="toe-preset-word">${label}</span>
+      ${preset.key === 'none' ? '' : `<span class="toe-preset-star${favoriteClass}" data-favorite-preset="${renderedKey}" data-tooltip="${isFavorite ? 'Remove favorite' : 'Add favorite'}">${star}</span>`}
     </button>`;
   }
 
   function toeRenderPresetGrids() {
-    const presets = TOE_PRESET_LIBRARY[toePresetCategory] || TOE_PRESET_LIBRARY.trending;
-    const html = presets.concat(presets).slice(0, 20).map((preset, index) => toePresetTileMarkup({
-      ...preset,
-      key: `${preset.key}-${index}`,
-      originalKey: preset.key,
-    })).join('');
+    toeRenderedPresets = new Map();
+    const basePresets = toePresetCategory === 'favorite'
+      ? toeLoadFavoritePresets()
+      : (TOE_PRESET_LIBRARY[toePresetCategory] || TOE_PRESET_LIBRARY.trending);
+    const presets = toePresetCategory === 'favorite' ? basePresets : basePresets.concat(basePresets).slice(0, 20);
+    const html = presets.length
+      ? presets.map((preset, index) => {
+          const originalKey = preset.originalKey || preset.key;
+          const sourceCategory = preset.sourceCategory || toePresetCategory;
+          const renderedKey = `${sourceCategory}:${originalKey}:${index}`;
+          const renderedPreset = { ...preset, key: originalKey, originalKey, sourceCategory };
+          toeRenderedPresets.set(renderedKey, renderedPreset);
+          return toePresetTileMarkup(renderedPreset, renderedKey);
+        }).join('')
+      : '<div class="toe-empty-favorites">Tap a star on any preset to save it here.</div>';
     const left = document.getElementById('toeLeftPresetGrid');
     const right = document.getElementById('toeRightPresetGrid');
     if (left) left.innerHTML = html;
@@ -879,9 +989,7 @@
   }
 
   function toeFindPresetByRenderedKey(renderedKey) {
-    const baseKey = String(renderedKey || '').replace(/-\d+$/, '');
-    const presets = TOE_PRESET_LIBRARY[toePresetCategory] || TOE_PRESET_LIBRARY.trending;
-    return presets.find(p => p.key === baseKey);
+    return toeRenderedPresets.get(renderedKey);
   }
 
   function toeSetRightPane(name) {
@@ -908,9 +1016,11 @@
     // Clear previous state
     toeTextElements = [];
     toeActiveId = null;
-    toeFont = 'modern'; toeColor = '#ffffff'; toeSize = 42; toeBg = 'none'; toeAlign = 'center';
+    toeFont = 'classic'; toeColor = '#ffffff'; toeSize = 32; toeBg = 'none'; toeAlign = 'center';
+    toeFontCategory = 'all';
     toePresetCategory = 'trending';
     toeTextLayer.innerHTML = '';
+    toeSetTheme(toeGetSavedTheme());
 
     // Remove old media from stage
     toeStage.querySelectorAll('img,video').forEach(e => e.remove());
@@ -923,11 +1033,12 @@
       vid.controls = true;
       vid.muted = true;
       vid.loop = false;
+      vid.preload = 'metadata';
+      vid.playsInline = true;
       vid.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
       toeStage.insertBefore(vid, toeTextLayer);
       toeSourceMedia = vid;
       toeRenderTimelineThumbs(vid);
-      vid.play().catch(() => {});
     } else {
       const img = document.createElement('img');
       img.src = URL.createObjectURL(mediaFile);
@@ -938,7 +1049,7 @@
     }
 
     // Reset toolbar UI
-    document.querySelectorAll('.toe-font-btn').forEach(b => b.classList.toggle('active', b.dataset.font === 'modern'));
+    toeRenderFontOptions();
     document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.toggle('active', b.dataset.color === '#ffffff'));
     document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === 'center'));
     const sizeSlider = document.getElementById('toeSizeSlider');
@@ -946,8 +1057,8 @@
     const bgBtn = document.getElementById('toeBgBtn');
     const inspector = document.getElementById('toeInspectorText');
     const colorPopover = document.getElementById('toeColorPopover');
-    if (sizeSlider) sizeSlider.value = 42;
-    if (sizeSelect) sizeSelect.value = '42';
+    if (sizeSlider) sizeSlider.value = 32;
+    if (sizeSelect) sizeSelect.value = '32';
     if (bgBtn) bgBtn.textContent = 'Bg: Off';
     if (inspector) inspector.value = 'Text';
     if (colorPopover) colorPopover.classList.remove('active');
@@ -1040,7 +1151,7 @@
   function toeDrawTextItems(ctx, canvasWidth, canvasHeight) {
     toeTextElements.forEach(item => {
       const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
-      ctx.font = `${item.size * 2}px ${fontConf.family}`;
+      ctx.font = `${fontConf.weight || 500} ${item.size * 2}px ${fontConf.family}`;
       ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
       ctx.textBaseline = 'alphabetic';
       const x = (item.x / 100) * canvasWidth;
@@ -1156,14 +1267,25 @@
   }
 
   // Wire up toolbar events
-  document.querySelectorAll('.toe-font-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      toeFont = btn.dataset.font;
-      document.querySelectorAll('.toe-font-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+  toeRenderFontOptions();
+
+  const toeFontCategorySelect = document.getElementById('toeFontCategorySelect');
+  const toeFontSelect = document.getElementById('toeFontSelect');
+  if (toeFontCategorySelect) {
+    toeFontCategorySelect.addEventListener('change', () => {
+      toeFontCategory = toeFontCategorySelect.value || 'all';
+      const keys = toeFontKeysForCategory(toeFontCategory);
+      toeFont = keys[0] || 'classic';
+      toeRenderFontOptions();
       toeUpdateActive('font', toeFont);
     });
-  });
+  }
+  if (toeFontSelect) {
+    toeFontSelect.addEventListener('change', () => {
+      toeFont = toeFontSelect.value || 'classic';
+      toeUpdateActive('font', toeFont);
+    });
+  }
 
   document.querySelectorAll('.toe-color-swatch').forEach(btn => {
     if (!btn.dataset.color) return;
@@ -1198,7 +1320,7 @@
   const toeSizeSelect = document.getElementById('toeSizeSelect');
   if (toeSizeSelect) {
     toeSizeSelect.addEventListener('change', () => {
-      toeSize = parseInt(toeSizeSelect.value, 10) || 42;
+      toeSize = parseInt(toeSizeSelect.value, 10) || 32;
       if (toeSizeSlider) toeSizeSlider.value = toeSize;
       toeUpdateActive('size', toeSize);
     });
@@ -1261,6 +1383,12 @@
 
   document.querySelectorAll('.toe-preset-grid').forEach(grid => {
     grid.addEventListener('click', (e) => {
+      const favoriteBtn = e.target.closest('[data-favorite-preset]');
+      if (favoriteBtn) {
+        e.stopPropagation();
+        toeToggleFavoritePreset(favoriteBtn.dataset.favoritePreset);
+        return;
+      }
       const tile = e.target.closest('.toe-preset-tile');
       if (!tile) return;
       document.querySelectorAll('.toe-preset-tile').forEach(t => t.classList.remove('active'));
@@ -1271,6 +1399,35 @@
 
   document.querySelectorAll('.toe-inspector-tab').forEach(tab => {
     tab.addEventListener('click', () => toeSetRightPane(tab.dataset.paneTarget || 'basic'));
+  });
+
+  document.querySelectorAll('[data-toe-theme]').forEach(btn => {
+    btn.addEventListener('click', () => toeSetTheme(btn.dataset.toeTheme));
+  });
+  toeSetTheme(toeGetSavedTheme());
+
+  function toeSetTimelineCollapsed(collapsed) {
+    if (!toeOverlay) return;
+    toeOverlay.classList.toggle('timeline-collapsed', collapsed);
+    const toggle = document.getElementById('toeTimelineToggle');
+    if (toggle) {
+      toggle.dataset.tooltip = collapsed ? 'Show timeline' : 'Collapse timeline';
+      toggle.setAttribute('aria-label', collapsed ? 'Show timeline' : 'Collapse timeline');
+      toggle.querySelector('span').textContent = collapsed ? '▾' : '▴';
+    }
+    const hideBtn = document.getElementById('toeTimelineHideBtn');
+    if (hideBtn) {
+      hideBtn.dataset.tooltip = collapsed ? 'Show timeline' : 'Hide timeline';
+      hideBtn.setAttribute('aria-label', collapsed ? 'Show timeline' : 'Hide timeline');
+    }
+  }
+
+  document.getElementById('toeTimelineToggle')?.addEventListener('click', () => {
+    toeSetTimelineCollapsed(!toeOverlay.classList.contains('timeline-collapsed'));
+  });
+
+  document.getElementById('toeTimelineHideBtn')?.addEventListener('click', () => {
+    toeSetTimelineCollapsed(!toeOverlay.classList.contains('timeline-collapsed'));
   });
 
   document.querySelectorAll('[data-style-popover]').forEach(btn => {
@@ -1320,7 +1477,7 @@
       if (isVid) {
         const videoEl = els.uploadZone.querySelector('video') || document.createElement('video');
         videoEl.src = URL.createObjectURL(blob);
-        videoEl.controls = true; videoEl.muted = true;
+        videoEl.controls = true; videoEl.muted = true; videoEl.preload = 'metadata'; videoEl.playsInline = true;
         videoEl.style.cssText = 'max-width:100%;border-radius:12px;';
         els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
         els.uploadZone.appendChild(videoEl);
@@ -1669,6 +1826,8 @@
       videoEl.src = URL.createObjectURL(file);
       videoEl.controls = true;
       videoEl.muted = true;
+      videoEl.preload = 'metadata';
+      videoEl.playsInline = true;
       videoEl.style.maxWidth = '100%';
       // Removed maxHeight because object-fit cover takes care of fitting it correctly
       // videoEl.style.maxHeight = '300px'; 

@@ -9,9 +9,9 @@
         content="G-Logic Automation is a professional Instagram scheduling tool for content creators. Plan, schedule, and optimize your posts for maximum engagement." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&family=Montserrat:wght@700&family=Bebas+Neue&family=Special+Elite&family=Anton&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Montserrat:wght@500;600;700&family=Bebas+Neue&family=Special+Elite&family=Anton&family=Caveat:wght@500;600;700&family=Pacifico&family=Permanent+Marker&family=Bangers&family=Comic+Neue:wght@400;700&family=Chewy&family=Fredoka:wght@400;500;600;700&family=Luckiest+Guy&family=Rubik+Bubbles&family=Oswald:wght@500;600;700&family=Dancing+Script:wght@600;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="index.css?v=5" />
+    <link rel="stylesheet" href="index.css?v=6" />
 </head>
 
 <body>
@@ -682,6 +682,10 @@
                         <button type="button">Zoom to 200%</button>
                     </div>
                 </div>
+                <div class="toe-theme-toggle" role="group" aria-label="Editor theme">
+                    <button class="active" type="button" data-toe-theme="brand" data-tooltip="Brand dark mode">Brand</button>
+                    <button type="button" data-toe-theme="light" data-tooltip="Light mode">Light</button>
+                </div>
             </div>
             <div class="toe-topbar-actions">
                 <button class="toe-cancel-btn" id="toeCancelBtnSecondary" type="button">Cancel</button>
@@ -760,22 +764,38 @@
                     </div>
                     <textarea id="toeInspectorText" class="toe-text-input">Text</textarea>
                     <div class="toe-font-controls">
-                        <div class="toe-font-dropdown">
-                            <button class="toe-font-btn active" data-font="modern" type="button">Modern</button>
-                            <button class="toe-font-btn" data-font="classic" type="button">Classic</button>
-                            <button class="toe-font-btn" data-font="strong" type="button">Strong</button>
-                            <button class="toe-font-btn" data-font="neon" type="button">Neon</button>
-                            <button class="toe-font-btn" data-font="typewriter" type="button">Type</button>
-                        </div>
+                        <select id="toeFontCategorySelect" class="toe-font-category-select" aria-label="Font category">
+                            <option value="all">All fonts</option>
+                            <option value="trending">Trending</option>
+                            <option value="basic">Basic</option>
+                            <option value="handwritten">Handwritten</option>
+                            <option value="retro">Retro</option>
+                            <option value="comic">Comic</option>
+                            <option value="cute">Cute</option>
+                            <option value="decorative">Decorative</option>
+                        </select>
+                        <select id="toeFontSelect" class="toe-font-select" aria-label="Font"></select>
                         <select id="toeSizeSelect" class="toe-size-select" aria-label="Font size">
+                            <option value="12">12</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="18">18</option>
+                            <option value="20">20</option>
                             <option value="24">24</option>
-                            <option value="32">32</option>
-                            <option value="42" selected>42</option>
+                            <option value="28">28</option>
+                            <option value="32" selected>32</option>
+                            <option value="36">36</option>
+                            <option value="42">42</option>
+                            <option value="48">48</option>
+                            <option value="56">56</option>
                             <option value="64">64</option>
+                            <option value="72">72</option>
                             <option value="80">80</option>
+                            <option value="96">96</option>
                         </select>
                     </div>
-                    <input type="range" id="toeSizeSlider" min="16" max="100" value="42" class="toe-size-slider">
+                    <input type="range" id="toeSizeSlider" min="12" max="100" value="32" class="toe-size-slider">
                     <div class="toe-format-row">
                         <button type="button" data-tooltip="Bold"><strong>B</strong></button>
                         <button type="button" data-tooltip="Italic"><em>I</em></button>
@@ -906,8 +926,11 @@
                     <button type="button" data-tooltip="Zoom in">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6M11 8v6"/></svg>
                     </button>
-                    <button type="button" data-tooltip="Hide timeline">
+                    <button id="toeTimelineHideBtn" type="button" data-tooltip="Hide timeline" aria-label="Hide timeline">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="12" rx="2"/><path d="M8 21h8"/></svg>
+                    </button>
+                    <button id="toeTimelineToggle" class="toe-timeline-toggle" type="button" data-tooltip="Collapse timeline" aria-label="Collapse timeline">
+                        <span>▴</span>
                     </button>
                 </div>
             </div>
@@ -934,7 +957,7 @@
     <script src="supabase.js"></script>
     <script src="auth.js"></script>
     <script src="instagram-oauth.js"></script>
-    <script src="app.js?v=5"></script>
+    <script src="app.js?v=6"></script>
 </body>
 
 </html>
