@@ -3266,21 +3266,30 @@ img {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(225, 48, 108, 0.15);
-  border: 1px solid rgba(225, 48, 108, 0.5);
-  color: #E1306C;
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.24), rgba(34, 197, 94, 0.34));
+  border: 1px solid rgba(34, 197, 94, 0.82);
+  color: #ecfdf5;
   font-size: 0.78rem;
-  font-weight: 600;
-  padding: 6px 14px;
+  font-weight: 800;
+  padding: 7px 15px;
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
   z-index: 10;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.42);
+  box-shadow:
+    0 0 0 1px rgba(187, 247, 208, 0.18) inset,
+    0 0 16px rgba(34, 197, 94, 0.58),
+    0 8px 24px rgba(22, 163, 74, 0.35);
 }
 .add-text-btn:hover {
-  background: rgba(225, 48, 108, 0.28);
-  border-color: #E1306C;
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.38), rgba(34, 197, 94, 0.52));
+  border-color: #86efac;
+  box-shadow:
+    0 0 0 1px rgba(220, 252, 231, 0.25) inset,
+    0 0 24px rgba(34, 197, 94, 0.76),
+    0 10px 28px rgba(22, 163, 74, 0.45);
 }
 .add-text-btn.is-disabled {
   background: rgba(255, 255, 255, 0.08);
