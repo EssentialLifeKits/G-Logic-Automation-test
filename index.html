@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&family=Montserrat:wght@700&family=Bebas+Neue&family=Special+Elite&family=Anton&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="index.css?v=3" />
+    <link rel="stylesheet" href="index.css?v=4" />
 </head>
 
 <body>
@@ -805,7 +805,8 @@
                             <button class="toe-style-more" type="button" data-style-popover="shadow" data-tooltip="Shadow">+</button>
                         </div>
                         <div class="toe-color-popover" id="toeColorPopover">
-                            <strong>Select color</strong>
+                            <strong id="toeColorPopoverTitle">Select color</strong>
+                            <p id="toeColorPopoverHint">Choose a color for the selected text style.</p>
                             <small>Recent</small>
                             <div class="toe-recent-colors">
                                 <button class="toe-color-custom" id="toeColorCustom" type="button" title="Custom color">
@@ -929,7 +930,7 @@
     <script src="supabase.js"></script>
     <script src="auth.js"></script>
     <script src="instagram-oauth.js"></script>
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
 </body>
 
 </html>

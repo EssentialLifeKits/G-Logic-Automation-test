@@ -668,6 +668,7 @@
   let toeSourceMedia = null;  // the img or video element in the stage
   let toeDragState = null;
   let toePresetCategory = 'trending';
+  let toeStyleTarget = 'fill';
 
   const toeOverlay    = document.getElementById('toeOverlay');
   const toeStage      = document.getElementById('toeStage');
@@ -694,6 +695,13 @@
     // Background
     el.classList.remove('toe-bg-none','toe-bg-semi','toe-bg-solid');
     el.classList.add('toe-bg-' + (item.bg || 'none'));
+    if (item.bg === 'none') {
+      el.style.background = 'transparent';
+    } else if (item.bgColor) {
+      el.style.background = item.bg === 'semi' ? toeHexToRgba(item.bgColor, 0.62) : item.bgColor;
+    } else {
+      el.style.background = '';
+    }
     // Font class
     Object.values(TOE_FONTS).forEach(f => el.classList.remove(f.cls));
     el.classList.add(fontConf.cls);
@@ -775,11 +783,16 @@
     const sizeSlider = document.getElementById('toeSizeSlider');
     const sizeSelect = document.getElementById('toeSizeSelect');
     const inspector = document.getElementById('toeInspectorText');
+    const opacityRange = document.querySelector('.toe-opacity-row input');
+    const opacityLabel = document.querySelector('.toe-opacity-row span');
     if (sizeSlider) sizeSlider.value = toeSize;
     if (sizeSelect) sizeSelect.value = String(toeSize);
     if (inspector && inspector.value !== item.text) inspector.value = item.text;
+    if (opacityRange) opacityRange.value = Math.round((item.opacity == null ? 1 : item.opacity) * 100);
+    if (opacityLabel) opacityLabel.textContent = `${Math.round((item.opacity == null ? 1 : item.opacity) * 100)}%`;
     const bgBtn = document.getElementById('toeBgBtn');
     if (bgBtn) bgBtn.textContent = toeBg === 'none' ? 'Bg: Off' : toeBg === 'semi' ? 'Bg: Dark' : 'Bg: Solid';
+    toeUpdateStylePreviewButtons(item);
   }
 
   function toeAddTextElement() {
@@ -811,7 +824,7 @@
     }
     if (!item) return;
     if (preset.key === 'none') {
-      Object.assign(item, { color:'#ffffff', bg:'none', shadow:'', stroke:'', font:'modern' });
+      Object.assign(item, { color:'#ffffff', bg:'none', bgColor:'', shadow:'', shadowColor:'', stroke:'', font:'modern' });
     } else {
       Object.assign(item, preset.style || {});
     }
@@ -889,7 +902,7 @@
       vid.src = URL.createObjectURL(mediaFile);
       vid.controls = true;
       vid.muted = true;
-      vid.loop = true;
+      vid.loop = false;
       vid.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
       toeStage.insertBefore(vid, toeTextLayer);
       toeSourceMedia = vid;
@@ -918,6 +931,7 @@
     if (bgBtn) bgBtn.textContent = 'Bg: Off';
     if (inspector) inspector.value = 'Text';
     if (colorPopover) colorPopover.classList.remove('active');
+    toeStyleTarget = 'fill';
     toeSetRightPane('basic');
     toeRenderPresetGrids();
 
@@ -933,6 +947,113 @@
     toeStage.querySelectorAll('img,video').forEach(e => { URL.revokeObjectURL(e.src); e.remove(); });
   }
 
+  function toeHexToRgba(hex, alpha) {
+    const clean = String(hex || '#000000').replace('#', '');
+    const value = clean.length === 3
+      ? clean.split('').map(ch => ch + ch).join('')
+      : clean.padEnd(6, '0').slice(0, 6);
+    const r = parseInt(value.slice(0, 2), 16);
+    const g = parseInt(value.slice(2, 4), 16);
+    const b = parseInt(value.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function toeUpdateStylePreviewButtons(item = toeGetActiveItem()) {
+    if (!item) return;
+    const fillBtn = document.querySelector('[data-style-popover="fill"] span');
+    const strokeBtn = document.querySelector('[data-style-popover="stroke"]');
+    const bgMoreBtn = document.querySelector('[data-style-popover="background"]');
+    const shadowBtn = document.querySelector('[data-style-popover="shadow"]');
+    if (fillBtn) fillBtn.style.background = item.color || '#ffffff';
+    if (strokeBtn) {
+      strokeBtn.textContent = item.stroke ? '' : '+';
+      strokeBtn.style.background = item.stroke || '#f1f1f1';
+    }
+    if (bgMoreBtn) {
+      bgMoreBtn.textContent = item.bgColor ? '' : '...';
+      bgMoreBtn.style.background = item.bgColor || '#f1f1f1';
+    }
+    if (shadowBtn) {
+      shadowBtn.textContent = item.shadowColor ? '' : '+';
+      shadowBtn.style.background = item.shadowColor || '#f1f1f1';
+    }
+  }
+
+  function toeOpenStylePicker(target) {
+    toeStyleTarget = target || 'fill';
+    const popover = document.getElementById('toeColorPopover');
+    const title = document.getElementById('toeColorPopoverTitle');
+    const hint = document.getElementById('toeColorPopoverHint');
+    if (!popover) return;
+    const labels = {
+      fill: ['Fill color', 'Changes the main text color.'],
+      stroke: ['Stroke color', 'Adds an outline around the selected text.'],
+      background: ['Background color', 'Turns on a text background and applies this color.'],
+      shadow: ['Shadow color', 'Adds a soft shadow/glow behind the selected text.'],
+    };
+    const [label, help] = labels[toeStyleTarget] || labels.fill;
+    if (title) title.textContent = label;
+    if (hint) hint.textContent = help;
+    popover.classList.add('active');
+  }
+
+  function toeApplyStyleColor(color) {
+    const item = toeGetActiveItem();
+    if (!item) return;
+    if (toeStyleTarget === 'stroke') {
+      item.stroke = color;
+    } else if (toeStyleTarget === 'background') {
+      item.bg = item.bg === 'none' ? 'solid' : item.bg;
+      item.bgColor = color;
+      toeBg = item.bg;
+    } else if (toeStyleTarget === 'shadow') {
+      item.shadowColor = color;
+      item.shadow = `0 4px 12px ${toeHexToRgba(color, 0.85)}`;
+    } else {
+      item.color = color;
+      toeColor = color;
+    }
+    toeApplyStyle(toeGetEl(item.id), item);
+    toeUpdateToolbarToActive();
+  }
+
+  function toeDrawTextItems(ctx, canvasWidth, canvasHeight) {
+    toeTextElements.forEach(item => {
+      const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
+      ctx.font = `${item.size * 2}px ${fontConf.family}`;
+      ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
+      ctx.textBaseline = 'alphabetic';
+      const x = (item.x / 100) * canvasWidth;
+      const y = (item.y / 100) * canvasHeight;
+      const lines = item.text.split('\n');
+      const lineH = item.size * 2 * 1.3;
+      if (item.bg !== 'none') {
+        ctx.fillStyle = item.bgColor
+          ? (item.bg === 'semi' ? toeHexToRgba(item.bgColor, 0.62) : item.bgColor)
+          : (item.bg === 'solid' ? '#000' : 'rgba(0,0,0,0.55)');
+        lines.forEach((line, i) => {
+          const tw = ctx.measureText(line).width;
+          const bx = item.align === 'center' ? x - tw / 2 - 12 : item.align === 'right' ? x - tw - 12 : x - 12;
+          ctx.fillRect(bx, y + i * lineH - item.size * 2 - 4, tw + 24, lineH);
+        });
+      }
+      if (item.font === 'neon' || item.shadow) {
+        ctx.shadowColor = item.shadowColor || item.color;
+        ctx.shadowBlur = item.font === 'neon' ? 20 : 12;
+      } else {
+        ctx.shadowBlur = 0;
+      }
+      if (item.stroke) {
+        ctx.lineWidth = Math.max(4, item.size / 5);
+        ctx.strokeStyle = item.stroke;
+        lines.forEach((line, i) => ctx.strokeText(line, x, y + i * lineH));
+      }
+      ctx.fillStyle = item.color;
+      lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineH));
+      ctx.shadowBlur = 0;
+    });
+  }
+
   // Burn text onto image → returns a Blob
   async function toeBurnImage(imgEl) {
     return new Promise((resolve) => {
@@ -944,40 +1065,7 @@
         canvas.height = img.naturalHeight || img.height || 1350;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        // Draw each text element
-        toeTextElements.forEach(item => {
-          const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
-          ctx.font = `${item.size * 2}px ${fontConf.family}`;
-          ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
-          const x = (item.x / 100) * canvas.width;
-          const y = (item.y / 100) * canvas.height;
-          const lines = item.text.split('\n');
-          const lineH = item.size * 2 * 1.3;
-          // Background
-          if (item.bg !== 'none') {
-            ctx.fillStyle = item.bg === 'solid' ? '#000' : 'rgba(0,0,0,0.55)';
-            lines.forEach((line, i) => {
-              const tw = ctx.measureText(line).width;
-              const bx = item.align === 'center' ? x - tw/2 - 12 : item.align === 'right' ? x - tw - 12 : x - 12;
-              ctx.fillRect(bx, y + i * lineH - item.size * 2 - 4, tw + 24, lineH);
-            });
-          }
-          // Neon glow
-          if (item.font === 'neon' || item.shadow) {
-            ctx.shadowColor = item.color;
-            ctx.shadowBlur = item.font === 'neon' ? 20 : 10;
-          } else {
-            ctx.shadowBlur = 0;
-          }
-          if (item.stroke) {
-            ctx.lineWidth = Math.max(4, item.size / 5);
-            ctx.strokeStyle = item.stroke;
-            lines.forEach((line, i) => ctx.strokeText(line, x, y + i * lineH));
-          }
-          ctx.fillStyle = item.color;
-          lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineH));
-          ctx.shadowBlur = 0;
-        });
+        toeDrawTextItems(ctx, canvas.width, canvas.height);
         canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.92);
       };
       img.src = imgEl.src;
@@ -987,60 +1075,63 @@
   // Burn text onto video → returns a Blob via MediaRecorder
   async function toeBurnVideo(vidEl) {
     return new Promise((resolve, reject) => {
-      vidEl.pause();
-      vidEl.currentTime = 0;
-      const canvas = document.createElement('canvas');
-      canvas.width  = vidEl.videoWidth  || 1080;
-      canvas.height = vidEl.videoHeight || 1920;
-      const ctx = canvas.getContext('2d');
-
-      const stream = canvas.captureStream(30);
-      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
-      const chunks = [];
-      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-      recorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
-
-      let rafId;
-      const drawFrame = () => {
-        ctx.drawImage(vidEl, 0, 0, canvas.width, canvas.height);
-        // Draw text overlays
-        toeTextElements.forEach(item => {
-          const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
-          ctx.font = `${item.size * 2}px ${fontConf.family}`;
-          ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
-          const x = (item.x / 100) * canvas.width;
-          const y = (item.y / 100) * canvas.height;
-          const lines = item.text.split('\n');
-          const lineH = item.size * 2 * 1.3;
-          if (item.bg !== 'none') {
-            ctx.fillStyle = item.bg === 'solid' ? '#000' : 'rgba(0,0,0,0.55)';
-            lines.forEach((line, i) => {
-              const tw = ctx.measureText(line).width;
-              const bx = item.align === 'center' ? x - tw/2 - 12 : item.align === 'right' ? x - tw - 12 : x - 12;
-              ctx.fillRect(bx, y + i * lineH - item.size * 2 - 4, tw + 24, lineH);
-            });
-          }
-          if (item.font === 'neon' || item.shadow) { ctx.shadowColor = item.color; ctx.shadowBlur = item.font === 'neon' ? 20 : 10; }
-          else { ctx.shadowBlur = 0; }
-          if (item.stroke) {
-            ctx.lineWidth = Math.max(4, item.size / 5);
-            ctx.strokeStyle = item.stroke;
-            lines.forEach((line, i) => ctx.strokeText(line, x, y + i * lineH));
-          }
-          ctx.fillStyle = item.color;
-          lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineH));
-          ctx.shadowBlur = 0;
+      const start = async () => {
+        vidEl.pause();
+        vidEl.loop = false;
+        vidEl.currentTime = 0;
+        await new Promise((done) => {
+          if (vidEl.readyState >= 1) done();
+          else vidEl.addEventListener('loadedmetadata', done, { once: true });
         });
-        if (!vidEl.paused && !vidEl.ended) rafId = requestAnimationFrame(drawFrame);
+
+        const canvas = document.createElement('canvas');
+        canvas.width  = vidEl.videoWidth  || 1080;
+        canvas.height = vidEl.videoHeight || 1920;
+        const ctx = canvas.getContext('2d');
+        const stream = canvas.captureStream(30);
+        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+          ? 'video/webm;codecs=vp8'
+          : 'video/webm';
+        const recorder = new MediaRecorder(stream, { mimeType });
+        const chunks = [];
+        const durationMs = Number.isFinite(vidEl.duration) && vidEl.duration > 0
+          ? Math.min(vidEl.duration * 1000, 120000)
+          : 8000;
+        let rafId = null;
+        let stopTimer = null;
+        let stopped = false;
+
+        const stopRecording = () => {
+          if (stopped) return;
+          stopped = true;
+          if (rafId) cancelAnimationFrame(rafId);
+          if (stopTimer) clearTimeout(stopTimer);
+          vidEl.pause();
+          if (recorder.state !== 'inactive') recorder.stop();
+        };
+
+        recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+        recorder.onerror = (event) => reject(event.error || new Error('Video recorder failed.'));
+        recorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
+
+        const drawFrame = () => {
+          ctx.drawImage(vidEl, 0, 0, canvas.width, canvas.height);
+          toeDrawTextItems(ctx, canvas.width, canvas.height);
+          if (Number.isFinite(vidEl.duration) && vidEl.currentTime >= vidEl.duration - 0.05) {
+            stopRecording();
+            return;
+          }
+          if (!vidEl.paused && !vidEl.ended && !stopped) rafId = requestAnimationFrame(drawFrame);
+        };
+
+        vidEl.onended = stopRecording;
+        recorder.start();
+        stopTimer = setTimeout(stopRecording, durationMs + 1250);
+        await vidEl.play();
+        rafId = requestAnimationFrame(drawFrame);
       };
 
-      vidEl.onended = () => {
-        cancelAnimationFrame(rafId);
-        recorder.stop();
-      };
-
-      recorder.start();
-      vidEl.play().then(() => { rafId = requestAnimationFrame(drawFrame); }).catch(reject);
+      start().catch(reject);
     });
   }
 
@@ -1060,7 +1151,7 @@
       toeColor = btn.dataset.color;
       document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      toeUpdateActive('color', toeColor);
+      toeApplyStyleColor(toeColor);
     });
   });
 
@@ -1070,7 +1161,7 @@
       toeColor = toeColorPicker.value;
       document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.remove('active'));
       document.getElementById('toeColorCustom').classList.add('active');
-      toeUpdateActive('color', toeColor);
+      toeApplyStyleColor(toeColor);
     });
   }
 
@@ -1115,6 +1206,18 @@
       toeBg = modes[(modes.indexOf(toeBg) + 1) % modes.length];
       toeBgBtn.textContent = toeBg === 'none' ? 'Bg: Off' : toeBg === 'semi' ? 'Bg: Dark' : 'Bg: Solid';
       toeUpdateActive('bg', toeBg);
+      toeUpdateToolbarToActive();
+    });
+  }
+
+  const toeOpacityRange = document.querySelector('.toe-opacity-row input');
+  const toeOpacityLabel = document.querySelector('.toe-opacity-row span');
+  if (toeOpacityRange) {
+    toeOpacityRange.addEventListener('input', () => {
+      const value = parseInt(toeOpacityRange.value, 10);
+      const opacity = Math.max(0, Math.min(1, value / 100));
+      if (toeOpacityLabel) toeOpacityLabel.textContent = `${value}%`;
+      toeUpdateActive('opacity', opacity);
     });
   }
 
@@ -1153,15 +1256,13 @@
   document.querySelectorAll('[data-style-popover]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      const target = btn.dataset.stylePopover || 'fill';
       const popover = document.getElementById('toeColorPopover');
-      if (!popover) return;
-      popover.classList.toggle('active');
-      const row = btn.closest('.toe-style-row');
-      if (row) {
-        const sectionRect = row.closest('.toe-style-section').getBoundingClientRect();
-        const rowRect = row.getBoundingClientRect();
-        popover.style.top = Math.max(16, rowRect.top - sectionRect.top - 14) + 'px';
+      if (popover?.classList.contains('active') && toeStyleTarget === target) {
+        popover.classList.remove('active');
+        return;
       }
+      toeOpenStylePicker(target);
     });
   });
 
