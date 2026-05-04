@@ -676,9 +676,16 @@
   const toeCanvas     = document.getElementById('toeCanvas');
   const toeProcessing = document.getElementById('toeProcessing');
   const toeProcLabel  = document.getElementById('toeProcessingLabel');
+  const toeCenterGuides = document.getElementById('toeCenterGuides');
 
   function toeGetEl(id) { return document.getElementById('toe-el-' + id); }
   function toeGetActiveItem() { return toeTextElements.find(t => t.id === toeActiveId); }
+
+  function toeSetCenterGuides(showX = false, showY = false) {
+    if (!toeCenterGuides) return;
+    toeCenterGuides.classList.toggle('show-x', showX);
+    toeCenterGuides.classList.toggle('show-y', showY);
+  }
 
   function toeApplyStyle(el, item) {
     if (!el) return;
@@ -715,6 +722,7 @@
       wrap.id = 'toe-el-' + item.id;
       wrap.contentEditable = 'true';
       wrap.textContent = item.text;
+      wrap.draggable = false;
       toeApplyStyle(wrap, item);
 
       // Delete button
@@ -732,6 +740,7 @@
       // Click to activate
       wrap.addEventListener('mousedown', (e) => {
         if (e.target.classList.contains('toe-delete-btn')) return;
+        e.preventDefault();
         toeActiveId = item.id;
         toeRenderAll();
         toeUpdateToolbarToActive();
@@ -741,20 +750,31 @@
         const startPX = item.x;
         const startPY = item.y;
         const rect = toeStage.getBoundingClientRect();
+        toeSetCenterGuides(Math.abs(item.y - 50) <= 1, Math.abs(item.x - 50) <= 1);
         const onMove = (mv) => {
           const dx = ((mv.clientX - startX) / rect.width)  * 100;
           const dy = ((mv.clientY - startY) / rect.height) * 100;
-          item.x = Math.max(5, Math.min(95, startPX + dx));
-          item.y = Math.max(5, Math.min(95, startPY + dy));
+          let nextX = Math.max(5, Math.min(95, startPX + dx));
+          let nextY = Math.max(5, Math.min(95, startPY + dy));
+          const nearX = Math.abs(nextX - 50) <= 2;
+          const nearY = Math.abs(nextY - 50) <= 2;
+          if (nearX) nextX = 50;
+          if (nearY) nextY = 50;
+          item.x = nextX;
+          item.y = nextY;
+          toeSetCenterGuides(nearY, nearX);
           const el2 = toeGetEl(item.id);
           if (el2) { el2.style.left = item.x + '%'; el2.style.top = item.y + '%'; }
         };
         const onUp = () => {
+          toeSetCenterGuides(Math.abs(item.y - 50) <= 1, Math.abs(item.x - 50) <= 1);
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
+          window.removeEventListener('mouseup', onUp);
         };
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
+        window.addEventListener('mouseup', onUp);
       });
 
       // Save text on input

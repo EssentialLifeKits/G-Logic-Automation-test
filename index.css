@@ -4120,6 +4120,40 @@ img {
   pointer-events: none;
 }
 
+.toe-center-guides {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.toe-center-guide-x,
+.toe-center-guide-y {
+  position: absolute;
+  background: #57f0a4;
+  box-shadow: 0 0 0 1px rgba(7, 148, 90, 0.2), 0 0 8px rgba(87, 240, 164, 0.45);
+  display: none;
+}
+
+.toe-center-guide-x {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+}
+
+.toe-center-guide-y {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+}
+
+.toe-center-guides.show-x .toe-center-guide-x,
+.toe-center-guides.show-y .toe-center-guide-y {
+  display: block;
+}
+
 .toe-text-el {
   position: absolute;
   pointer-events: all;
@@ -4133,6 +4167,7 @@ img {
   user-select: none;
   transform: translate(-50%, -50%);
   outline: 0;
+  z-index: 6;
 }
 
 .toe-text-el.active-text {
