@@ -571,6 +571,93 @@
     typewriter: { family: "'Special Elite','Courier New',monospace",   cls: 'toe-font-typewriter' },
   };
 
+  const TOE_PRESET_CATEGORIES = ['favorite','trending','basic','background','glow','shadow','stroke','red','blue','yellow','pink','green'];
+  const TOE_PRESET_LIBRARY = {
+    favorite: [
+      { key:'none', label:'⊘', cls:'toe-preset-none', style:{} },
+      { key:'outline', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', shadow:'1px 1px 0 #111' } },
+      { key:'pop', cls:'toe-preset-s-pop', style:{ color:'#facc15', bg:'none', shadow:'2px 2px 0 #ef4444' } },
+      { key:'blue', cls:'toe-preset-s-blue', style:{ color:'#93c5fd', bg:'none', shadow:'0 0 8px #38bdf8' } },
+      { key:'black', cls:'toe-preset-s-black', style:{ color:'#ffffff', bg:'solid' } },
+      { key:'pink', cls:'toe-preset-s-pink', style:{ color:'#f0abfc', bg:'none', shadow:'0 2px 0 #2563eb' } },
+      { key:'green', cls:'toe-preset-s-green', style:{ color:'#bbf7d0', bg:'none', shadow:'0 0 8px #22c55e' } },
+      { key:'yellow', cls:'toe-preset-s-yellow', style:{ color:'#111111', bg:'semi' } },
+    ],
+    trending: [
+      { key:'none', label:'⊘', cls:'toe-preset-none', style:{} },
+      { key:'outline', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', shadow:'1px 1px 0 #111' } },
+      { key:'pop', cls:'toe-preset-s-pop', style:{ color:'#facc15', bg:'none', shadow:'2px 2px 0 #ef4444' } },
+      { key:'red', cls:'toe-preset-s-red', style:{ color:'#ffffff', bg:'none', shadow:'0 0 8px #ef4444' } },
+      { key:'purple', cls:'toe-preset-s-purple', style:{ color:'#ffffff', bg:'none', shadow:'2px 2px 0 #312e81' } },
+      { key:'soft', cls:'toe-preset-s-soft', style:{ color:'#ffffff', bg:'none', shadow:'0 2px 0 #999' } },
+      { key:'yellow', cls:'toe-preset-s-yellow', style:{ color:'#111111', bg:'semi' } },
+      { key:'neon', cls:'toe-preset-s-neon', style:{ color:'#ffffff', bg:'none', font:'neon', shadow:'0 0 12px #fb7185' } },
+      { key:'blue', cls:'toe-preset-s-blue', style:{ color:'#93c5fd', bg:'none', shadow:'0 0 8px #38bdf8' } },
+      { key:'black', cls:'toe-preset-s-black', style:{ color:'#ffffff', bg:'solid' } },
+      { key:'pink', cls:'toe-preset-s-pink', style:{ color:'#f0abfc', bg:'none', shadow:'0 2px 0 #2563eb' } },
+      { key:'green', cls:'toe-preset-s-green', style:{ color:'#bbf7d0', bg:'none', shadow:'0 0 8px #22c55e' } },
+    ],
+    basic: [
+      { key:'white', cls:'toe-preset-s-soft', style:{ color:'#ffffff', bg:'none', shadow:'0 1px 2px rgba(0,0,0,.45)' } },
+      { key:'black', cls:'toe-preset-s-black', style:{ color:'#ffffff', bg:'solid' } },
+      { key:'bold', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', font:'strong' } },
+      { key:'serif', cls:'toe-preset-s-purple', style:{ color:'#ffffff', bg:'none', font:'classic' } },
+      { key:'type', cls:'toe-preset-s-yellow', style:{ color:'#111111', bg:'semi', font:'typewriter' } },
+      { key:'clean', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', font:'modern' } },
+    ],
+    background: [
+      { key:'dark', cls:'toe-preset-s-black', style:{ color:'#ffffff', bg:'solid' } },
+      { key:'semi', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'semi' } },
+      { key:'gold', cls:'toe-preset-s-yellow', style:{ color:'#111111', bg:'semi' } },
+      { key:'pink-bg', cls:'toe-preset-s-pink', style:{ color:'#ffffff', bg:'semi', shadow:'0 0 8px #ec4899' } },
+      { key:'blue-bg', cls:'toe-preset-s-blue', style:{ color:'#ffffff', bg:'semi', shadow:'0 0 8px #2563eb' } },
+      { key:'green-bg', cls:'toe-preset-s-green', style:{ color:'#ffffff', bg:'semi', shadow:'0 0 8px #22c55e' } },
+    ],
+    glow: [
+      { key:'rose', cls:'toe-preset-s-neon', style:{ color:'#ffffff', bg:'none', font:'neon', shadow:'0 0 14px #fb7185' } },
+      { key:'cyan', cls:'toe-preset-s-blue', style:{ color:'#e0f2fe', bg:'none', font:'neon', shadow:'0 0 14px #06b6d4' } },
+      { key:'lime', cls:'toe-preset-s-green', style:{ color:'#ecfccb', bg:'none', font:'neon', shadow:'0 0 14px #84cc16' } },
+      { key:'violet', cls:'toe-preset-s-pink', style:{ color:'#f5d0fe', bg:'none', font:'neon', shadow:'0 0 14px #a855f7' } },
+    ],
+    shadow: [
+      { key:'dark-shadow', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', shadow:'3px 3px 0 #111' } },
+      { key:'red-shadow', cls:'toe-preset-s-red', style:{ color:'#ffffff', bg:'none', shadow:'3px 3px 0 #dc2626' } },
+      { key:'blue-shadow', cls:'toe-preset-s-blue', style:{ color:'#ffffff', bg:'none', shadow:'3px 3px 0 #2563eb' } },
+      { key:'pink-shadow', cls:'toe-preset-s-pink', style:{ color:'#ffffff', bg:'none', shadow:'3px 3px 0 #db2777' } },
+    ],
+    stroke: [
+      { key:'black-stroke', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', stroke:'#111111' } },
+      { key:'red-stroke', cls:'toe-preset-s-red', style:{ color:'#ffffff', bg:'none', stroke:'#ef4444' } },
+      { key:'blue-stroke', cls:'toe-preset-s-blue', style:{ color:'#ffffff', bg:'none', stroke:'#2563eb' } },
+      { key:'purple-stroke', cls:'toe-preset-s-purple', style:{ color:'#ffffff', bg:'none', stroke:'#7c3aed' } },
+    ],
+    red: [
+      { key:'red-1', cls:'toe-preset-s-red', style:{ color:'#ef4444', bg:'none', shadow:'0 1px 0 #111' } },
+      { key:'red-2', cls:'toe-preset-s-red', style:{ color:'#ffffff', bg:'semi', shadow:'0 0 8px #ef4444' } },
+      { key:'red-3', cls:'toe-preset-s-red', style:{ color:'#fecaca', bg:'none', font:'neon', shadow:'0 0 14px #dc2626' } },
+    ],
+    blue: [
+      { key:'blue-1', cls:'toe-preset-s-blue', style:{ color:'#3b82f6', bg:'none', shadow:'0 1px 0 #111' } },
+      { key:'blue-2', cls:'toe-preset-s-blue', style:{ color:'#dbeafe', bg:'semi', shadow:'0 0 8px #2563eb' } },
+      { key:'blue-3', cls:'toe-preset-s-blue', style:{ color:'#bae6fd', bg:'none', font:'neon', shadow:'0 0 14px #0284c7' } },
+    ],
+    yellow: [
+      { key:'yellow-1', cls:'toe-preset-s-yellow', style:{ color:'#111111', bg:'semi' } },
+      { key:'yellow-2', cls:'toe-preset-s-pop', style:{ color:'#facc15', bg:'none', shadow:'2px 2px 0 #111' } },
+      { key:'yellow-3', cls:'toe-preset-s-yellow', style:{ color:'#fef3c7', bg:'none', font:'neon', shadow:'0 0 12px #f59e0b' } },
+    ],
+    pink: [
+      { key:'pink-1', cls:'toe-preset-s-pink', style:{ color:'#ec4899', bg:'none', shadow:'0 1px 0 #111' } },
+      { key:'pink-2', cls:'toe-preset-s-pink', style:{ color:'#fce7f3', bg:'semi', shadow:'0 0 8px #db2777' } },
+      { key:'pink-3', cls:'toe-preset-s-pink', style:{ color:'#f5d0fe', bg:'none', font:'neon', shadow:'0 0 14px #d946ef' } },
+    ],
+    green: [
+      { key:'green-1', cls:'toe-preset-s-green', style:{ color:'#22c55e', bg:'none', shadow:'0 1px 0 #111' } },
+      { key:'green-2', cls:'toe-preset-s-green', style:{ color:'#dcfce7', bg:'semi', shadow:'0 0 8px #16a34a' } },
+      { key:'green-3', cls:'toe-preset-s-green', style:{ color:'#bbf7d0', bg:'none', font:'neon', shadow:'0 0 14px #22c55e' } },
+    ],
+  };
+
   let toeTextElements = [];   // { id, text, font, color, size, bg, align, x, y }
   let toeActiveId = null;
   let toeFont = 'modern';
@@ -580,6 +667,7 @@
   let toeAlign = 'center';
   let toeSourceMedia = null;  // the img or video element in the stage
   let toeDragState = null;
+  let toePresetCategory = 'trending';
 
   const toeOverlay    = document.getElementById('toeOverlay');
   const toeStage      = document.getElementById('toeStage');
@@ -589,8 +677,10 @@
   const toeProcLabel  = document.getElementById('toeProcessingLabel');
 
   function toeGetEl(id) { return document.getElementById('toe-el-' + id); }
+  function toeGetActiveItem() { return toeTextElements.find(t => t.id === toeActiveId); }
 
   function toeApplyStyle(el, item) {
+    if (!el) return;
     const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
     el.style.fontFamily = fontConf.family;
     el.style.fontSize   = item.size + 'px';
@@ -598,6 +688,9 @@
     el.style.textAlign  = item.align;
     el.style.left       = item.x + '%';
     el.style.top        = item.y + '%';
+    el.style.textShadow = item.shadow || '';
+    el.style.webkitTextStroke = item.stroke ? `1px ${item.stroke}` : '';
+    el.style.opacity = item.opacity == null ? '1' : String(item.opacity);
     // Background
     el.classList.remove('toe-bg-none','toe-bg-semi','toe-bg-solid');
     el.classList.add('toe-bg-' + (item.bg || 'none'));
@@ -659,6 +752,8 @@
       // Save text on input
       wrap.addEventListener('input', () => {
         item.text = wrap.innerText;
+        const inspector = document.getElementById('toeInspectorText');
+        if (toeActiveId === item.id && inspector && inspector.value !== item.text) inspector.value = item.text;
       });
 
       toeTextLayer.appendChild(wrap);
@@ -666,7 +761,7 @@
   }
 
   function toeUpdateToolbarToActive() {
-    const item = toeTextElements.find(t => t.id === toeActiveId);
+    const item = toeGetActiveItem();
     if (!item) return;
     toeFont  = item.font;
     toeColor = item.color;
@@ -677,16 +772,22 @@
     document.querySelectorAll('.toe-font-btn').forEach(b => b.classList.toggle('active', b.dataset.font === toeFont));
     document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.toggle('active', b.dataset.color === toeColor));
     document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === toeAlign));
-    document.getElementById('toeSizeSlider').value = toeSize;
+    const sizeSlider = document.getElementById('toeSizeSlider');
+    const sizeSelect = document.getElementById('toeSizeSelect');
+    const inspector = document.getElementById('toeInspectorText');
+    if (sizeSlider) sizeSlider.value = toeSize;
+    if (sizeSelect) sizeSelect.value = String(toeSize);
+    if (inspector && inspector.value !== item.text) inspector.value = item.text;
     const bgBtn = document.getElementById('toeBgBtn');
-    bgBtn.textContent = toeBg === 'none' ? 'Bg: Off' : toeBg === 'semi' ? 'Bg: Dark' : 'Bg: Solid';
+    if (bgBtn) bgBtn.textContent = toeBg === 'none' ? 'Bg: Off' : toeBg === 'semi' ? 'Bg: Dark' : 'Bg: Solid';
   }
 
   function toeAddTextElement() {
     const id = Date.now();
-    toeTextElements.push({ id, text: 'Tap to edit', font: toeFont, color: toeColor, size: toeSize, bg: toeBg, align: toeAlign, x: 50, y: 50 });
+    toeTextElements.push({ id, text: 'Text', font: toeFont, color: toeColor, size: toeSize, bg: toeBg, align: toeAlign, x: 50, y: 12 });
     toeActiveId = id;
     toeRenderAll();
+    toeUpdateToolbarToActive();
     // Focus for editing
     setTimeout(() => {
       const el = toeGetEl(id);
@@ -695,10 +796,79 @@
   }
 
   function toeUpdateActive(prop, val) {
-    const item = toeTextElements.find(t => t.id === toeActiveId);
+    const item = toeGetActiveItem();
     if (!item) return;
     item[prop] = val;
     toeApplyStyle(toeGetEl(item.id), item);
+  }
+
+  function toeApplyPreset(preset) {
+    if (!preset) return;
+    let item = toeGetActiveItem();
+    if (!item) {
+      toeAddTextElement();
+      item = toeGetActiveItem();
+    }
+    if (!item) return;
+    if (preset.key === 'none') {
+      Object.assign(item, { color:'#ffffff', bg:'none', shadow:'', stroke:'', font:'modern' });
+    } else {
+      Object.assign(item, preset.style || {});
+    }
+    toeFont = item.font || toeFont;
+    toeColor = item.color || toeColor;
+    toeBg = item.bg || toeBg;
+    toeRenderAll();
+    toeUpdateToolbarToActive();
+  }
+
+  function toePresetTileMarkup(preset) {
+    const label = preset.label || 'ART';
+    return `<button class="toe-preset-tile ${preset.cls || ''}" type="button" data-preset-key="${preset.key}">
+      <span class="toe-preset-word">${label}</span>
+    </button>`;
+  }
+
+  function toeRenderPresetGrids() {
+    const presets = TOE_PRESET_LIBRARY[toePresetCategory] || TOE_PRESET_LIBRARY.trending;
+    const html = presets.concat(presets).slice(0, 20).map((preset, index) => toePresetTileMarkup({
+      ...preset,
+      key: `${preset.key}-${index}`,
+      originalKey: preset.key,
+    })).join('');
+    const left = document.getElementById('toeLeftPresetGrid');
+    const right = document.getElementById('toeRightPresetGrid');
+    if (left) left.innerHTML = html;
+    if (right) right.innerHTML = html;
+    document.querySelectorAll('.toe-preset-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.preset === toePresetCategory);
+    });
+  }
+
+  function toeFindPresetByRenderedKey(renderedKey) {
+    const baseKey = String(renderedKey || '').replace(/-\d+$/, '');
+    const presets = TOE_PRESET_LIBRARY[toePresetCategory] || TOE_PRESET_LIBRARY.trending;
+    return presets.find(p => p.key === baseKey);
+  }
+
+  function toeSetRightPane(name) {
+    document.querySelectorAll('.toe-right-pane').forEach(pane => {
+      pane.classList.toggle('active', pane.dataset.pane === name);
+    });
+    document.querySelectorAll('.toe-inspector-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.paneTarget === name);
+    });
+  }
+
+  function toeRenderTimelineThumbs(mediaEl) {
+    const track = document.getElementById('toeTimelineThumbs');
+    if (!track) return;
+    const isVid = mediaEl?.tagName === 'VIDEO';
+    const source = !isVid ? mediaEl?.src : '';
+    track.innerHTML = Array.from({ length: 24 }).map(() => {
+      const style = source ? ` style="background-image:url('${source.replace(/'/g, "\\'")}')"` : '';
+      return `<span class="toe-media-thumb${isVid ? ' is-video' : ''}"${style}></span>`;
+    }).join('');
   }
 
   function toeOpen(mediaFile) {
@@ -706,6 +876,7 @@
     toeTextElements = [];
     toeActiveId = null;
     toeFont = 'modern'; toeColor = '#ffffff'; toeSize = 42; toeBg = 'none'; toeAlign = 'center';
+    toePresetCategory = 'trending';
     toeTextLayer.innerHTML = '';
 
     // Remove old media from stage
@@ -722,6 +893,7 @@
       vid.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
       toeStage.insertBefore(vid, toeTextLayer);
       toeSourceMedia = vid;
+      toeRenderTimelineThumbs(vid);
       vid.play().catch(() => {});
     } else {
       const img = document.createElement('img');
@@ -729,14 +901,25 @@
       img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
       toeStage.insertBefore(img, toeTextLayer);
       toeSourceMedia = img;
+      toeRenderTimelineThumbs(img);
     }
 
     // Reset toolbar UI
     document.querySelectorAll('.toe-font-btn').forEach(b => b.classList.toggle('active', b.dataset.font === 'modern'));
     document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.toggle('active', b.dataset.color === '#ffffff'));
     document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === 'center'));
-    document.getElementById('toeSizeSlider').value = 42;
-    document.getElementById('toeBgBtn').textContent = 'Bg: Off';
+    const sizeSlider = document.getElementById('toeSizeSlider');
+    const sizeSelect = document.getElementById('toeSizeSelect');
+    const bgBtn = document.getElementById('toeBgBtn');
+    const inspector = document.getElementById('toeInspectorText');
+    const colorPopover = document.getElementById('toeColorPopover');
+    if (sizeSlider) sizeSlider.value = 42;
+    if (sizeSelect) sizeSelect.value = '42';
+    if (bgBtn) bgBtn.textContent = 'Bg: Off';
+    if (inspector) inspector.value = 'Text';
+    if (colorPopover) colorPopover.classList.remove('active');
+    toeSetRightPane('basic');
+    toeRenderPresetGrids();
 
     toeOverlay.style.display = 'flex';
     toeOverlay.style.flexDirection = 'column';
@@ -780,11 +963,16 @@
             });
           }
           // Neon glow
-          if (item.font === 'neon') {
+          if (item.font === 'neon' || item.shadow) {
             ctx.shadowColor = item.color;
-            ctx.shadowBlur = 20;
+            ctx.shadowBlur = item.font === 'neon' ? 20 : 10;
           } else {
             ctx.shadowBlur = 0;
+          }
+          if (item.stroke) {
+            ctx.lineWidth = Math.max(4, item.size / 5);
+            ctx.strokeStyle = item.stroke;
+            lines.forEach((line, i) => ctx.strokeText(line, x, y + i * lineH));
           }
           ctx.fillStyle = item.color;
           lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineH));
@@ -832,8 +1020,13 @@
               ctx.fillRect(bx, y + i * lineH - item.size * 2 - 4, tw + 24, lineH);
             });
           }
-          if (item.font === 'neon') { ctx.shadowColor = item.color; ctx.shadowBlur = 20; }
+          if (item.font === 'neon' || item.shadow) { ctx.shadowColor = item.color; ctx.shadowBlur = item.font === 'neon' ? 20 : 10; }
           else { ctx.shadowBlur = 0; }
+          if (item.stroke) {
+            ctx.lineWidth = Math.max(4, item.size / 5);
+            ctx.strokeStyle = item.stroke;
+            lines.forEach((line, i) => ctx.strokeText(line, x, y + i * lineH));
+          }
           ctx.fillStyle = item.color;
           lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineH));
           ctx.shadowBlur = 0;
@@ -885,7 +1078,33 @@
   if (toeSizeSlider) {
     toeSizeSlider.addEventListener('input', () => {
       toeSize = parseInt(toeSizeSlider.value);
+      const sizeSelect = document.getElementById('toeSizeSelect');
+      if (sizeSelect) sizeSelect.value = String(toeSize);
       toeUpdateActive('size', toeSize);
+    });
+  }
+
+  const toeSizeSelect = document.getElementById('toeSizeSelect');
+  if (toeSizeSelect) {
+    toeSizeSelect.addEventListener('change', () => {
+      toeSize = parseInt(toeSizeSelect.value, 10) || 42;
+      if (toeSizeSlider) toeSizeSlider.value = toeSize;
+      toeUpdateActive('size', toeSize);
+    });
+  }
+
+  const toeInspectorText = document.getElementById('toeInspectorText');
+  if (toeInspectorText) {
+    toeInspectorText.addEventListener('input', () => {
+      const item = toeGetActiveItem();
+      if (!item) return;
+      item.text = toeInspectorText.value;
+      const el = toeGetEl(item.id);
+      if (el) {
+        const deleteBtn = el.querySelector('.toe-delete-btn');
+        el.textContent = item.text;
+        if (deleteBtn) el.appendChild(deleteBtn);
+      }
     });
   }
 
@@ -908,8 +1127,54 @@
     });
   });
 
+  document.querySelectorAll('[data-preset-tabs]').forEach(tabGroup => {
+    tabGroup.addEventListener('click', (e) => {
+      const tab = e.target.closest('.toe-preset-tab');
+      if (!tab) return;
+      toePresetCategory = tab.dataset.preset || 'trending';
+      toeRenderPresetGrids();
+    });
+  });
+
+  document.querySelectorAll('.toe-preset-grid').forEach(grid => {
+    grid.addEventListener('click', (e) => {
+      const tile = e.target.closest('.toe-preset-tile');
+      if (!tile) return;
+      document.querySelectorAll('.toe-preset-tile').forEach(t => t.classList.remove('active'));
+      tile.classList.add('active');
+      toeApplyPreset(toeFindPresetByRenderedKey(tile.dataset.presetKey));
+    });
+  });
+
+  document.querySelectorAll('.toe-inspector-tab').forEach(tab => {
+    tab.addEventListener('click', () => toeSetRightPane(tab.dataset.paneTarget || 'basic'));
+  });
+
+  document.querySelectorAll('[data-style-popover]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const popover = document.getElementById('toeColorPopover');
+      if (!popover) return;
+      popover.classList.toggle('active');
+      const row = btn.closest('.toe-style-row');
+      if (row) {
+        const sectionRect = row.closest('.toe-style-section').getBoundingClientRect();
+        const rowRect = row.getBoundingClientRect();
+        popover.style.top = Math.max(16, rowRect.top - sectionRect.top - 14) + 'px';
+      }
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    const popover = document.getElementById('toeColorPopover');
+    if (!popover || !toeOverlay || toeOverlay.style.display === 'none') return;
+    if (e.target.closest('#toeColorPopover') || e.target.closest('[data-style-popover]')) return;
+    popover.classList.remove('active');
+  });
+
   document.getElementById('toeAddTextBtn')?.addEventListener('click', toeAddTextElement);
   document.getElementById('toeCancelBtn')?.addEventListener('click', toeClose);
+  document.getElementById('toeCancelBtnSecondary')?.addEventListener('click', toeClose);
 
   document.getElementById('toeDoneBtn')?.addEventListener('click', async () => {
     if (toeTextElements.length === 0) { toeClose(); return; }
