@@ -792,8 +792,33 @@
                         <button class="toe-align-btn" data-align="left" type="button" data-tooltip="Align left">≡</button>
                         <button class="toe-align-btn active" data-align="center" type="button" data-tooltip="Align center">≣</button>
                         <button class="toe-align-btn" data-align="right" type="button" data-tooltip="Align right">≡</button>
-                        <button type="button" data-tooltip="Case">Aa</button>
-                        <button type="button" data-tooltip="Spacing">↕</button>
+                        <button id="toeCaseBtn" type="button" data-tooltip="Case">Aa⌃</button>
+                        <button id="toeSpacingBtn" type="button" data-tooltip="Spacing">↕A⌃</button>
+                    </div>
+                    <div class="toe-format-popover toe-case-popover" id="toeCasePopover">
+                        <span>Case</span>
+                        <button type="button" data-case-mode="upper">AG</button>
+                        <button type="button" data-case-mode="lower">ag</button>
+                        <button type="button" data-case-mode="title">Ag</button>
+                    </div>
+                    <div class="toe-format-popover toe-spacing-popover" id="toeSpacingPopover">
+                        <label>
+                            <span>Line height</span>
+                            <div class="toe-spacing-control">
+                                <input id="toeLineHeightSlider" type="range" min="0" max="80" value="20">
+                                <input id="toeLineHeightValue" type="number" min="0" max="80" value="20">
+                            </div>
+                        </label>
+                        <label>
+                            <span>Letter spacing</span>
+                            <div class="toe-spacing-control">
+                                <input id="toeLetterSpacingSlider" type="range" min="0" max="100" value="0">
+                                <div class="toe-number-suffix">
+                                    <input id="toeLetterSpacingValue" type="number" min="0" max="100" value="0">
+                                    <span>%</span>
+                                </div>
+                            </div>
+                        </label>
                     </div>
                     <div class="toe-style-section">
                         <div class="toe-style-title">
@@ -802,7 +827,7 @@
                         </div>
                         <div class="toe-style-row">
                             <span>Fill</span>
-                            <button class="toe-style-toggle" type="button" data-style-popover="fill" data-tooltip="Fill color"><span style="background:#fff;"></span></button>
+                            <button class="toe-style-more" type="button" data-style-popover="fill" data-tooltip="Fill color">+</button>
                         </div>
                         <div class="toe-style-row">
                             <span>Stroke</span>
@@ -810,8 +835,7 @@
                         </div>
                         <div class="toe-style-row">
                             <span>Background</span>
-                            <button class="toe-style-more" type="button" data-style-popover="background" data-tooltip="Background">...</button>
-                            <button class="toe-bg-btn" id="toeBgBtn" type="button" data-tooltip="Toggle background">Bg: Off</button>
+                            <button class="toe-style-more" type="button" data-style-popover="background" data-tooltip="Background">+</button>
                         </div>
                         <div class="toe-style-row">
                             <span>Shadow</span>
@@ -822,6 +846,7 @@
                             <p id="toeColorPopoverHint">Choose a color for the selected text style.</p>
                             <small>Recent</small>
                             <div class="toe-recent-colors">
+                                <button class="toe-eyedropper-btn" id="toeEyedropperBtn" type="button" title="Eyedropper" aria-label="Eyedropper">⌕</button>
                                 <button class="toe-color-custom" id="toeColorCustom" type="button" title="Custom color">
                                     <input type="color" id="toeColorPicker" value="#ffffff">
                                     <span></span>

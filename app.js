@@ -710,6 +710,15 @@
   function toeGetEl(id) { return document.getElementById('toe-el-' + id); }
   function toeGetActiveItem() { return toeTextElements.find(t => t.id === toeActiveId); }
 
+  function toeTransformText(text = '', caseMode = 'normal') {
+    if (caseMode === 'upper') return text.toUpperCase();
+    if (caseMode === 'lower') return text.toLowerCase();
+    if (caseMode === 'title') {
+      return text.toLowerCase().replace(/\b([a-z])/g, char => char.toUpperCase());
+    }
+    return text;
+  }
+
   function toeSetCenterGuides(showX = false, showY = false) {
     if (!toeCenterGuides) return;
     toeCenterGuides.classList.toggle('show-x', showX);
@@ -794,6 +803,8 @@
     el.style.textShadow = item.shadow || '';
     el.style.webkitTextStroke = item.stroke ? `1px ${item.stroke}` : '';
     el.style.opacity = item.opacity == null ? '1' : String(item.opacity);
+    el.style.lineHeight = String(1 + ((item.lineHeight ?? 20) / 100));
+    el.style.letterSpacing = `${((item.letterSpacing ?? 0) / 100) * item.size}px`;
     // Background
     el.classList.remove('toe-bg-none','toe-bg-semi','toe-bg-solid');
     el.classList.add('toe-bg-' + (item.bg || 'none'));
@@ -816,7 +827,7 @@
       wrap.className = 'toe-text-el' + (item.id === toeActiveId ? ' active-text' : '');
       wrap.id = 'toe-el-' + item.id;
       wrap.contentEditable = 'true';
-      wrap.textContent = item.text;
+      wrap.textContent = toeTransformText(item.text, item.caseMode);
       wrap.draggable = false;
       toeApplyStyle(wrap, item);
 
@@ -900,11 +911,22 @@
     const inspector = document.getElementById('toeInspectorText');
     const opacityRange = document.querySelector('.toe-opacity-row input');
     const opacityLabel = document.querySelector('.toe-opacity-row span');
+    const lineSlider = document.getElementById('toeLineHeightSlider');
+    const lineValue = document.getElementById('toeLineHeightValue');
+    const letterSlider = document.getElementById('toeLetterSpacingSlider');
+    const letterValue = document.getElementById('toeLetterSpacingValue');
     if (sizeSlider) sizeSlider.value = toeSize;
     if (sizeSelect) sizeSelect.value = String(toeSize);
     if (inspector && inspector.value !== item.text) inspector.value = item.text;
     if (opacityRange) opacityRange.value = Math.round((item.opacity == null ? 1 : item.opacity) * 100);
     if (opacityLabel) opacityLabel.textContent = `${Math.round((item.opacity == null ? 1 : item.opacity) * 100)}%`;
+    if (lineSlider) lineSlider.value = item.lineHeight ?? 20;
+    if (lineValue) lineValue.value = item.lineHeight ?? 20;
+    if (letterSlider) letterSlider.value = item.letterSpacing ?? 0;
+    if (letterValue) letterValue.value = item.letterSpacing ?? 0;
+    document.querySelectorAll('[data-case-mode]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.caseMode === (item.caseMode || 'normal'));
+    });
     const bgBtn = document.getElementById('toeBgBtn');
     if (bgBtn) bgBtn.textContent = toeBg === 'none' ? 'Bg: Off' : toeBg === 'semi' ? 'Bg: Dark' : 'Bg: Solid';
     toeUpdateStylePreviewButtons(item);
@@ -912,7 +934,20 @@
 
   function toeAddTextElement() {
     const id = Date.now();
-    toeTextElements.push({ id, text: 'Text', font: toeFont, color: toeColor, size: toeSize, bg: toeBg, align: toeAlign, x: 50, y: 12 });
+    toeTextElements.push({
+      id,
+      text: 'Text',
+      font: toeFont,
+      color: toeColor,
+      size: toeSize,
+      bg: toeBg,
+      align: toeAlign,
+      x: 50,
+      y: 12,
+      lineHeight: 20,
+      letterSpacing: 0,
+      caseMode: 'normal'
+    });
     toeActiveId = id;
     toeRenderAll();
     toeUpdateToolbarToActive();
@@ -1090,22 +1125,25 @@
 
   function toeUpdateStylePreviewButtons(item = toeGetActiveItem()) {
     if (!item) return;
-    const fillBtn = document.querySelector('[data-style-popover="fill"] span');
+    const fillBtn = document.querySelector('[data-style-popover="fill"]');
     const strokeBtn = document.querySelector('[data-style-popover="stroke"]');
     const bgMoreBtn = document.querySelector('[data-style-popover="background"]');
     const shadowBtn = document.querySelector('[data-style-popover="shadow"]');
-    if (fillBtn) fillBtn.style.background = item.color || '#ffffff';
+    if (fillBtn) {
+      fillBtn.textContent = item.color && item.color !== '#ffffff' ? '' : '+';
+      fillBtn.style.background = item.color && item.color !== '#ffffff' ? item.color : '';
+    }
     if (strokeBtn) {
       strokeBtn.textContent = item.stroke ? '' : '+';
-      strokeBtn.style.background = item.stroke || '#f1f1f1';
+      strokeBtn.style.background = item.stroke || '';
     }
     if (bgMoreBtn) {
-      bgMoreBtn.textContent = item.bgColor ? '' : '...';
-      bgMoreBtn.style.background = item.bgColor || '#f1f1f1';
+      bgMoreBtn.textContent = item.bgColor ? '' : '+';
+      bgMoreBtn.style.background = item.bgColor || '';
     }
     if (shadowBtn) {
       shadowBtn.textContent = item.shadowColor ? '' : '+';
-      shadowBtn.style.background = item.shadowColor || '#f1f1f1';
+      shadowBtn.style.background = item.shadowColor || '';
     }
   }
 
@@ -1116,10 +1154,10 @@
     const hint = document.getElementById('toeColorPopoverHint');
     if (!popover) return;
     const labels = {
-      fill: ['Fill color', 'Changes the main text color.'],
-      stroke: ['Stroke color', 'Adds an outline around the selected text.'],
-      background: ['Background color', 'Turns on a text background and applies this color.'],
-      shadow: ['Shadow color', 'Adds a soft shadow/glow behind the selected text.'],
+      fill: ['Select color', 'Fill'],
+      stroke: ['Select color', 'Stroke'],
+      background: ['Select color', 'Background'],
+      shadow: ['Select color', 'Shadow'],
     };
     const [label, help] = labels[toeStyleTarget] || labels.fill;
     if (title) title.textContent = label;
@@ -1155,14 +1193,33 @@
       ctx.textBaseline = 'alphabetic';
       const x = (item.x / 100) * canvasWidth;
       const y = (item.y / 100) * canvasHeight;
-      const lines = item.text.split('\n');
-      const lineH = item.size * 2 * 1.3;
+      const lines = toeTransformText(item.text, item.caseMode).split('\n');
+      const letterGap = ((item.letterSpacing ?? 0) / 100) * item.size * 2;
+      const lineH = item.size * 2 * (1 + ((item.lineHeight ?? 20) / 100));
+      const measureLine = (line) => {
+        if (!line) return 0;
+        return ctx.measureText(line).width + Math.max(0, line.length - 1) * letterGap;
+      };
+      const drawLine = (method, line, tx, ty) => {
+        if (!letterGap) {
+          ctx[method](line, tx, ty);
+          return;
+        }
+        const total = measureLine(line);
+        let cursor = item.align === 'center' ? tx - total / 2 : item.align === 'right' ? tx - total : tx;
+        ctx.textAlign = 'left';
+        Array.from(line).forEach(char => {
+          ctx[method](char, cursor, ty);
+          cursor += ctx.measureText(char).width + letterGap;
+        });
+        ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
+      };
       if (item.bg !== 'none') {
         ctx.fillStyle = item.bgColor
           ? (item.bg === 'semi' ? toeHexToRgba(item.bgColor, 0.62) : item.bgColor)
           : (item.bg === 'solid' ? '#000' : 'rgba(0,0,0,0.55)');
         lines.forEach((line, i) => {
-          const tw = ctx.measureText(line).width;
+          const tw = measureLine(line);
           const bx = item.align === 'center' ? x - tw / 2 - 12 : item.align === 'right' ? x - tw - 12 : x - 12;
           ctx.fillRect(bx, y + i * lineH - item.size * 2 - 4, tw + 24, lineH);
         });
@@ -1176,10 +1233,10 @@
       if (item.stroke) {
         ctx.lineWidth = Math.max(4, item.size / 5);
         ctx.strokeStyle = item.stroke;
-        lines.forEach((line, i) => ctx.strokeText(line, x, y + i * lineH));
+        lines.forEach((line, i) => drawLine('strokeText', line, x, y + i * lineH));
       }
       ctx.fillStyle = item.color;
-      lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineH));
+      lines.forEach((line, i) => drawLine('fillText', line, x, y + i * lineH));
       ctx.shadowBlur = 0;
     });
   }
@@ -1296,6 +1353,26 @@
     });
   }
 
+  const toeEyedropperBtn = document.getElementById('toeEyedropperBtn');
+  if (toeEyedropperBtn) {
+    toeEyedropperBtn.addEventListener('click', async () => {
+      if ('EyeDropper' in window) {
+        try {
+          const result = await new EyeDropper().open();
+          if (result?.sRGBHex) {
+            toeColor = result.sRGBHex;
+            if (toeColorPicker) toeColorPicker.value = toeColor;
+            document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.remove('active'));
+            toeEyedropperBtn.classList.add('active');
+            toeApplyStyleColor(toeColor);
+          }
+        } catch (_) {}
+      } else {
+        toeColorPicker?.click();
+      }
+    });
+  }
+
   const toeSizeSlider = document.getElementById('toeSizeSlider');
   if (toeSizeSlider) {
     toeSizeSlider.addEventListener('input', () => {
@@ -1360,6 +1437,51 @@
       toeUpdateActive('align', toeAlign);
     });
   });
+
+  function toeToggleFormatPopover(popoverId) {
+    const popover = document.getElementById(popoverId);
+    if (!popover) return;
+    document.querySelectorAll('.toe-format-popover').forEach(panel => {
+      if (panel !== popover) panel.classList.remove('active');
+    });
+    const colorPopover = document.getElementById('toeColorPopover');
+    if (colorPopover) colorPopover.classList.remove('active');
+    popover.classList.toggle('active');
+  }
+
+  document.getElementById('toeCaseBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toeToggleFormatPopover('toeCasePopover');
+  });
+
+  document.getElementById('toeSpacingBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toeToggleFormatPopover('toeSpacingPopover');
+  });
+
+  document.querySelectorAll('[data-case-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      toeUpdateActive('caseMode', btn.dataset.caseMode || 'normal');
+      toeRenderAll();
+      toeUpdateToolbarToActive();
+    });
+  });
+
+  function toeBindSpacingControl(sliderId, inputId, prop) {
+    const slider = document.getElementById(sliderId);
+    const input = document.getElementById(inputId);
+    const update = (value) => {
+      const next = Math.max(0, Math.min(prop === 'lineHeight' ? 80 : 100, parseInt(value, 10) || 0));
+      if (slider) slider.value = next;
+      if (input) input.value = next;
+      toeUpdateActive(prop, next);
+    };
+    slider?.addEventListener('input', () => update(slider.value));
+    input?.addEventListener('input', () => update(input.value));
+  }
+
+  toeBindSpacingControl('toeLineHeightSlider', 'toeLineHeightValue', 'lineHeight');
+  toeBindSpacingControl('toeLetterSpacingSlider', 'toeLetterSpacingValue', 'letterSpacing');
 
   document.querySelectorAll('[data-preset-tabs]').forEach(tabGroup => {
     tabGroup.addEventListener('click', (e) => {
@@ -1451,6 +1573,8 @@
     if (!popover || !toeOverlay || toeOverlay.style.display === 'none') return;
     if (e.target.closest('#toeColorPopover') || e.target.closest('[data-style-popover]')) return;
     popover.classList.remove('active');
+    if (e.target.closest('.toe-format-popover') || e.target.closest('#toeCaseBtn') || e.target.closest('#toeSpacingBtn')) return;
+    document.querySelectorAll('.toe-format-popover').forEach(panel => panel.classList.remove('active'));
   });
 
   document.getElementById('toeAddTextBtn')?.addEventListener('click', toeAddTextElement);
