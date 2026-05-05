@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Montserrat:wght@500;600;700&family=Bebas+Neue&family=Special+Elite&family=Anton&family=Caveat:wght@500;600;700&family=Pacifico&family=Permanent+Marker&family=Bangers&family=Comic+Neue:wght@400;700&family=Chewy&family=Fredoka:wght@400;500;600;700&family=Luckiest+Guy&family=Rubik+Bubbles&family=Oswald:wght@500;600;700&family=Dancing+Script:wght@600;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="index.css?v=9" />
+    <link rel="stylesheet" href="index.css?v=10" />
 </head>
 
 <body>
@@ -669,18 +669,22 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h2"/></svg>
                 </button>
                 <div class="toe-zoom-menu">
-                    <button class="toe-zoom-btn" type="button" data-tooltip="Zoom">100%⌄</button>
+                    <button class="toe-zoom-btn" id="toeZoomBtn" type="button" data-tooltip="Zoom">100%⌄</button>
                     <div class="toe-zoom-popover">
                         <span>Zoom to</span>
                         <div class="toe-zoom-control">
-                            <input type="range" min="50" max="200" value="100">
-                            <strong>100%</strong>
+                            <input id="toeCanvasZoomRange" type="range" min="50" max="200" value="100">
+                            <strong id="toeCanvasZoomValue">100%</strong>
                         </div>
-                        <button type="button">Zoom to fit</button>
-                        <button type="button">Zoom to 50%</button>
-                        <button type="button">Zoom to 100%</button>
-                        <button type="button">Zoom to 200%</button>
+                        <button type="button" data-toe-zoom="fit">Zoom to fit</button>
+                        <button type="button" data-toe-zoom="50">Zoom to 50%</button>
+                        <button type="button" data-toe-zoom="100">Zoom to 100%</button>
+                        <button type="button" data-toe-zoom="200">Zoom to 200%</button>
                     </div>
+                </div>
+                <div class="toe-theme-toggle" role="group" aria-label="Editor theme">
+                    <button class="active" type="button" data-toe-theme="brand">Brand</button>
+                    <button type="button" data-toe-theme="light">Light</button>
                 </div>
             </div>
             <div class="toe-topbar-actions">
@@ -928,16 +932,16 @@
                     <button type="button" data-tooltip="Play">
                         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                     </button>
-                    <span>00:00:00</span>
+                    <span id="toeCurrentTime">00:00:00</span>
                     <em>/</em>
-                    <span class="muted">00:08:00</span>
+                    <span class="muted" id="toeDurationTime">00:08:00</span>
                 </div>
                 <div class="toe-timeline-right">
-                    <button type="button" data-tooltip="Zoom out">
+                    <button id="toeTimelineZoomOut" type="button" data-tooltip="Zoom out">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/></svg>
                     </button>
-                    <input type="range" min="0" max="100" value="25" aria-label="Timeline zoom">
-                    <button type="button" data-tooltip="Zoom in">
+                    <input id="toeTimelineZoomRange" type="range" min="0" max="100" value="25" aria-label="Timeline zoom">
+                    <button id="toeTimelineZoomIn" type="button" data-tooltip="Zoom in">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6M11 8v6"/></svg>
                     </button>
                     <button id="toeTimelineHideBtn" type="button" data-tooltip="Hide timeline" aria-label="Hide timeline">
@@ -946,7 +950,7 @@
                 </div>
             </div>
             <button id="toeTimelineDragHandle" class="toe-timeline-drag-handle" type="button" data-tooltip="Drag timeline" aria-label="Drag timeline">
-                <span>▴</span><span>▾</span>
+                <span>↕</span>
             </button>
             <div class="toe-timeline-body">
                 <div class="toe-track-labels">
@@ -955,7 +959,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg>
                     </span>
                 </div>
-                <div class="toe-track-area">
+                <div class="toe-track-area" id="toeTrackArea">
                     <div class="toe-playhead"></div>
                     <div class="toe-ruler">
                         <span>00:00</span><span>00:02</span><span>00:04</span><span>00:06</span><span>00:08</span>
@@ -971,7 +975,7 @@
     <script src="supabase.js"></script>
     <script src="auth.js"></script>
     <script src="instagram-oauth.js"></script>
-    <script src="app.js?v=9"></script>
+    <script src="app.js?v=10"></script>
 </body>
 
 </html>

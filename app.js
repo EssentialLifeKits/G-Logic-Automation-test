@@ -598,6 +598,7 @@
     { key:'decorative', label:'Decorative' },
   ];
   const TOE_FAVORITES_KEY = 'glogic_toe_favorite_presets';
+  const TOE_THEME_KEY = 'glogic_toe_theme';
 
   const TOE_PRESET_CATEGORIES = ['favorite','trending','basic','background','glow','shadow','stroke','red','blue','yellow','pink','green'];
   const TOE_PRESET_LIBRARY = {
@@ -698,6 +699,9 @@
   let toePresetCategory = 'trending';
   let toeStyleTarget = 'fill';
   let toeRenderedPresets = new Map();
+  let toeStageZoom = 100;
+  let toeTimelineZoom = 25;
+  let toeTimelineProgress = 0;
 
   const toeOverlay    = document.getElementById('toeOverlay');
   const toeStage      = document.getElementById('toeStage');
@@ -747,12 +751,77 @@
 
   function toeSetTheme(theme) {
     if (!toeOverlay) return;
-    toeOverlay.classList.remove('theme-light');
-    toeOverlay.classList.add('theme-brand');
+    const next = theme === 'light' ? 'light' : 'brand';
+    toeOverlay.classList.toggle('theme-light', next === 'light');
+    toeOverlay.classList.toggle('theme-brand', next === 'brand');
+    document.querySelectorAll('[data-toe-theme]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.toeTheme === next);
+    });
+    try { localStorage.setItem(TOE_THEME_KEY, next); } catch (_) {}
   }
 
   function toeGetSavedTheme() {
-    return 'brand';
+    try {
+      return localStorage.getItem(TOE_THEME_KEY) === 'light' ? 'light' : 'brand';
+    } catch (_) {
+      return 'brand';
+    }
+  }
+
+  function toeClamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function toeFormatTime(seconds = 0, includeHours = true) {
+    const safe = Math.max(0, Math.floor(seconds || 0));
+    const h = Math.floor(safe / 3600);
+    const m = Math.floor((safe % 3600) / 60);
+    const s = safe % 60;
+    if (!includeHours && h === 0) return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  function toeSetStageZoom(percent) {
+    toeStageZoom = toeClamp(Math.round(percent || 100), 50, 200);
+    const scale = toeStageZoom / 100;
+    if (toeStage) toeStage.style.setProperty('--toe-stage-scale', String(scale));
+    const zoomBtn = document.getElementById('toeZoomBtn');
+    const zoomRange = document.getElementById('toeCanvasZoomRange');
+    const zoomValue = document.getElementById('toeCanvasZoomValue');
+    if (zoomBtn) zoomBtn.textContent = `${toeStageZoom}%⌄`;
+    if (zoomRange) zoomRange.value = toeStageZoom;
+    if (zoomValue) zoomValue.textContent = `${toeStageZoom}%`;
+  }
+
+  function toeSetTimelineZoom(value) {
+    toeTimelineZoom = toeClamp(Math.round(value || 0), 0, 100);
+    if (toeOverlay) {
+      toeOverlay.style.setProperty('--toe-timeline-track-width', `${100 + toeTimelineZoom * 2.8}%`);
+      toeOverlay.style.setProperty('--toe-timeline-clip-width', `${44 + toeTimelineZoom * 0.72}%`);
+    }
+    const range = document.getElementById('toeTimelineZoomRange');
+    if (range) range.value = toeTimelineZoom;
+  }
+
+  function toeSetTimelineProgress(progress) {
+    toeTimelineProgress = toeClamp(progress || 0, 0, 1);
+    if (toeOverlay) toeOverlay.style.setProperty('--toe-playhead-x', `calc(42px + ${toeTimelineProgress * 90}%)`);
+    const current = document.getElementById('toeCurrentTime');
+    const duration = toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration)
+      ? toeSourceMedia.duration
+      : 8;
+    if (current) current.textContent = toeFormatTime(duration * toeTimelineProgress);
+    if (toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration) && toeSourceMedia.duration > 0) {
+      toeSourceMedia.currentTime = toeSourceMedia.duration * toeTimelineProgress;
+    }
+  }
+
+  function toeSyncTimelineDuration() {
+    const durationLabel = document.getElementById('toeDurationTime');
+    const duration = toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration) && toeSourceMedia.duration > 0
+      ? toeSourceMedia.duration
+      : 8;
+    if (durationLabel) durationLabel.textContent = toeFormatTime(duration);
   }
 
   function toeRenderFontOptions() {
@@ -820,6 +889,7 @@
     el.style.textAlign  = item.align;
     el.style.left       = item.x + '%';
     el.style.top        = item.y + '%';
+    el.style.width      = (item.width || 24) + '%';
     el.style.textShadow = item.shadow || '';
     el.style.webkitTextStroke = item.stroke ? `1px ${item.stroke}` : '';
     el.style.opacity = item.opacity == null ? '1' : String(item.opacity);
@@ -838,6 +908,65 @@
     // Font class
     Object.values(TOE_FONTS).forEach(f => el.classList.remove(f.cls));
     el.classList.add(fontConf.cls);
+  }
+
+  function toeResizeTextElement(item, handle, start, event) {
+    if (!toeStage || !item) return;
+    const rect = toeStage.getBoundingClientRect();
+    const dxPct = ((event.clientX - start.x) / rect.width) * 100;
+    const dyPx = event.clientY - start.y;
+    let nextWidth = start.width;
+    let nextX = start.itemX;
+    if (handle.startsWith('r')) {
+      nextWidth = start.width + dxPct;
+      nextX = start.itemX + dxPct / 2;
+    } else {
+      nextWidth = start.width - dxPct;
+      nextX = start.itemX + dxPct / 2;
+    }
+    const clampedWidth = toeClamp(nextWidth, 8, 88);
+    if (clampedWidth !== nextWidth) {
+      nextX += (nextWidth - clampedWidth) / (handle.startsWith('r') ? -2 : 2);
+    }
+    item.width = clampedWidth;
+    item.x = toeClamp(nextX, 5, 95);
+    if (handle.endsWith('t') || handle.endsWith('b')) {
+      const direction = handle.endsWith('b') ? 1 : -1;
+      item.size = toeClamp(Math.round(start.size + dyPx * direction * 0.18), 12, 120);
+      toeSize = item.size;
+    }
+    toeApplyStyle(toeGetEl(item.id), item);
+    toeUpdateToolbarToActive();
+  }
+
+  function toeCreateResizeHandle(item, handle) {
+    const btn = document.createElement('button');
+    btn.className = `toe-resize-handle toe-resize-${handle}`;
+    btn.type = 'button';
+    btn.dataset.resizeHandle = handle;
+    btn.setAttribute('aria-label', 'Resize text box');
+    btn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toeActiveId = item.id;
+      const start = {
+        x: e.clientX,
+        y: e.clientY,
+        width: item.width || 24,
+        itemX: item.x,
+        size: item.size || toeSize
+      };
+      const onMove = (mv) => toeResizeTextElement(item, handle, start, mv);
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        window.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      window.addEventListener('mouseup', onUp);
+    });
+    return btn;
   }
 
   function toeRenderAll() {
@@ -863,9 +992,15 @@
       });
       wrap.appendChild(del);
 
+      if (item.id === toeActiveId) {
+        ['lt', 'lm', 'lb', 'rt', 'rm', 'rb'].forEach(handle => {
+          wrap.appendChild(toeCreateResizeHandle(item, handle));
+        });
+      }
+
       // Click to activate
       wrap.addEventListener('mousedown', (e) => {
-        if (e.target.classList.contains('toe-delete-btn')) return;
+        if (e.target.classList.contains('toe-delete-btn') || e.target.closest('.toe-resize-handle')) return;
         e.preventDefault();
         toeActiveId = item.id;
         toeRenderAll();
@@ -962,6 +1097,7 @@
       align: toeAlign,
       x: 50,
       y: 12,
+      width: 24,
       lineHeight: 20,
       letterSpacing: 0,
       caseMode: 'normal'
@@ -1074,6 +1210,10 @@
     toePresetCategory = 'trending';
     toeTextLayer.innerHTML = '';
     toeSetTheme(toeGetSavedTheme());
+    toeSetStageZoom(100);
+    toeSetTimelineZoom(25);
+    toeSetTimelineProgress(0);
+    toeSetTimelineHeight(176);
 
     // Remove old media from stage
     toeStage.querySelectorAll('img,video').forEach(e => e.remove());
@@ -1092,6 +1232,15 @@
       toeStage.insertBefore(vid, toeTextLayer);
       toeSourceMedia = vid;
       toeRenderTimelineThumbs(vid);
+      vid.addEventListener('loadedmetadata', toeSyncTimelineDuration, { once: true });
+      vid.addEventListener('timeupdate', () => {
+        if (Number.isFinite(vid.duration) && vid.duration > 0) {
+          toeTimelineProgress = toeClamp(vid.currentTime / vid.duration, 0, 1);
+          if (toeOverlay) toeOverlay.style.setProperty('--toe-playhead-x', `calc(42px + ${toeTimelineProgress * 90}%)`);
+          const current = document.getElementById('toeCurrentTime');
+          if (current) current.textContent = toeFormatTime(vid.currentTime);
+        }
+      });
     } else {
       const img = document.createElement('img');
       img.src = URL.createObjectURL(mediaFile);
@@ -1099,6 +1248,7 @@
       toeStage.insertBefore(img, toeTextLayer);
       toeSourceMedia = img;
       toeRenderTimelineThumbs(img);
+      toeSyncTimelineDuration();
     }
 
     // Reset toolbar UI
@@ -1415,12 +1565,7 @@
       const item = toeGetActiveItem();
       if (!item) return;
       item.text = toeInspectorText.value;
-      const el = toeGetEl(item.id);
-      if (el) {
-        const deleteBtn = el.querySelector('.toe-delete-btn');
-        el.textContent = item.text;
-        if (deleteBtn) el.appendChild(deleteBtn);
-      }
+      toeRenderAll();
     });
   }
 
@@ -1518,12 +1663,43 @@
     tab.addEventListener('click', () => toeSetRightPane(tab.dataset.paneTarget || 'basic'));
   });
 
+  document.querySelectorAll('[data-toe-theme]').forEach(btn => {
+    btn.addEventListener('click', () => toeSetTheme(btn.dataset.toeTheme || 'brand'));
+  });
+
+  document.getElementById('toeCanvasZoomRange')?.addEventListener('input', (e) => {
+    toeSetStageZoom(parseInt(e.target.value, 10) || 100);
+  });
+
+  document.querySelectorAll('[data-toe-zoom]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.toeZoom;
+      toeSetStageZoom(value === 'fit' ? 100 : parseInt(value, 10));
+    });
+  });
+
+  document.getElementById('toeTimelineZoomRange')?.addEventListener('input', (e) => {
+    toeSetTimelineZoom(parseInt(e.target.value, 10) || 0);
+  });
+
+  document.getElementById('toeTimelineZoomOut')?.addEventListener('click', () => {
+    toeSetTimelineZoom(toeTimelineZoom - 10);
+  });
+
+  document.getElementById('toeTimelineZoomIn')?.addEventListener('click', () => {
+    toeSetTimelineZoom(toeTimelineZoom + 10);
+  });
+
   toeSetTheme(toeGetSavedTheme());
+  toeSetStageZoom(100);
+  toeSetTimelineZoom(25);
 
   function toeSetTimelineHeight(height) {
     if (!toeOverlay) return;
     const next = Math.max(52, Math.min(220, height));
     toeOverlay.style.setProperty('--toe-timeline-height', `${next}px`);
+    const zoomBoost = toeClamp(Math.round((176 - next) * 0.52), 0, 70);
+    toeSetStageZoom(100 + zoomBoost);
     const collapsed = next <= 70;
     toeOverlay.classList.toggle('timeline-collapsed', collapsed);
     const handle = document.getElementById('toeTimelineDragHandle');
@@ -1558,6 +1734,33 @@
       };
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  const toeTrackArea = document.getElementById('toeTrackArea');
+  if (toeTrackArea) {
+    const setScrubX = (event) => {
+      const rect = toeTrackArea.getBoundingClientRect();
+      const pct = toeClamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100);
+      toeTrackArea.style.setProperty('--toe-scrub-x', `${pct}%`);
+      return pct / 100;
+    };
+    toeTrackArea.addEventListener('mousemove', setScrubX);
+    toeTrackArea.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      toeTrackArea.classList.add('is-scrubbing');
+      toeSetTimelineProgress(setScrubX(e));
+      const onMove = (mv) => toeSetTimelineProgress(setScrubX(mv));
+      const onUp = () => {
+        toeTrackArea.classList.remove('is-scrubbing');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        window.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      window.addEventListener('mouseup', onUp);
     });
   }
 
