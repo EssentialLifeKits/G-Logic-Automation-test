@@ -947,8 +947,6 @@
     document.querySelectorAll('[data-case-mode]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.caseMode === (item.caseMode || 'normal'));
     });
-    const bgBtn = document.getElementById('toeBgBtn');
-    if (bgBtn) bgBtn.textContent = toeBg === 'none' ? 'Bg: Off' : toeBg === 'semi' ? 'Bg: Dark' : 'Bg: Solid';
     toeUpdateStylePreviewButtons(item);
   }
 
@@ -1109,12 +1107,10 @@
     document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === 'center'));
     const sizeSlider = document.getElementById('toeSizeSlider');
     const sizeSelect = document.getElementById('toeSizeSelect');
-    const bgBtn = document.getElementById('toeBgBtn');
     const inspector = document.getElementById('toeInspectorText');
     const colorPopover = document.getElementById('toeColorPopover');
     if (sizeSlider) sizeSlider.value = 32;
     if (sizeSelect) sizeSelect.value = '32';
-    if (bgBtn) bgBtn.textContent = 'Bg: Off';
     if (inspector) inspector.value = 'Text';
     if (colorPopover) colorPopover.classList.remove('active');
     toeStyleTarget = 'fill';
@@ -1425,17 +1421,6 @@
         el.textContent = item.text;
         if (deleteBtn) el.appendChild(deleteBtn);
       }
-    });
-  }
-
-  const toeBgBtn = document.getElementById('toeBgBtn');
-  if (toeBgBtn) {
-    toeBgBtn.addEventListener('click', () => {
-      const modes = ['none','semi','solid'];
-      toeBg = modes[(modes.indexOf(toeBg) + 1) % modes.length];
-      toeBgBtn.textContent = toeBg === 'none' ? 'Bg: Off' : toeBg === 'semi' ? 'Bg: Dark' : 'Bg: Solid';
-      toeUpdateActive('bg', toeBg);
-      toeUpdateToolbarToActive();
     });
   }
 
