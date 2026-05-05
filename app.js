@@ -587,9 +587,17 @@
     lucky:      { label:'Luckiest', family:"'Luckiest Guy', Impact, sans-serif", cls:'toe-font-decorative', category:'decorative', weight:400 },
     bubbles:    { label:'Bubbles', family:"'Rubik Bubbles', cursive", cls:'toe-font-decorative', category:'decorative', weight:400 },
   };
-  const TOE_FONT_CATEGORIES = ['all','trending','basic','handwritten','retro','comic','cute','decorative'];
+  const TOE_FONT_CATEGORIES = [
+    { key:'all', label:'All fonts' },
+    { key:'trending', label:'Trending' },
+    { key:'basic', label:'Basic' },
+    { key:'handwritten', label:'Handwritten' },
+    { key:'retro', label:'Retro' },
+    { key:'comic', label:'Comic' },
+    { key:'cute', label:'Cute' },
+    { key:'decorative', label:'Decorative' },
+  ];
   const TOE_FAVORITES_KEY = 'glogic_toe_favorite_presets';
-  const TOE_THEME_KEY = 'glogic_toe_theme';
 
   const TOE_PRESET_CATEGORIES = ['favorite','trending','basic','background','glow','shadow','stroke','red','blue','yellow','pink','green'];
   const TOE_PRESET_LIBRARY = {
@@ -689,7 +697,6 @@
   let toeDragState = null;
   let toePresetCategory = 'trending';
   let toeStyleTarget = 'fill';
-  let toeFontCategory = 'all';
   let toeRenderedPresets = new Map();
 
   const toeOverlay    = document.getElementById('toeOverlay');
@@ -710,38 +717,30 @@
   }
 
   function toeSetTheme(theme) {
-    const nextTheme = theme === 'light' ? 'light' : 'brand';
     if (!toeOverlay) return;
-    toeOverlay.classList.toggle('theme-light', nextTheme === 'light');
-    toeOverlay.classList.toggle('theme-brand', nextTheme === 'brand');
-    document.querySelectorAll('[data-toe-theme]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.toeTheme === nextTheme);
-    });
-    try { localStorage.setItem(TOE_THEME_KEY, nextTheme); } catch (_) {}
+    toeOverlay.classList.remove('theme-light');
+    toeOverlay.classList.add('theme-brand');
   }
 
   function toeGetSavedTheme() {
-    try { return localStorage.getItem(TOE_THEME_KEY) || 'brand'; }
-    catch (_) { return 'brand'; }
-  }
-
-  function toeFontKeysForCategory(category = toeFontCategory) {
-    const keys = Object.keys(TOE_FONTS);
-    if (category === 'all') return keys;
-    return keys.filter(key => TOE_FONTS[key].category === category);
+    return 'brand';
   }
 
   function toeRenderFontOptions() {
-    const categorySelect = document.getElementById('toeFontCategorySelect');
     const fontSelect = document.getElementById('toeFontSelect');
     if (!fontSelect) return;
-    const validCategory = TOE_FONT_CATEGORIES.includes(toeFontCategory) ? toeFontCategory : 'all';
-    const keys = toeFontKeysForCategory(validCategory);
+    const keys = Object.keys(TOE_FONTS);
     if (!keys.includes(toeFont)) toeFont = keys[0] || 'classic';
-    if (categorySelect) categorySelect.value = validCategory;
-    fontSelect.innerHTML = keys.map(key => {
-      const font = TOE_FONTS[key];
-      return `<option value="${key}" style="font-family:${font.family};font-weight:${font.weight || 500};">${font.label}</option>`;
+    fontSelect.innerHTML = TOE_FONT_CATEGORIES.map(category => {
+      const categoryKeys = category.key === 'all'
+        ? keys
+        : keys.filter(key => TOE_FONTS[key].category === category.key);
+      if (!categoryKeys.length) return '';
+      const options = categoryKeys.map(key => {
+        const font = TOE_FONTS[key];
+        return `<option value="${key}" style="font-family:${font.family};font-weight:${font.weight || 500};">${font.label}</option>`;
+      }).join('');
+      return `<optgroup label="${category.label}">${options}</optgroup>`;
     }).join('');
     fontSelect.value = toeFont;
   }
@@ -893,7 +892,6 @@
     toeBg    = item.bg;
     toeAlign = item.align;
     // Update UI
-    if (!toeFontKeysForCategory(toeFontCategory).includes(toeFont)) toeFontCategory = 'all';
     toeRenderFontOptions();
     document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.toggle('active', b.dataset.color === toeColor));
     document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === toeAlign));
@@ -968,7 +966,9 @@
     const basePresets = toePresetCategory === 'favorite'
       ? toeLoadFavoritePresets()
       : (TOE_PRESET_LIBRARY[toePresetCategory] || TOE_PRESET_LIBRARY.trending);
-    const presets = toePresetCategory === 'favorite' ? basePresets : basePresets.concat(basePresets).slice(0, 20);
+    const presets = toePresetCategory === 'favorite'
+      ? basePresets
+      : Array.from({ length: 5 }).flatMap(() => basePresets).slice(0, 60);
     const html = presets.length
       ? presets.map((preset, index) => {
           const originalKey = preset.originalKey || preset.key;
@@ -1017,7 +1017,6 @@
     toeTextElements = [];
     toeActiveId = null;
     toeFont = 'classic'; toeColor = '#ffffff'; toeSize = 32; toeBg = 'none'; toeAlign = 'center';
-    toeFontCategory = 'all';
     toePresetCategory = 'trending';
     toeTextLayer.innerHTML = '';
     toeSetTheme(toeGetSavedTheme());
@@ -1269,17 +1268,7 @@
   // Wire up toolbar events
   toeRenderFontOptions();
 
-  const toeFontCategorySelect = document.getElementById('toeFontCategorySelect');
   const toeFontSelect = document.getElementById('toeFontSelect');
-  if (toeFontCategorySelect) {
-    toeFontCategorySelect.addEventListener('change', () => {
-      toeFontCategory = toeFontCategorySelect.value || 'all';
-      const keys = toeFontKeysForCategory(toeFontCategory);
-      toeFont = keys[0] || 'classic';
-      toeRenderFontOptions();
-      toeUpdateActive('font', toeFont);
-    });
-  }
   if (toeFontSelect) {
     toeFontSelect.addEventListener('change', () => {
       toeFont = toeFontSelect.value || 'classic';
@@ -1401,20 +1390,16 @@
     tab.addEventListener('click', () => toeSetRightPane(tab.dataset.paneTarget || 'basic'));
   });
 
-  document.querySelectorAll('[data-toe-theme]').forEach(btn => {
-    btn.addEventListener('click', () => toeSetTheme(btn.dataset.toeTheme));
-  });
   toeSetTheme(toeGetSavedTheme());
 
-  function toeSetTimelineCollapsed(collapsed) {
+  function toeSetTimelineHeight(height) {
     if (!toeOverlay) return;
+    const next = Math.max(52, Math.min(220, height));
+    toeOverlay.style.setProperty('--toe-timeline-height', `${next}px`);
+    const collapsed = next <= 70;
     toeOverlay.classList.toggle('timeline-collapsed', collapsed);
-    const toggle = document.getElementById('toeTimelineToggle');
-    if (toggle) {
-      toggle.dataset.tooltip = collapsed ? 'Show timeline' : 'Collapse timeline';
-      toggle.setAttribute('aria-label', collapsed ? 'Show timeline' : 'Collapse timeline');
-      toggle.querySelector('span').textContent = collapsed ? '▾' : '▴';
-    }
+    const handle = document.getElementById('toeTimelineDragHandle');
+    if (handle) handle.dataset.tooltip = collapsed ? 'Show timeline' : 'Drag timeline';
     const hideBtn = document.getElementById('toeTimelineHideBtn');
     if (hideBtn) {
       hideBtn.dataset.tooltip = collapsed ? 'Show timeline' : 'Hide timeline';
@@ -1422,13 +1407,31 @@
     }
   }
 
-  document.getElementById('toeTimelineToggle')?.addEventListener('click', () => {
-    toeSetTimelineCollapsed(!toeOverlay.classList.contains('timeline-collapsed'));
-  });
+  function toeSetTimelineCollapsed(collapsed) {
+    if (!toeOverlay) return;
+    toeSetTimelineHeight(collapsed ? 52 : 176);
+  }
 
   document.getElementById('toeTimelineHideBtn')?.addEventListener('click', () => {
     toeSetTimelineCollapsed(!toeOverlay.classList.contains('timeline-collapsed'));
   });
+
+  const toeTimelineDragHandle = document.getElementById('toeTimelineDragHandle');
+  if (toeTimelineDragHandle) {
+    toeTimelineDragHandle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const startY = e.clientY;
+      const timeline = document.querySelector('.toe-timeline');
+      const startHeight = timeline?.getBoundingClientRect().height || 176;
+      const onMove = (mv) => toeSetTimelineHeight(startHeight - (mv.clientY - startY));
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
 
   document.querySelectorAll('[data-style-popover]').forEach(btn => {
     btn.addEventListener('click', (e) => {

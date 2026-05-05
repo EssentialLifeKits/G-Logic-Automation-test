@@ -682,10 +682,6 @@
                         <button type="button">Zoom to 200%</button>
                     </div>
                 </div>
-                <div class="toe-theme-toggle" role="group" aria-label="Editor theme">
-                    <button class="active" type="button" data-toe-theme="brand" data-tooltip="Brand dark mode">Brand</button>
-                    <button type="button" data-toe-theme="light" data-tooltip="Light mode">Light</button>
-                </div>
             </div>
             <div class="toe-topbar-actions">
                 <button class="toe-cancel-btn" id="toeCancelBtnSecondary" type="button">Cancel</button>
@@ -764,23 +760,16 @@
                     </div>
                     <textarea id="toeInspectorText" class="toe-text-input">Text</textarea>
                     <div class="toe-font-controls">
-                        <select id="toeFontCategorySelect" class="toe-font-category-select" aria-label="Font category">
-                            <option value="all">All fonts</option>
-                            <option value="trending">Trending</option>
-                            <option value="basic">Basic</option>
-                            <option value="handwritten">Handwritten</option>
-                            <option value="retro">Retro</option>
-                            <option value="comic">Comic</option>
-                            <option value="cute">Cute</option>
-                            <option value="decorative">Decorative</option>
-                        </select>
                         <select id="toeFontSelect" class="toe-font-select" aria-label="Font"></select>
                         <select id="toeSizeSelect" class="toe-size-select" aria-label="Font size">
                             <option value="12">12</option>
+                            <option value="13">13</option>
                             <option value="14">14</option>
                             <option value="15">15</option>
                             <option value="16">16</option>
+                            <option value="17">17</option>
                             <option value="18">18</option>
+                            <option value="19">19</option>
                             <option value="20">20</option>
                             <option value="24">24</option>
                             <option value="28">28</option>
@@ -929,11 +918,11 @@
                     <button id="toeTimelineHideBtn" type="button" data-tooltip="Hide timeline" aria-label="Hide timeline">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="12" rx="2"/><path d="M8 21h8"/></svg>
                     </button>
-                    <button id="toeTimelineToggle" class="toe-timeline-toggle" type="button" data-tooltip="Collapse timeline" aria-label="Collapse timeline">
-                        <span>▴</span>
-                    </button>
                 </div>
             </div>
+            <button id="toeTimelineDragHandle" class="toe-timeline-drag-handle" type="button" data-tooltip="Drag timeline" aria-label="Drag timeline">
+                <span>▴</span><span>▾</span>
+            </button>
             <div class="toe-timeline-body">
                 <div class="toe-track-labels">
                     <span></span>
