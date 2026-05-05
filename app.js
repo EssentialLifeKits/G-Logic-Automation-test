@@ -707,6 +707,26 @@
   const toeProcLabel  = document.getElementById('toeProcessingLabel');
   const toeCenterGuides = document.getElementById('toeCenterGuides');
 
+  function toeRemoveLegacyEditors() {
+    [
+      'textOverlayEditor',
+      'textOverlayModal',
+      'textEditorOverlay',
+      'textOverlayPage',
+      'legacyTextOverlay',
+      'overlayTextEditor',
+      'textEditorModal'
+    ].forEach(id => {
+      const node = document.getElementById(id);
+      if (node) node.remove();
+    });
+    document
+      .querySelectorAll('.text-overlay-editor, .text-overlay-modal, .legacy-text-overlay, .text-editor-overlay')
+      .forEach(node => node.remove());
+  }
+
+  toeRemoveLegacyEditors();
+
   function toeGetEl(id) { return document.getElementById('toe-el-' + id); }
   function toeGetActiveItem() { return toeTextElements.find(t => t.id === toeActiveId); }
 
@@ -1048,6 +1068,7 @@
   }
 
   function toeOpen(mediaFile) {
+    toeRemoveLegacyEditors();
     // Clear previous state
     toeTextElements = [];
     toeActiveId = null;
