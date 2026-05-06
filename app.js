@@ -180,6 +180,7 @@
     fileInput: $('#fileInput'),
     uploadPreview: $('#uploadPreview'),
     addTextBtn: $('#addTextBtn'),
+    returnToEditorBtn: $('#returnToEditorBtn'),
     captureThumbBtn: $('#captureThumbBtn'),
     capturedThumbPreview: $('#capturedThumbPreview'),
     removeMediaBtn: $('#removeMediaBtn'),
@@ -699,6 +700,7 @@
   let toeBg = 'none';         // none | semi | solid
   let toeAlign = 'center';
   let toeSourceMedia = null;  // the img or video element in the stage
+  let toeEditingSourceFile = null;
   let toeDragState = null;
   let toePresetCategory = 'trending';
   let toeStyleTarget = 'fill';
@@ -1231,6 +1233,11 @@
 
   function toeOpen(mediaFile) {
     toeRemoveLegacyEditors();
+    const editableMediaFile = mediaFile?._toeSourceFile || mediaFile;
+    const restoredTextElements = Array.isArray(mediaFile?._toeTextElements)
+      ? JSON.parse(JSON.stringify(mediaFile._toeTextElements))
+      : [];
+    toeEditingSourceFile = editableMediaFile;
     // Clear previous state
     toeTextElements = [];
     toeActiveId = null;
@@ -1247,10 +1254,10 @@
     toeStage.querySelectorAll('img,video').forEach(e => e.remove());
 
     // Add media preview to stage
-    const isVid = mediaFile.type?.startsWith('video/') || mediaFile._isVideo;
+    const isVid = editableMediaFile.type?.startsWith('video/') || editableMediaFile._isVideo;
     if (isVid) {
       const vid = document.createElement('video');
-      vid.src = URL.createObjectURL(mediaFile);
+      vid.src = URL.createObjectURL(editableMediaFile);
       vid.controls = true;
       vid.muted = true;
       vid.loop = false;
@@ -1271,7 +1278,7 @@
       });
     } else {
       const img = document.createElement('img');
-      img.src = URL.createObjectURL(mediaFile);
+      img.src = URL.createObjectURL(editableMediaFile);
       img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
       toeStage.insertBefore(img, toeTextLayer);
       toeSourceMedia = img;
@@ -1298,8 +1305,14 @@
     toeOverlay.style.display = 'flex';
     toeOverlay.style.flexDirection = 'column';
 
-    // Auto-add first text element
-    toeAddTextElement();
+    if (restoredTextElements.length) {
+      toeTextElements = restoredTextElements;
+      toeActiveId = toeTextElements[0].id;
+      toeRenderAll();
+      toeUpdateToolbarToActive();
+    } else {
+      toeAddTextElement();
+    }
   }
 
   function toeClose() {
@@ -1327,18 +1340,22 @@
     if (fillBtn) {
       fillBtn.textContent = item.color && item.color !== '#ffffff' ? '' : '+';
       fillBtn.style.background = item.color && item.color !== '#ffffff' ? item.color : '';
+      fillBtn.classList.toggle('has-color', !!(item.color && item.color !== '#ffffff'));
     }
     if (strokeBtn) {
       strokeBtn.textContent = item.stroke ? '' : '+';
       strokeBtn.style.background = item.stroke || '';
+      strokeBtn.classList.toggle('has-color', !!item.stroke);
     }
     if (bgMoreBtn) {
       bgMoreBtn.textContent = item.bgColor ? '' : '+';
       bgMoreBtn.style.background = item.bgColor || '';
+      bgMoreBtn.classList.toggle('has-color', !!item.bgColor);
     }
     if (shadowBtn) {
       shadowBtn.textContent = item.shadowColor ? '' : '+';
       shadowBtn.style.background = item.shadowColor || '';
+      shadowBtn.classList.toggle('has-color', !!item.shadowColor);
     }
   }
 
@@ -1361,7 +1378,11 @@
   }
 
   function toeApplyStyleColor(color) {
-    const item = toeGetActiveItem();
+    let item = toeGetActiveItem();
+    if (!item) {
+      toeAddTextElement();
+      item = toeGetActiveItem();
+    }
     if (!item) return;
     if (toeStyleTarget === 'stroke') {
       item.stroke = color;
@@ -1378,6 +1399,7 @@
     }
     toeApplyStyle(toeGetEl(item.id), item);
     toeUpdateToolbarToActive();
+    toeUpdateStylePreviewButtons(item);
   }
 
   function toeUpdateShadowStyle(item) {
@@ -1596,15 +1618,34 @@
     });
   }
 
+  function toeSelectPopoverColor(color, swatchBtn = null) {
+    if (!color) return;
+    toeColor = color;
+    if (toeColorPicker) toeColorPicker.value = color;
+    document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.remove('active'));
+    swatchBtn?.classList.add('active');
+    toeApplyStyleColor(color);
+  }
+
   document.querySelectorAll('.toe-color-swatch').forEach(btn => {
     if (!btn.dataset.color) return;
-    btn.addEventListener('click', () => {
-      toeColor = btn.dataset.color;
-      document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      toeApplyStyleColor(toeColor);
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toeSelectPopoverColor(btn.dataset.color, btn);
     });
   });
+
+  const toeColorPopover = document.getElementById('toeColorPopover');
+  if (toeColorPopover) {
+    toeColorPopover.addEventListener('click', (e) => {
+      const swatch = e.target.closest('.toe-color-swatch');
+      if (!swatch?.dataset.color) return;
+      e.preventDefault();
+      e.stopPropagation();
+      toeSelectPopoverColor(swatch.dataset.color, swatch);
+    });
+  }
 
   const toeColorPicker = document.getElementById('toeColorPicker');
   if (toeColorPicker) {
@@ -1866,6 +1907,7 @@
       const target = btn.dataset.stylePopover || 'fill';
       const popover = document.getElementById('toeColorPopover');
       document.getElementById('toeStyleOptionsPopover')?.classList.remove('active');
+      document.querySelectorAll('[data-style-options]').forEach(optionBtn => optionBtn.classList.remove('active'));
       if (popover?.classList.contains('active') && toeStyleTarget === target) {
         popover.classList.remove('active');
         return;
@@ -1941,6 +1983,8 @@
       const ext = isVid ? 'webm' : 'jpg';
       const newFile = new File([blob], `overlay_${Date.now()}.${ext}`, { type: blob.type });
       newFile._isVideo = isVid;
+      newFile._toeSourceFile = toeEditingSourceFile || uploadedFile;
+      newFile._toeTextElements = JSON.parse(JSON.stringify(toeTextElements));
       // Replace uploadedFile and trigger re-upload
       uploadedFile = newFile;
       uploadedFile._uploading = true;
@@ -1966,6 +2010,7 @@
         els.addTextBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit Text';
         els.addTextBtn.title = 'Return to text overlay editor';
       }
+      setReturnToEditorButtonState(true);
       // Upload to Supabase
       uploadedFile._uploadPromise = uploadMediaToSupabase(newFile).then(url => {
         uploadedFile._uploading = false;
@@ -2024,6 +2069,11 @@
       : addTextButtonDefaultHtml;
   }
 
+  function setReturnToEditorButtonState(visible) {
+    if (!els.returnToEditorBtn) return;
+    els.returnToEditorBtn.style.display = visible ? '' : 'none';
+  }
+
   function openScheduler(date, suggestedTime) {
     editingPostId = null; // New post mode
     userSelectedThumbnail = '';
@@ -2042,6 +2092,7 @@
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
     if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
     setAddTextButtonState(false);
+    setReturnToEditorButtonState(false);
     els.uploadPlaceholder.style.display = '';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
     uploadedFile = null;
@@ -2079,6 +2130,7 @@
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
     if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
     setAddTextButtonState(false);
+    setReturnToEditorButtonState(false);
     els.uploadPlaceholder.style.display = 'none';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
     uploadedFile = { _existing: true }; // Mark as having existing media
@@ -2187,6 +2239,7 @@
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
     if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
     setAddTextButtonState(false);
+    setReturnToEditorButtonState(false);
     els.uploadPlaceholder.style.display = '';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
     uploadedFile = null;
@@ -2335,6 +2388,7 @@
     if (!file) return;
     uploadedFile = file;
     if (els.addTextBtn) els.addTextBtn.classList.remove('has-overlay');
+    setReturnToEditorButtonState(false);
     uploadedFile._uploadError = false;
 
     // Detect if the uploaded file is a video
@@ -2529,6 +2583,15 @@
     });
   }
 
+  if (els.returnToEditorBtn) {
+    els.returnToEditorBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!uploadedFile || !uploadedFile._hasTextOverlay) return;
+      toeOpen(uploadedFile);
+    });
+  }
+
   if (els.removeMediaBtn) {
     els.removeMediaBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -2542,6 +2605,7 @@
       if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
       if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
       setAddTextButtonState(false);
+      setReturnToEditorButtonState(false);
       
       els.uploadPlaceholder.style.display = '';
       els.uploadZone.querySelectorAll('video').forEach(v => v.remove());

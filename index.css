@@ -1701,6 +1701,33 @@ img {
   display: none;
 }
 
+.return-editor-btn {
+  position: absolute;
+  top: 52px;
+  left: 12px;
+  z-index: 11;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(46, 255, 170, 0.42);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: rgba(8, 12, 18, 0.78);
+  color: #eafff5;
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 0 18px rgba(46, 255, 170, 0.18);
+  backdrop-filter: blur(8px);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.return-editor-btn:hover {
+  border-color: rgba(46, 255, 170, 0.9);
+  box-shadow: 0 0 24px rgba(46, 255, 170, 0.34);
+  transform: translateY(-1px);
+}
+
 .remove-media-btn {
   position: absolute;
   top: 12px;
@@ -4393,12 +4420,11 @@ img {
 .toe-style-actions {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 .toe-style-toggle,
 .toe-style-more,
-.toe-style-options,
 .toe-bg-btn {
   min-width: 42px;
   height: 36px;
@@ -4411,15 +4437,30 @@ img {
 }
 
 .toe-style-options {
-  font-size: 1rem;
-  letter-spacing: 1px;
+  width: 34px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #8a8a8a;
+  font-size: 1.28rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  box-shadow: none;
 }
 
 .toe-style-options:hover,
 .toe-style-options.active {
-  background: #fff;
+  background: rgba(0,0,0,0.06);
   color: #111;
-  box-shadow: 0 0 0 2px rgba(17,17,17,0.12);
+  box-shadow: none;
+}
+
+.toe-style-more.has-color {
+  color: transparent;
+  box-shadow: 0 10px 18px rgba(0,0,0,0.16), inset 0 0 0 1px rgba(255,255,255,0.28);
 }
 
 .toe-style-options-popover {
@@ -5318,6 +5359,23 @@ img {
 
 .toe-overlay.theme-brand .toe-style-more {
   background: rgba(255,255,255,0.08);
+}
+
+.toe-overlay.theme-brand .toe-style-options {
+  background: transparent;
+  border-color: transparent;
+  color: rgba(248,247,251,0.58);
+  box-shadow: none;
+}
+
+.toe-overlay.theme-brand .toe-style-options:hover,
+.toe-overlay.theme-brand .toe-style-options.active {
+  background: rgba(255,255,255,0.08);
+  color: #f8f7fb;
+}
+
+.toe-overlay.theme-brand .toe-style-more.has-color {
+  box-shadow: 0 10px 18px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.28);
 }
 
 .toe-overlay.theme-brand .toe-theme-toggle button {
