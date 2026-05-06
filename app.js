@@ -83,7 +83,7 @@
     if (!isSupabaseConfigured) return null;
     try {
       const userId = await getCurrentUserId();
-      if (!userId) return null;
+      if (!userId) throw new Error('You are not signed in. Please sign in again before scheduling.');
       const scheduledTime = `${postData.date}T${postData.time || '09:00'}:00`;
       const { data, error } = await supabase
         .from('posts')
@@ -99,9 +99,9 @@
           video_url: postData.video_url || '',
         }])
         .select();
-      if (error) { console.error('Insert error:', error); return null; }
+      if (error) { console.error('Insert error:', error); throw error; }
       return data?.[0] || null;
-    } catch (e) { console.error('Insert exception:', e); return null; }
+    } catch (e) { console.error('Insert exception:', e); throw e; }
   }
 
   // ========== LOCAL STORAGE HELPERS ==========
@@ -123,6 +123,25 @@
     carousel: { label: 'Carousel', color: '#515BD4', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="15" height="18" rx="2"/><path d="M20 7v14a2 2 0 01-2 2H7"/></svg>' },
     live: { label: 'Live', color: '#F58529', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' },
   };
+
+  function normalizeDbMediaType(postType, isVideo) {
+    if (postType === 'live') return 'NONE';
+    if (postType === 'carousel') return 'CAROUSEL';
+    return isVideo ? 'VIDEO' : 'IMAGE';
+  }
+
+  function getPostScheduledDate(post) {
+    if (!post?.date) return null;
+    const scheduled = new Date(`${post.date}T${post.time || '09:00'}:00`);
+    return Number.isNaN(scheduled.getTime()) ? null : scheduled;
+  }
+
+  function shouldShowPostOnCalendar(post) {
+    const status = (post.status || 'pending').toLowerCase();
+    if (status !== 'published') return true;
+    const scheduled = getPostScheduledDate(post);
+    return scheduled ? scheduled > new Date() : false;
+  }
 
   // ========== STATE ==========
   const now = new Date();
@@ -343,13 +362,13 @@
     const posts = getPostsByDate(dateStr);
     const maxVisible = 2;
 
-    // Color-coded horizontal bars — deduplicate by type (one bar per unique type)
+    // Color-coded horizontal bars — one segment for every scheduled item.
     let barsHtml = '';
     if (posts.length > 0) {
-      const uniqueTypes = [...new Set(posts.map(p => p.type))];
-      const barItems = uniqueTypes.map(type => {
-        const typeConf = POST_TYPES[type] || POST_TYPES.post;
-        return `<div class="cal-bar cal-bar-${type}" style="background:${typeConf.color};" title="${typeConf.label}"></div>`;
+      const barItems = posts.slice().sort((a, b) => (a.time || '').localeCompare(b.time || '')).map(post => {
+        const typeConf = POST_TYPES[post.type] || POST_TYPES.post;
+        const label = `${formatTime12(post.time)} ${typeConf.label}`;
+        return `<div class="cal-bar cal-bar-${post.type}" data-post-id="${post.id}" style="background:${typeConf.color};" title="${escapeHtml(label)}"></div>`;
       }).join('');
       barsHtml = `<div class="cal-post-bars">${barItems}</div>`;
     }
@@ -2276,15 +2295,14 @@
   // Update an existing post
   async function updatePost(postId, updatedData) {
     const idx = state.posts.findIndex(p => String(p.id) === String(postId));
-    if (idx === -1) return;
-    Object.assign(state.posts[idx], updatedData);
-    savePosts();
+    if (idx === -1) return false;
+    const previous = { ...state.posts[idx] };
 
     // Update in Supabase if configured
     if (isSupabaseConfigured) {
       try {
         const scheduledTime = `${updatedData.date}T${updatedData.time || '09:00'}:00`;
-        await supabase.from('posts').update({
+        const { error } = await supabase.from('posts').update({
           caption: updatedData.caption,
           hashtags: updatedData.hashtags || '',
           post_type: updatedData.type || 'post',
@@ -2293,8 +2311,18 @@
           video_url: updatedData.video_url || '',
           media_type: updatedData.media_type || 'IMAGE',
         }).eq('id', postId);
-      } catch (e) { console.error('Update error:', e); }
+        if (error) throw error;
+      } catch (e) {
+        console.error('Update error:', e);
+        state.posts[idx] = previous;
+        savePosts();
+        return false;
+      }
     }
+
+    Object.assign(state.posts[idx], updatedData);
+    savePosts();
+    return true;
   }
 
   // Delete a post
@@ -2771,9 +2799,14 @@
         hashtags,
         image_url: isLive ? '' : (thumbnailUrl || supabaseUrl || existingPost?.image_url || ''),
         video_url: isLive ? '' : (isVideo ? (supabaseUrl || existingPost?.video_url || '') : ''),
-        media_type: isLive ? 'NONE' : (selectedType === 'story' ? (isVideo ? 'STORY_VIDEO' : 'STORY') : (isVideo ? 'VIDEO' : 'IMAGE')),
+        media_type: normalizeDbMediaType(selectedType, isVideo),
       };
-      await updatePost(editingPostId, updatedData);
+      const updated = await updatePost(editingPostId, updatedData);
+      if (!updated) {
+        showToast('Could not update this post — please try again.');
+        validateForm();
+        return;
+      }
       renderCalendar();
       renderUpcoming();
       renderActionsPage();
@@ -2793,14 +2826,20 @@
         hashtags,
         image_url: isLive ? '' : (isVideo ? thumbnailUrl : supabaseUrl),
         video_url: isLive ? '' : (isVideo ? supabaseUrl : ''),
-        media_type: isLive ? 'NONE' : (selectedType === 'story' ? (isVideo ? 'STORY_VIDEO' : 'STORY') : (isVideo ? 'VIDEO' : 'IMAGE')),
+        media_type: normalizeDbMediaType(selectedType, isVideo),
       };
 
       // Insert to Supabase
       if (isSupabaseConfigured) {
-        const sbPost = await insertPostToSupabase(post);
-        if (sbPost) {
+        try {
+          const sbPost = await insertPostToSupabase(post);
+          if (!sbPost) throw new Error('The schedule save did not return a post record.');
           post.id = sbPost.id;
+        } catch (e) {
+          const message = e?.message || 'Supabase rejected the scheduled post.';
+          showToast(`Could not schedule post: ${message}`);
+          validateForm();
+          return;
         }
       }
 
@@ -2841,9 +2880,14 @@
 
     // Insert to Supabase
     if (isSupabaseConfigured) {
-      const sbPost = await insertPostToSupabase(post);
-      if (sbPost) {
+      try {
+        const sbPost = await insertPostToSupabase(post);
+        if (!sbPost) throw new Error('The draft save did not return a post record.');
         post.id = sbPost.id;
+      } catch (e) {
+        const message = e?.message || 'Supabase rejected the draft.';
+        showToast(`Could not save draft: ${message}`);
+        return;
       }
     }
 
@@ -3122,7 +3166,7 @@
   }
 
   function getPostsByDate(dateStr) {
-    return state.posts.filter(p => p.date === dateStr && (p.status || 'pending').toLowerCase() !== 'published');
+    return state.posts.filter(p => p.date === dateStr && shouldShowPostOnCalendar(p));
   }
 
   // ========== KEYBOARD SHORTCUTS ==========

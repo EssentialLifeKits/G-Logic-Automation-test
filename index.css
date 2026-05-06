@@ -755,24 +755,26 @@ img {
   font-weight: 500;
   color: var(--text-secondary);
   margin-bottom: 4px;
+  margin-top: 6px;
 }
 
 /* --- Post Color Bars (side-by-side at top of cell) --- */
 .cal-post-bars {
   display: flex;
-  gap: 0;
+  gap: 3px;
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
+  top: 7px;
+  left: 8px;
+  right: 8px;
+  height: 5px;
   z-index: 2;
 }
 
 .cal-bar {
-  height: 4px;
+  height: 5px;
   flex: 1;
-  border-radius: 0;
+  min-width: 0;
+  border-radius: 999px;
   transition: all 0.2s var(--ease);
   cursor: pointer;
 }
@@ -4453,9 +4455,9 @@ img {
 
 .toe-style-options:hover,
 .toe-style-options.active {
-  background: rgba(0,0,0,0.06);
+  background: rgba(20,184,166,0.12);
   color: #111;
-  box-shadow: none;
+  box-shadow: 0 0 0 1px rgba(20,184,166,0.18);
 }
 
 .toe-style-more.has-color {
@@ -4465,36 +4467,42 @@ img {
 
 .toe-style-options-popover {
   display: none;
-  margin: 6px 0 14px;
-  padding: 16px 14px;
-  border-radius: 11px;
+  margin: 8px 0 16px;
+  padding: 14px 16px 16px;
+  border-radius: 14px;
   border: 1px solid #e8e8e8;
   background: #fff;
   box-shadow: 0 16px 36px rgba(15,23,42,0.12);
+  max-width: 360px;
 }
 
 .toe-style-options-popover.active {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .toe-option-control > span {
   display: block;
-  margin-bottom: 9px;
+  margin-bottom: 10px;
   color: #8a8a8a;
   font-weight: 800;
 }
 
 .toe-option-control-row {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) 112px;
+  grid-template-columns: minmax(135px, 1fr) 96px;
   align-items: center;
-  gap: 20px;
+  gap: 18px;
 }
 
 .toe-option-control-row input[type="range"] {
   width: 100%;
   accent-color: #111;
+}
+
+.toe-option-control-row .toe-number-suffix {
+  height: 42px;
+  border-radius: 10px;
 }
 
 .toe-option-color-control input[type="color"] {
@@ -5385,8 +5393,9 @@ img {
 
 .toe-overlay.theme-brand .toe-style-options:hover,
 .toe-overlay.theme-brand .toe-style-options.active {
-  background: rgba(255,255,255,0.08);
+  background: rgba(16,185,129,0.14);
   color: #f8f7fb;
+  box-shadow: 0 0 0 1px rgba(16,185,129,0.24), 0 0 16px rgba(16,185,129,0.18);
 }
 
 .toe-overlay.theme-brand .toe-style-more.has-color {

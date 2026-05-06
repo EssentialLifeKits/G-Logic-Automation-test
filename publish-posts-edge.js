@@ -266,15 +266,15 @@ Deno.serve(async (_req) => {
             if (post.hashtags) fullCaption += '\n\n' + post.hashtags;
 
             const mediaType = (post.media_type || 'IMAGE').toUpperCase();
+            const postType = (post.post_type || '').toLowerCase();
             let igMediaId;
 
-            if (mediaType === 'STORY_VIDEO') {
+            if (postType === 'story') {
                 const videoUrl = post.video_url || post.image_url;
-                if (!videoUrl) throw new Error('No video URL found for this story.');
-                igMediaId = await publishStory(account.provider_id, account.access_token, videoUrl, true);
-            } else if (mediaType === 'STORY') {
-                if (!post.image_url) throw new Error('No image URL found for this story.');
-                igMediaId = await publishStory(account.provider_id, account.access_token, post.image_url, false);
+                const isStoryVideo = mediaType === 'VIDEO' || mediaType === 'STORY_VIDEO' || !!post.video_url;
+                const mediaUrl = isStoryVideo ? videoUrl : post.image_url;
+                if (!mediaUrl) throw new Error(`No ${isStoryVideo ? 'video' : 'image'} URL found for this story.`);
+                igMediaId = await publishStory(account.provider_id, account.access_token, mediaUrl, isStoryVideo);
             } else if (mediaType === 'VIDEO') {
                 const videoUrl = post.video_url || post.image_url;
                 if (!videoUrl) throw new Error('No video URL found.');
