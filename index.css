@@ -4390,8 +4390,15 @@ img {
   font-weight: 800;
 }
 
+.toe-style-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .toe-style-toggle,
 .toe-style-more,
+.toe-style-options,
 .toe-bg-btn {
   min-width: 42px;
   height: 36px;
@@ -4401,6 +4408,52 @@ img {
   font-weight: 900;
   border: 0;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.02);
+}
+
+.toe-style-options {
+  font-size: 1rem;
+  letter-spacing: 1px;
+}
+
+.toe-style-options:hover,
+.toe-style-options.active {
+  background: #fff;
+  color: #111;
+  box-shadow: 0 0 0 2px rgba(17,17,17,0.12);
+}
+
+.toe-style-options-popover {
+  display: none;
+  margin: 6px 0 14px;
+  padding: 16px 14px;
+  border-radius: 11px;
+  border: 1px solid #e8e8e8;
+  background: #fff;
+  box-shadow: 0 16px 36px rgba(15,23,42,0.12);
+}
+
+.toe-style-options-popover.active {
+  display: grid;
+  gap: 14px;
+}
+
+.toe-option-control > span {
+  display: block;
+  margin-bottom: 9px;
+  color: #8a8a8a;
+  font-weight: 800;
+}
+
+.toe-option-control-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 112px;
+  align-items: center;
+  gap: 20px;
+}
+
+.toe-option-control-row input[type="range"] {
+  width: 100%;
+  accent-color: #111;
 }
 
 .toe-style-toggle span {
@@ -5085,6 +5138,7 @@ img {
 .toe-overlay.theme-brand .toe-format-row button,
 .toe-overlay.theme-brand .toe-style-toggle,
 .toe-overlay.theme-brand .toe-style-more,
+.toe-overlay.theme-brand .toe-style-options,
 .toe-overlay.theme-brand .toe-bg-btn,
 .toe-overlay.theme-brand .toe-timeline button,
 .toe-overlay.theme-brand .toe-expand-btn,
@@ -5237,7 +5291,8 @@ img {
 }
 
 .toe-overlay.theme-brand .toe-format-popover,
-.toe-overlay.theme-brand .toe-color-popover {
+.toe-overlay.theme-brand .toe-color-popover,
+.toe-overlay.theme-brand .toe-style-options-popover {
   background: #15141d;
   border-color: rgba(255,255,255,0.08);
   box-shadow: 0 20px 48px rgba(0,0,0,0.34);
@@ -5249,7 +5304,8 @@ img {
 }
 
 .toe-overlay.theme-brand .toe-spacing-control input[type="number"],
-.toe-overlay.theme-brand .toe-number-suffix {
+.toe-overlay.theme-brand .toe-number-suffix,
+.toe-overlay.theme-brand .toe-option-control-row input[type="number"] {
   background: rgba(255,255,255,0.08);
   color: #f8f7fb;
 }

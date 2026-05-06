@@ -908,7 +908,7 @@
     el.style.top        = item.y + '%';
     el.style.width      = (item.width || 24) + '%';
     el.style.textShadow = item.shadow || '';
-    el.style.webkitTextStroke = item.stroke ? `1px ${item.stroke}` : '';
+    el.style.webkitTextStroke = item.stroke ? `${item.strokeWidth || 1}px ${item.stroke}` : '';
     el.style.opacity = item.opacity == null ? '1' : String(item.opacity);
     el.style.lineHeight = String(1 + ((item.lineHeight ?? 20) / 100));
     el.style.letterSpacing = `${((item.letterSpacing ?? 0) / 100) * item.size}px`;
@@ -918,10 +918,11 @@
     if (item.bg === 'none') {
       el.style.background = 'transparent';
     } else if (item.bgColor) {
-      el.style.background = item.bg === 'semi' ? toeHexToRgba(item.bgColor, 0.62) : item.bgColor;
+      el.style.background = item.bg === 'semi' ? toeHexToRgba(item.bgColor, item.bgOpacity ?? 0.62) : item.bgColor;
     } else {
       el.style.background = '';
     }
+    el.style.borderRadius = `${item.bgRadius ?? 2}px`;
     // Font class
     Object.values(TOE_FONTS).forEach(f => el.classList.remove(f.cls));
     el.classList.add(fontConf.cls);
@@ -1120,7 +1121,14 @@
       width: 24,
       lineHeight: 20,
       letterSpacing: 0,
-      caseMode: 'normal'
+      caseMode: 'normal',
+      strokeWidth: 1,
+      bgOpacity: 1,
+      bgRadius: 0,
+      shadowOpacity: 80,
+      shadowBlur: 25,
+      shadowDistance: 4,
+      shadowAngle: 45
     });
     toeActiveId = id;
     toeRenderAll();
@@ -1363,13 +1371,71 @@
       toeBg = item.bg;
     } else if (toeStyleTarget === 'shadow') {
       item.shadowColor = color;
-      item.shadow = `0 4px 12px ${toeHexToRgba(color, 0.85)}`;
+      toeUpdateShadowStyle(item);
     } else {
       item.color = color;
       toeColor = color;
     }
     toeApplyStyle(toeGetEl(item.id), item);
     toeUpdateToolbarToActive();
+  }
+
+  function toeUpdateShadowStyle(item) {
+    if (!item) return;
+    const distance = item.shadowDistance ?? 4;
+    const angle = ((item.shadowAngle ?? 45) * Math.PI) / 180;
+    const x = Math.round(Math.cos(angle) * distance);
+    const y = Math.round(Math.sin(angle) * distance);
+    const blur = item.shadowBlur ?? 25;
+    const alpha = (item.shadowOpacity ?? 80) / 100;
+    item.shadow = `${x}px ${y}px ${blur}px ${toeHexToRgba(item.shadowColor || '#000000', alpha)}`;
+  }
+
+  function toeUpdateStyleOption(prop, value) {
+    const item = toeGetActiveItem();
+    if (!item) return;
+    let next = Number(value);
+    if (!Number.isFinite(next)) next = 0;
+    item[prop] = prop === 'bgOpacity' ? next / 100 : next;
+    if (prop.startsWith('shadow')) toeUpdateShadowStyle(item);
+    toeApplyStyle(toeGetEl(item.id), item);
+    toeUpdateToolbarToActive();
+  }
+
+  function toeOptionControl(label, prop, value, min, max, suffix = '%') {
+    return `<label class="toe-option-control">
+      <span>${label}</span>
+      <div class="toe-option-control-row">
+        <input type="range" min="${min}" max="${max}" value="${value}" data-style-option-prop="${prop}">
+        <div class="toe-number-suffix">
+          <input type="number" min="${min}" max="${max}" value="${value}" data-style-option-prop="${prop}">
+          ${suffix ? `<span>${suffix}</span>` : ''}
+        </div>
+      </div>
+    </label>`;
+  }
+
+  function toeOpenStyleOptions(target) {
+    const popover = document.getElementById('toeStyleOptionsPopover');
+    const item = toeGetActiveItem();
+    if (!popover || !item) return;
+    const content = {
+      stroke: toeOptionControl('Width', 'strokeWidth', item.strokeWidth ?? 1, 1, 100),
+      background: [
+        toeOptionControl('Opacity', 'bgOpacity', Math.round((item.bgOpacity ?? 1) * 100), 0, 100),
+        toeOptionControl('Rounding', 'bgRadius', item.bgRadius ?? 0, 0, 36, '')
+      ].join(''),
+      shadow: [
+        toeOptionControl('Opacity', 'shadowOpacity', item.shadowOpacity ?? 80, 0, 100),
+        toeOptionControl('Blur', 'shadowBlur', item.shadowBlur ?? 25, 0, 80),
+        toeOptionControl('Distance', 'shadowDistance', item.shadowDistance ?? 4, 0, 60, ''),
+        toeOptionControl('Angle', 'shadowAngle', item.shadowAngle ?? 45, 0, 360, '')
+      ].join('')
+    }[target];
+    popover.dataset.optionsTarget = target;
+    popover.innerHTML = content || '';
+    popover.classList.add('active');
+    document.getElementById('toeColorPopover')?.classList.remove('active');
   }
 
   function toeDrawTextItems(ctx, canvasWidth, canvasHeight) {
@@ -1403,13 +1469,21 @@
       };
       if (item.bg !== 'none') {
         ctx.fillStyle = item.bgColor
-          ? (item.bg === 'semi' ? toeHexToRgba(item.bgColor, 0.62) : item.bgColor)
+          ? (item.bg === 'semi' ? toeHexToRgba(item.bgColor, item.bgOpacity ?? 0.62) : toeHexToRgba(item.bgColor, item.bgOpacity ?? 1))
           : (item.bg === 'solid' ? '#000' : 'rgba(0,0,0,0.55)');
-        lines.forEach((line, i) => {
-          const tw = measureLine(line);
-          const bx = item.align === 'center' ? x - tw / 2 - 12 : item.align === 'right' ? x - tw - 12 : x - 12;
-          ctx.fillRect(bx, y + i * lineH - item.size * 2 - 4, tw + 24, lineH);
-        });
+        const widest = Math.max(...lines.map(measureLine), item.size * 2);
+        const boxWidth = Math.max(widest + 24, ((item.width || 24) / 100) * canvasWidth);
+        const boxHeight = lines.length * lineH + 14;
+        const bx = item.align === 'left' ? x - 12 : item.align === 'right' ? x - boxWidth + 12 : x - boxWidth / 2;
+        const by = y - item.size * 2 - 8;
+        const radius = Math.min(item.bgRadius ?? 0, boxHeight / 2, boxWidth / 2);
+        if (radius && ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(bx, by, boxWidth, boxHeight, radius);
+          ctx.fill();
+        } else {
+          ctx.fillRect(bx, by, boxWidth, boxHeight);
+        }
       }
       if (item.font === 'neon' || item.shadow) {
         ctx.shadowColor = item.shadowColor || item.color;
@@ -1418,7 +1492,7 @@
         ctx.shadowBlur = 0;
       }
       if (item.stroke) {
-        ctx.lineWidth = Math.max(4, item.size / 5);
+        ctx.lineWidth = Math.max(1, (item.strokeWidth || 1) * 2);
         ctx.strokeStyle = item.stroke;
         lines.forEach((line, i) => drawLine('strokeText', line, x, y + i * lineH));
       }
@@ -1791,6 +1865,7 @@
       e.stopPropagation();
       const target = btn.dataset.stylePopover || 'fill';
       const popover = document.getElementById('toeColorPopover');
+      document.getElementById('toeStyleOptionsPopover')?.classList.remove('active');
       if (popover?.classList.contains('active') && toeStyleTarget === target) {
         popover.classList.remove('active');
         return;
@@ -1799,11 +1874,41 @@
     });
   });
 
+  document.querySelectorAll('[data-style-options]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const target = btn.dataset.styleOptions;
+      const popover = document.getElementById('toeStyleOptionsPopover');
+      const isSameOpen = popover?.classList.contains('active') && popover.dataset.optionsTarget === target;
+      document.querySelectorAll('[data-style-options]').forEach(optionBtn => optionBtn.classList.remove('active'));
+      if (isSameOpen) {
+        popover.classList.remove('active');
+        return;
+      }
+      btn.classList.add('active');
+      toeOpenStyleOptions(target);
+    });
+  });
+
+  document.getElementById('toeStyleOptionsPopover')?.addEventListener('input', (e) => {
+    const control = e.target.closest('[data-style-option-prop]');
+    if (!control) return;
+    const prop = control.dataset.styleOptionProp;
+    document.querySelectorAll(`[data-style-option-prop="${prop}"]`).forEach(input => {
+      if (input !== control) input.value = control.value;
+    });
+    toeUpdateStyleOption(prop, control.value);
+  });
+
   document.addEventListener('click', (e) => {
     const popover = document.getElementById('toeColorPopover');
+    const optionsPopover = document.getElementById('toeStyleOptionsPopover');
     if (!popover || !toeOverlay || toeOverlay.style.display === 'none') return;
     if (e.target.closest('#toeColorPopover') || e.target.closest('[data-style-popover]')) return;
+    if (e.target.closest('#toeStyleOptionsPopover') || e.target.closest('[data-style-options]')) return;
     popover.classList.remove('active');
+    optionsPopover?.classList.remove('active');
+    document.querySelectorAll('[data-style-options]').forEach(btn => btn.classList.remove('active'));
     if (e.target.closest('.toe-format-popover') || e.target.closest('#toeCaseBtn') || e.target.closest('#toeSpacingBtn')) return;
     document.querySelectorAll('.toe-format-popover').forEach(panel => panel.classList.remove('active'));
   });
@@ -1839,6 +1944,7 @@
       // Replace uploadedFile and trigger re-upload
       uploadedFile = newFile;
       uploadedFile._uploading = true;
+      uploadedFile._uploadError = false;
       uploadedFile._hasTextOverlay = true;
       // Show in upload zone
       if (isVid) {
@@ -1866,19 +1972,22 @@
         const indicator = document.getElementById('uploadProgressIndicator');
         if (indicator) indicator.remove();
         if (url) {
+          uploadedFile._uploadError = false;
           uploadedFile._supabaseUrl = url;
           showToast('Text overlay applied!');
           validateForm();
         } else {
-          showToast('Upload failed — try again.');
-          uploadedFile = null;
-          setAddTextButtonState(false);
+          uploadedFile._uploadError = true;
+          showToast('Upload failed — tap Retry Media Upload.');
           validateForm();
         }
         return url;
       }).catch(err => {
         console.error('Overlay upload failed:', err);
-        if (uploadedFile) uploadedFile._uploading = false;
+        if (uploadedFile) {
+          uploadedFile._uploading = false;
+          uploadedFile._uploadError = true;
+        }
         const indicator = document.getElementById('uploadProgressIndicator');
         if (indicator) indicator.remove();
         showToast('Media upload timed out — please try again.');
@@ -2120,6 +2229,23 @@
     els.schedulePostBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> ${actionLabel}`;
   }
 
+  async function retryCurrentMediaUpload() {
+    if (!uploadedFile || uploadedFile._existing || uploadedFile._uploading) return;
+    uploadedFile._uploading = true;
+    uploadedFile._uploadError = false;
+    validateForm();
+    const url = await uploadMediaToSupabase(uploadedFile);
+    uploadedFile._uploading = false;
+    if (url) {
+      uploadedFile._supabaseUrl = url;
+      showToast('Media ready to schedule.');
+    } else {
+      uploadedFile._uploadError = true;
+      showToast('Upload failed again — please re-upload the media.');
+    }
+    validateForm();
+  }
+
   function validateForm() {
     const isLive = selectedType === 'live';
     const hasMedia = isLive || !!uploadedFile;
@@ -2128,14 +2254,17 @@
     const hasTime = !!els.timeInput.value;
     const hasType = !!selectedType;
     const isUploading = uploadedFile?._uploading === true;
-    const isValid = hasMedia && hasCaption && hasDate && hasTime && hasType && !isUploading;
+    const hasUploadError = uploadedFile?._uploadError === true;
+    const isValid = hasMedia && hasCaption && hasDate && hasTime && hasType && !isUploading && !hasUploadError;
 
-    els.schedulePostBtn.classList.toggle('btn-disabled', !isValid);
-    els.schedulePostBtn.classList.toggle('btn-glow', isValid);
-    els.schedulePostBtn.disabled = !isValid;
+    els.schedulePostBtn.classList.toggle('btn-disabled', !isValid && !hasUploadError);
+    els.schedulePostBtn.classList.toggle('btn-glow', isValid || hasUploadError);
+    els.schedulePostBtn.disabled = !isValid && !hasUploadError;
 
     if (isUploading) {
       els.schedulePostBtn.innerHTML = '<span style="display:inline-block;margin-right:6px;">⏳</span> Preparing media...';
+    } else if (hasUploadError) {
+      els.schedulePostBtn.innerHTML = '<span style="display:inline-block;margin-right:6px;">↻</span> Retry Media Upload';
     } else if (!els.schedulePostBtn.innerHTML.includes('Schedule Post') && !els.schedulePostBtn.innerHTML.includes('Update ')) {
       restoreScheduleButtonLabel();
     }
@@ -2206,6 +2335,7 @@
     if (!file) return;
     uploadedFile = file;
     if (els.addTextBtn) els.addTextBtn.classList.remove('has-overlay');
+    uploadedFile._uploadError = false;
 
     // Detect if the uploaded file is a video
     const isVideo = file.type.startsWith('video/');
@@ -2287,6 +2417,7 @@
         if (indicator) indicator.remove();
 
         if (url) {
+          uploadedFile._uploadError = false;
           uploadedFile._supabaseUrl = url;
           // Re-run validation to re-enable Schedule button now that upload is ready
           validateForm();
@@ -2303,7 +2434,10 @@
         return url;
       }).catch(err => {
         console.error('Media upload failed:', err);
-        if (uploadedFile) uploadedFile._uploading = false;
+        if (uploadedFile) {
+          uploadedFile._uploading = false;
+          uploadedFile._uploadError = true;
+        }
         const indicator = document.getElementById('uploadProgressIndicator');
         if (indicator) indicator.remove();
         showToast('Media upload timed out — please try again.');
@@ -2447,6 +2581,10 @@
   // Schedule / Update post
   els.schedulePostBtn.addEventListener('click', async () => {
     if (els.schedulePostBtn.disabled) return;
+    if (uploadedFile?._uploadError) {
+      await retryCurrentMediaUpload();
+      return;
+    }
 
     const supabaseUrl = uploadedFile?._supabaseUrl || '';
 
