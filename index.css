@@ -4497,6 +4497,16 @@ img {
   accent-color: #111;
 }
 
+.toe-option-color-control input[type="color"] {
+  width: 46px;
+  height: 42px;
+  padding: 4px;
+  border: 1px solid #e7e7e7;
+  border-radius: 10px;
+  background: #f7f7f7;
+  cursor: pointer;
+}
+
 .toe-style-toggle span {
   display: block;
   width: 21px;
@@ -5349,6 +5359,11 @@ img {
 .toe-overlay.theme-brand .toe-option-control-row input[type="number"] {
   background: rgba(255,255,255,0.08);
   color: #f8f7fb;
+}
+
+.toe-overlay.theme-brand .toe-option-color-control input[type="color"] {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.12);
 }
 
 .toe-overlay.theme-brand .toe-eyedropper-btn {

@@ -919,7 +919,7 @@
     el.style.top        = item.y + '%';
     el.style.width      = (item.width || 24) + '%';
     el.style.textShadow = toeComposeTextShadow(item);
-    el.style.webkitTextStroke = item.stroke ? `${toeStrokePixels(item)}px ${item.stroke}` : '';
+    el.style.webkitTextStroke = '';
     el.style.opacity = item.opacity == null ? '1' : String(item.opacity);
     el.style.lineHeight = String(1 + ((item.lineHeight ?? 20) / 100));
     el.style.letterSpacing = `${((item.letterSpacing ?? 0) / 100) * item.size}px`;
@@ -934,6 +934,9 @@
       el.style.background = '';
     }
     el.style.borderRadius = `${item.bgRadius ?? 2}px`;
+    el.style.border = item.bgBorderWidth
+      ? `${item.bgBorderWidth}px solid ${item.bgBorderColor || item.stroke || item.color || '#ffffff'}`
+      : '0';
     // Font class
     Object.values(TOE_FONTS).forEach(f => el.classList.remove(f.cls));
     el.classList.add(fontConf.cls);
@@ -1136,6 +1139,8 @@
       strokeWidth: 36,
       bgOpacity: 1,
       bgRadius: 0,
+      bgBorderWidth: 0,
+      bgBorderColor: '#ffffff',
       shadowOpacity: 80,
       shadowBlur: 25,
       shadowDistance: 4,
@@ -1253,6 +1258,8 @@
     toeFont = 'classic'; toeColor = '#ffffff'; toeSize = 32; toeBg = 'none'; toeAlign = 'center';
     toePresetCategory = 'trending';
     toeTextLayer.innerHTML = '';
+    if (toeProcessing) toeProcessing.style.display = 'none';
+    if (toeProcLabel) toeProcLabel.textContent = 'Processing video...';
     toeSetTheme(toeGetSavedTheme());
     toeSetStageZoom(100);
     toeSetTimelineZoom(25);
@@ -1454,6 +1461,12 @@
   function toeUpdateStyleOption(prop, value) {
     const item = toeGetActiveItem();
     if (!item) return;
+    if (prop === 'bgBorderColor') {
+      item.bgBorderColor = value || '#ffffff';
+      toeApplyStyle(toeGetEl(item.id), item);
+      toeUpdateToolbarToActive();
+      return;
+    }
     let next = Number(value);
     if (!Number.isFinite(next)) next = 0;
     item[prop] = prop === 'bgOpacity' ? next / 100 : next;
@@ -1475,6 +1488,13 @@
     </label>`;
   }
 
+  function toeColorOptionControl(label, prop, value) {
+    return `<label class="toe-option-control toe-option-color-control">
+      <span>${label}</span>
+      <input type="color" value="${value || '#ffffff'}" data-style-option-prop="${prop}">
+    </label>`;
+  }
+
   function toeOpenStyleOptions(target) {
     const popover = document.getElementById('toeStyleOptionsPopover');
     const item = toeGetActiveItem();
@@ -1483,7 +1503,9 @@
       stroke: toeOptionControl('Width', 'strokeWidth', item.strokeWidth ?? 1, 1, 100),
       background: [
         toeOptionControl('Opacity', 'bgOpacity', Math.round((item.bgOpacity ?? 1) * 100), 0, 100),
-        toeOptionControl('Rounding', 'bgRadius', item.bgRadius ?? 0, 0, 36, '')
+        toeOptionControl('Rounding', 'bgRadius', item.bgRadius ?? 0, 0, 36, ''),
+        toeOptionControl('Border', 'bgBorderWidth', item.bgBorderWidth ?? 0, 0, 24, ''),
+        toeColorOptionControl('Border color', 'bgBorderColor', item.bgBorderColor || item.stroke || item.color || '#ffffff')
       ].join(''),
       shadow: [
         toeOptionControl('Opacity', 'shadowOpacity', item.shadowOpacity ?? 80, 0, 100),
@@ -1541,8 +1563,18 @@
           ctx.beginPath();
           ctx.roundRect(bx, by, boxWidth, boxHeight, radius);
           ctx.fill();
+          if (item.bgBorderWidth) {
+            ctx.strokeStyle = item.bgBorderColor || item.stroke || item.color || '#ffffff';
+            ctx.lineWidth = Math.max(1, item.bgBorderWidth * 2);
+            ctx.stroke();
+          }
         } else {
           ctx.fillRect(bx, by, boxWidth, boxHeight);
+          if (item.bgBorderWidth) {
+            ctx.strokeStyle = item.bgBorderColor || item.stroke || item.color || '#ffffff';
+            ctx.lineWidth = Math.max(1, item.bgBorderWidth * 2);
+            ctx.strokeRect(bx, by, boxWidth, boxHeight);
+          }
         }
       }
       if (item.font === 'neon' || item.shadow) {
