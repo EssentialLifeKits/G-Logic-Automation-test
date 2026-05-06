@@ -130,24 +130,30 @@
     return isVideo ? 'VIDEO' : 'IMAGE';
   }
 
+  function isPublishedPost(post) {
+    const status = (post?.status || 'pending').toLowerCase();
+    return status === 'published';
+  }
+
+  function normalizePostTime(time) {
+    const raw = String(time || '09:00').trim();
+    if (/\b(am|pm)\b/i.test(raw)) return convertTo24(raw);
+    const match = raw.match(/^(\d{1,2}):(\d{2})/);
+    return match ? `${String(match[1]).padStart(2, '0')}:${match[2]}` : '09:00';
+  }
+
   function getPostScheduledDate(post) {
     if (!post?.date) return null;
-    const scheduled = new Date(`${post.date}T${post.time || '09:00'}:00`);
+    const scheduled = new Date(`${post.date}T${normalizePostTime(post.time)}:00`);
     return Number.isNaN(scheduled.getTime()) ? null : scheduled;
   }
 
   function shouldShowPostOnCalendar(post) {
-    const status = (post.status || 'pending').toLowerCase();
-    if (status !== 'published') return true;
-    const scheduled = getPostScheduledDate(post);
-    return scheduled ? scheduled > new Date() : false;
+    return !isPublishedPost(post);
   }
 
   function shouldShowPostInUpcoming(post) {
-    const status = (post.status || 'pending').toLowerCase();
-    if (status === 'published') return false;
-    const scheduled = getPostScheduledDate(post);
-    return scheduled ? scheduled >= new Date() : true;
+    return !isPublishedPost(post);
   }
 
   // ========== STATE ==========
@@ -500,7 +506,7 @@
   function renderUpcoming() {
     const upcoming = state.posts
       .filter(shouldShowPostInUpcoming)
-      .sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
+      .sort((a, b) => (getPostScheduledDate(a)?.getTime() || 0) - (getPostScheduledDate(b)?.getTime() || 0));
 
     if (upcoming.length === 0) {
       els.upcomingList.innerHTML = `<p style="text-align:center;color:var(--text-tertiary);font-size:0.82rem;padding:20px;">No upcoming posts. Click a date to schedule!</p>`;
@@ -3179,7 +3185,8 @@
   }
 
   function formatTime12(time24) {
-    const [h, m] = time24.split(':').map(Number);
+    const normalized = normalizePostTime(time24);
+    const [h, m] = normalized.split(':').map(Number);
     const period = h >= 12 ? 'PM' : 'AM';
     const hour = h % 12 || 12;
     return `${hour}:${String(m).padStart(2, '0')} ${period}`;
