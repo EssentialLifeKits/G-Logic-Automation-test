@@ -52,13 +52,22 @@
     try {
       const userId = await getCurrentUserId();
       if (!userId) return null;
-      const ext = file.name.split('.').pop();
+      const inferredExt = file.type?.includes('jpeg') ? 'jpg'
+        : file.type?.includes('png') ? 'png'
+        : file.type?.includes('mp4') ? 'mp4'
+        : file.type?.includes('webm') ? 'webm'
+        : file.name?.split('.').pop() || 'bin';
+      const ext = String(inferredExt).replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin';
       const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
       const uploadPromise = supabase.storage
         .from('media_uploads')
-        .upload(fileName, file, { cacheControl: '3600', upsert: false });
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          contentType: file.type || 'application/octet-stream',
+          upsert: false
+        });
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Media upload timed out.')), 45000);
+        setTimeout(() => reject(new Error('Media upload timed out.')), 120000);
       });
       const { data, error } = await Promise.race([uploadPromise, timeoutPromise]);
       if (error) { console.error('Upload error:', error); return null; }
@@ -909,8 +918,8 @@
     el.style.left       = item.x + '%';
     el.style.top        = item.y + '%';
     el.style.width      = (item.width || 24) + '%';
-    el.style.textShadow = item.shadow || '';
-    el.style.webkitTextStroke = item.stroke ? `${item.strokeWidth || 1}px ${item.stroke}` : '';
+    el.style.textShadow = toeComposeTextShadow(item);
+    el.style.webkitTextStroke = item.stroke ? `${toeStrokePixels(item)}px ${item.stroke}` : '';
     el.style.opacity = item.opacity == null ? '1' : String(item.opacity);
     el.style.lineHeight = String(1 + ((item.lineHeight ?? 20) / 100));
     el.style.letterSpacing = `${((item.letterSpacing ?? 0) / 100) * item.size}px`;
@@ -1124,7 +1133,7 @@
       lineHeight: 20,
       letterSpacing: 0,
       caseMode: 'normal',
-      strokeWidth: 1,
+      strokeWidth: 36,
       bgOpacity: 1,
       bgRadius: 0,
       shadowOpacity: 80,
@@ -1331,6 +1340,34 @@
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
+  function toeStrokePixels(item) {
+    return Math.max(1, Math.round((item.strokeWidth ?? 36) / 12));
+  }
+
+  function toeBuildStrokeShadow(color, widthPx) {
+    if (!color || !widthPx) return '';
+    const radius = Math.max(1, Math.min(8, Math.round(widthPx)));
+    const shadows = [];
+    for (let step = 1; step <= radius; step += 1) {
+      shadows.push(
+        `${step}px 0 0 ${color}`,
+        `${-step}px 0 0 ${color}`,
+        `0 ${step}px 0 ${color}`,
+        `0 ${-step}px 0 ${color}`,
+        `${step}px ${step}px 0 ${color}`,
+        `${-step}px ${step}px 0 ${color}`,
+        `${step}px ${-step}px 0 ${color}`,
+        `${-step}px ${-step}px 0 ${color}`
+      );
+    }
+    return shadows.join(', ');
+  }
+
+  function toeComposeTextShadow(item) {
+    const outline = item.stroke ? toeBuildStrokeShadow(item.stroke, toeStrokePixels(item)) : '';
+    return [outline, item.shadow || ''].filter(Boolean).join(', ');
+  }
+
   function toeUpdateStylePreviewButtons(item = toeGetActiveItem()) {
     if (!item) return;
     const fillBtn = document.querySelector('[data-style-popover="fill"]');
@@ -1386,6 +1423,7 @@
     if (!item) return;
     if (toeStyleTarget === 'stroke') {
       item.stroke = color;
+      if (!item.strokeWidth || item.strokeWidth <= 1) item.strokeWidth = 36;
     } else if (toeStyleTarget === 'background') {
       item.bg = item.bg === 'none' ? 'solid' : item.bg;
       item.bgColor = color;
@@ -1514,7 +1552,9 @@
         ctx.shadowBlur = 0;
       }
       if (item.stroke) {
-        ctx.lineWidth = Math.max(1, (item.strokeWidth || 1) * 2);
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+        ctx.lineWidth = Math.max(2, toeStrokePixels(item) * 2);
         ctx.strokeStyle = item.stroke;
         lines.forEach((line, i) => drawLine('strokeText', line, x, y + i * lineH));
       }
@@ -1560,11 +1600,15 @@
         canvas.width = fitted.width;
         canvas.height = fitted.height;
         const ctx = canvas.getContext('2d');
-        const stream = canvas.captureStream(30);
-        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
-          ? 'video/webm;codecs=vp8'
-          : 'video/webm';
-        const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2200000 });
+        const stream = canvas.captureStream(24);
+        const mimeType = [
+          'video/mp4;codecs=avc1.42E01E',
+          'video/mp4',
+          'video/webm;codecs=vp9',
+          'video/webm;codecs=vp8',
+          'video/webm'
+        ].find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
+        const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 1500000 });
         const chunks = [];
         const durationMs = Number.isFinite(vidEl.duration) && vidEl.duration > 0
           ? Math.min(vidEl.duration * 1000, 30000)
@@ -1584,7 +1628,7 @@
 
         recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
         recorder.onerror = (event) => reject(event.error || new Error('Video recorder failed.'));
-        recorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
+        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType.split(';')[0] || 'video/webm' }));
 
         const drawFrame = () => {
           ctx.drawImage(vidEl, 0, 0, canvas.width, canvas.height);
@@ -1980,7 +2024,9 @@
         blob = await toeBurnImage(toeSourceMedia);
       }
       // Create a new File object from the blob
-      const ext = isVid ? 'webm' : 'jpg';
+      const ext = isVid
+        ? (blob.type.includes('mp4') ? 'mp4' : 'webm')
+        : (blob.type.includes('png') ? 'png' : 'jpg');
       const newFile = new File([blob], `overlay_${Date.now()}.${ext}`, { type: blob.type });
       newFile._isVideo = isVid;
       newFile._toeSourceFile = toeEditingSourceFile || uploadedFile;
