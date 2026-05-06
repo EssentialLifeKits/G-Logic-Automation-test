@@ -54,9 +54,13 @@
       if (!userId) return null;
       const ext = file.name.split('.').pop();
       const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
-      const { data, error } = await supabase.storage
+      const uploadPromise = supabase.storage
         .from('media_uploads')
         .upload(fileName, file, { cacheControl: '3600', upsert: false });
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Media upload timed out.')), 45000);
+      });
+      const { data, error } = await Promise.race([uploadPromise, timeoutPromise]);
       if (error) { console.error('Upload error:', error); return null; }
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -827,6 +831,16 @@
     if (durationLabel) durationLabel.textContent = toeFormatTime(duration);
   }
 
+  function toeFitMediaSize(width, height, maxWidth = 1080, maxHeight = 1920) {
+    const safeWidth = Math.max(1, width || maxWidth);
+    const safeHeight = Math.max(1, height || maxHeight);
+    const scale = Math.min(1, maxWidth / safeWidth, maxHeight / safeHeight);
+    return {
+      width: Math.max(1, Math.round(safeWidth * scale)),
+      height: Math.max(1, Math.round(safeHeight * scale)),
+    };
+  }
+
   function toeRenderFontOptions() {
     const fontSelect = document.getElementById('toeFontSelect');
     if (!fontSelect) return;
@@ -1421,12 +1435,13 @@
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
-        canvas.width  = img.naturalWidth  || img.width  || 1080;
-        canvas.height = img.naturalHeight || img.height || 1350;
+        const fitted = toeFitMediaSize(img.naturalWidth || img.width || 1080, img.naturalHeight || img.height || 1350);
+        canvas.width = fitted.width;
+        canvas.height = fitted.height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         toeDrawTextItems(ctx, canvas.width, canvas.height);
-        canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.92);
+        canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.86);
       };
       img.src = imgEl.src;
     });
@@ -1445,17 +1460,18 @@
         });
 
         const canvas = document.createElement('canvas');
-        canvas.width  = vidEl.videoWidth  || 1080;
-        canvas.height = vidEl.videoHeight || 1920;
+        const fitted = toeFitMediaSize(vidEl.videoWidth || 1080, vidEl.videoHeight || 1920);
+        canvas.width = fitted.width;
+        canvas.height = fitted.height;
         const ctx = canvas.getContext('2d');
         const stream = canvas.captureStream(30);
         const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
           ? 'video/webm;codecs=vp8'
           : 'video/webm';
-        const recorder = new MediaRecorder(stream, { mimeType });
+        const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2200000 });
         const chunks = [];
         const durationMs = Number.isFinite(vidEl.duration) && vidEl.duration > 0
-          ? Math.min(vidEl.duration * 1000, 120000)
+          ? Math.min(vidEl.duration * 1000, 30000)
           : 8000;
         let rafId = null;
         let stopTimer = null;
@@ -1860,6 +1876,14 @@
           validateForm();
         }
         return url;
+      }).catch(err => {
+        console.error('Overlay upload failed:', err);
+        if (uploadedFile) uploadedFile._uploading = false;
+        const indicator = document.getElementById('uploadProgressIndicator');
+        if (indicator) indicator.remove();
+        showToast('Media upload timed out — please try again.');
+        validateForm();
+        return null;
       });
       toeClose();
       validateForm();
@@ -2090,6 +2114,12 @@
   });
 
   // ========== FORM VALIDATION ==========
+  function restoreScheduleButtonLabel() {
+    const typeLabel = (POST_TYPES[selectedType] || POST_TYPES.post).label;
+    const actionLabel = editingPostId ? `Update ${typeLabel}` : 'Schedule Post';
+    els.schedulePostBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> ${actionLabel}`;
+  }
+
   function validateForm() {
     const isLive = selectedType === 'live';
     const hasMedia = isLive || !!uploadedFile;
@@ -2106,6 +2136,8 @@
 
     if (isUploading) {
       els.schedulePostBtn.innerHTML = '<span style="display:inline-block;margin-right:6px;">⏳</span> Preparing media...';
+    } else if (!els.schedulePostBtn.innerHTML.includes('Schedule Post') && !els.schedulePostBtn.innerHTML.includes('Update ')) {
+      restoreScheduleButtonLabel();
     }
   }
 
@@ -2269,6 +2301,14 @@
           validateForm();
         }
         return url;
+      }).catch(err => {
+        console.error('Media upload failed:', err);
+        if (uploadedFile) uploadedFile._uploading = false;
+        const indicator = document.getElementById('uploadProgressIndicator');
+        if (indicator) indicator.remove();
+        showToast('Media upload timed out — please try again.');
+        validateForm();
+        return null;
       });
     }
   }
