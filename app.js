@@ -143,6 +143,13 @@
     return scheduled ? scheduled > new Date() : false;
   }
 
+  function shouldShowPostInUpcoming(post) {
+    const status = (post.status || 'pending').toLowerCase();
+    if (status === 'published') return false;
+    const scheduled = getPostScheduledDate(post);
+    return scheduled ? scheduled >= new Date() : true;
+  }
+
   // ========== STATE ==========
   const now = new Date();
   const state = {
@@ -491,9 +498,8 @@
 
   // ========== UPCOMING POSTS WIDGET ==========
   function renderUpcoming() {
-    const todayStr = formatDate(state.today.getFullYear(), state.today.getMonth(), state.today.getDate());
     const upcoming = state.posts
-      .filter(p => p.date >= todayStr)
+      .filter(shouldShowPostInUpcoming)
       .sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
 
     if (upcoming.length === 0) {
@@ -990,7 +996,6 @@
       toeSize = item.size;
     }
     toeApplyStyle(toeGetEl(item.id), item);
-    toeUpdateToolbarToActive();
   }
 
   function toeCreateResizeHandle(item, handle) {
@@ -1012,6 +1017,7 @@
       };
       const onMove = (mv) => toeResizeTextElement(item, handle, start, mv);
       const onUp = () => {
+        toeUpdateToolbarToActive();
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
         window.removeEventListener('mouseup', onUp);
@@ -1294,7 +1300,7 @@
       const vid = document.createElement('video');
       vid.src = URL.createObjectURL(editableMediaFile);
       vid.controls = true;
-      vid.muted = true;
+      vid.muted = false;
       vid.loop = false;
       vid.preload = 'metadata';
       vid.playsInline = true;
@@ -1652,6 +1658,8 @@
         canvas.height = fitted.height;
         const ctx = canvas.getContext('2d');
         const stream = canvas.captureStream(24);
+        const mediaStream = typeof vidEl.captureStream === 'function' ? vidEl.captureStream() : null;
+        mediaStream?.getAudioTracks().forEach(track => stream.addTrack(track));
         const mimeType = [
           'video/mp4;codecs=avc1.42E01E',
           'video/mp4',
@@ -1667,6 +1675,16 @@
         let rafId = null;
         let stopTimer = null;
         let stopped = false;
+        const previousMuted = vidEl.muted;
+        const previousVolume = vidEl.volume;
+
+        const cleanupTracks = () => {
+          stream.getTracks().forEach(track => {
+            if (track.readyState !== 'ended') track.stop();
+          });
+          vidEl.muted = previousMuted;
+          vidEl.volume = previousVolume;
+        };
 
         const stopRecording = () => {
           if (stopped) return;
@@ -1678,8 +1696,14 @@
         };
 
         recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-        recorder.onerror = (event) => reject(event.error || new Error('Video recorder failed.'));
-        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType.split(';')[0] || 'video/webm' }));
+        recorder.onerror = (event) => {
+          cleanupTracks();
+          reject(event.error || new Error('Video recorder failed.'));
+        };
+        recorder.onstop = () => {
+          cleanupTracks();
+          resolve(new Blob(chunks, { type: mimeType.split(';')[0] || 'video/webm' }));
+        };
 
         const drawFrame = () => {
           ctx.drawImage(vidEl, 0, 0, canvas.width, canvas.height);
@@ -1694,6 +1718,8 @@
         vidEl.onended = stopRecording;
         recorder.start();
         stopTimer = setTimeout(stopRecording, durationMs + 1250);
+        vidEl.muted = false;
+        vidEl.volume = 1;
         await vidEl.play();
         rafId = requestAnimationFrame(drawFrame);
       };
@@ -2091,7 +2117,7 @@
       if (isVid) {
         const videoEl = els.uploadZone.querySelector('video') || document.createElement('video');
         videoEl.src = URL.createObjectURL(blob);
-        videoEl.controls = true; videoEl.muted = true; videoEl.preload = 'metadata'; videoEl.playsInline = true;
+        videoEl.controls = true; videoEl.muted = false; videoEl.preload = 'metadata'; videoEl.playsInline = true;
         videoEl.style.cssText = 'max-width:100%;border-radius:12px;';
         els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
         els.uploadZone.appendChild(videoEl);
@@ -2109,26 +2135,28 @@
       }
       setReturnToEditorButtonState(true);
       // Upload to Supabase
+      const overlayUploadTarget = uploadedFile;
       uploadedFile._uploadPromise = uploadMediaToSupabase(newFile).then(url => {
-        uploadedFile._uploading = false;
+        if (uploadedFile !== overlayUploadTarget) return url;
+        overlayUploadTarget._uploading = false;
         const indicator = document.getElementById('uploadProgressIndicator');
         if (indicator) indicator.remove();
         if (url) {
-          uploadedFile._uploadError = false;
-          uploadedFile._supabaseUrl = url;
+          overlayUploadTarget._uploadError = false;
+          overlayUploadTarget._supabaseUrl = url;
           showToast('Text overlay applied!');
           validateForm();
         } else {
-          uploadedFile._uploadError = true;
+          overlayUploadTarget._uploadError = true;
           showToast('Upload failed — tap Retry Media Upload.');
           validateForm();
         }
         return url;
       }).catch(err => {
         console.error('Overlay upload failed:', err);
-        if (uploadedFile) {
-          uploadedFile._uploading = false;
-          uploadedFile._uploadError = true;
+        if (uploadedFile === overlayUploadTarget) {
+          overlayUploadTarget._uploading = false;
+          overlayUploadTarget._uploadError = true;
         }
         const indicator = document.getElementById('uploadProgressIndicator');
         if (indicator) indicator.remove();
@@ -2489,8 +2517,8 @@
     }
   });
 
-  function handleFileUpload() {
-    const file = els.fileInput.files[0];
+  function handleFileUpload(fileOverride = null) {
+    const file = fileOverride || els.fileInput.files[0];
     if (!file) return;
     uploadedFile = file;
     if (els.addTextBtn) els.addTextBtn.classList.remove('has-overlay');
@@ -2506,7 +2534,7 @@
       const videoEl = document.createElement('video');
       videoEl.src = URL.createObjectURL(file);
       videoEl.controls = true;
-      videoEl.muted = true;
+      videoEl.muted = false;
       videoEl.preload = 'metadata';
       videoEl.playsInline = true;
       videoEl.style.maxWidth = '100%';
@@ -2571,14 +2599,16 @@
       els.schedulePostBtn.classList.add('btn-disabled');
       els.schedulePostBtn.disabled = true;
 
+      const uploadTarget = uploadedFile;
       uploadedFile._uploadPromise = uploadMediaToSupabase(file).then(url => {
-        uploadedFile._uploading = false;
+        if (uploadedFile !== uploadTarget) return url;
+        uploadTarget._uploading = false;
         const indicator = document.getElementById('uploadProgressIndicator');
         if (indicator) indicator.remove();
 
         if (url) {
-          uploadedFile._uploadError = false;
-          uploadedFile._supabaseUrl = url;
+          uploadTarget._uploadError = false;
+          uploadTarget._supabaseUrl = url;
           // Re-run validation to re-enable Schedule button now that upload is ready
           validateForm();
         } else {
@@ -2594,9 +2624,9 @@
         return url;
       }).catch(err => {
         console.error('Media upload failed:', err);
-        if (uploadedFile) {
-          uploadedFile._uploading = false;
-          uploadedFile._uploadError = true;
+        if (uploadedFile === uploadTarget) {
+          uploadTarget._uploading = false;
+          uploadTarget._uploadError = true;
         }
         const indicator = document.getElementById('uploadProgressIndicator');
         if (indicator) indicator.remove();

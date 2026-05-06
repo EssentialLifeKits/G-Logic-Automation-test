@@ -5155,6 +5155,9 @@ img {
 
 .toe-text-el {
   font-weight: 500;
+  contain: layout paint style;
+  will-change: left, top, transform;
+  backface-visibility: hidden;
 }
 
 .toe-overlay.theme-brand {
