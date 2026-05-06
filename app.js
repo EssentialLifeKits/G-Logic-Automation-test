@@ -791,6 +791,9 @@
     if (zoomBtn) zoomBtn.textContent = `${toeStageZoom}%⌄`;
     if (zoomRange) zoomRange.value = toeStageZoom;
     if (zoomValue) zoomValue.textContent = `${toeStageZoom}%`;
+    document.querySelectorAll('[data-toe-zoom]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.toeZoom === String(toeStageZoom));
+    });
   }
 
   function toeSetTimelineZoom(value) {
@@ -917,7 +920,10 @@
     const dyPx = event.clientY - start.y;
     let nextWidth = start.width;
     let nextX = start.itemX;
-    if (handle.startsWith('r')) {
+    if (handle.startsWith('m')) {
+      nextWidth = start.width + dxPct * 2;
+      nextX = start.itemX;
+    } else if (handle.startsWith('r')) {
       nextWidth = start.width + dxPct;
       nextX = start.itemX + dxPct / 2;
     } else {
@@ -926,7 +932,7 @@
     }
     const clampedWidth = toeClamp(nextWidth, 8, 88);
     if (clampedWidth !== nextWidth) {
-      nextX += (nextWidth - clampedWidth) / (handle.startsWith('r') ? -2 : 2);
+      nextX += handle.startsWith('m') ? 0 : (nextWidth - clampedWidth) / (handle.startsWith('r') ? -2 : 2);
     }
     item.width = clampedWidth;
     item.x = toeClamp(nextX, 5, 95);
@@ -993,7 +999,7 @@
       wrap.appendChild(del);
 
       if (item.id === toeActiveId) {
-        ['lt', 'lm', 'lb', 'rt', 'rm', 'rb'].forEach(handle => {
+        ['lt', 'mt', 'rt', 'lm', 'rm', 'lb', 'mb', 'rb'].forEach(handle => {
           wrap.appendChild(toeCreateResizeHandle(item, handle));
         });
       }
@@ -1790,6 +1796,14 @@
   document.getElementById('toeCancelBtn')?.addEventListener('click', toeClose);
   document.getElementById('toeCancelBtnSecondary')?.addEventListener('click', toeClose);
 
+  toeStage?.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.toe-text-el')) return;
+    if (!e.target.closest('#toeStage')) return;
+    toeActiveId = null;
+    toeSetCenterGuides(false, false);
+    toeRenderAll();
+  });
+
   document.getElementById('toeDoneBtn')?.addEventListener('click', async () => {
     if (toeTextElements.length === 0) { toeClose(); return; }
     const isVid = toeSourceMedia?.tagName === 'VIDEO';
@@ -1809,6 +1823,7 @@
       // Replace uploadedFile and trigger re-upload
       uploadedFile = newFile;
       uploadedFile._uploading = true;
+      uploadedFile._hasTextOverlay = true;
       // Show in upload zone
       if (isVid) {
         const videoEl = els.uploadZone.querySelector('video') || document.createElement('video');
@@ -1822,6 +1837,12 @@
         els.uploadPreview.src = URL.createObjectURL(blob);
         els.uploadPreview.classList.add('visible');
         els.uploadPreview.style.display = '';
+      }
+      setAddTextButtonState(true);
+      if (els.addTextBtn) {
+        els.addTextBtn.classList.add('has-overlay');
+        els.addTextBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit Text';
+        els.addTextBtn.title = 'Return to text overlay editor';
       }
       // Upload to Supabase
       uploadedFile._uploadPromise = uploadMediaToSupabase(newFile).then(url => {
@@ -1860,6 +1881,7 @@
     if (!els.addTextBtn) return;
     els.addTextBtn.style.display = visible ? '' : 'none';
     els.addTextBtn.classList.toggle('is-disabled', disabled);
+    if (!visible || disabled) els.addTextBtn.classList.remove('has-overlay');
     els.addTextBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
     els.addTextBtn.title = disabled
       ? 'Re-upload this media to add text overlays safely'
@@ -1939,7 +1961,7 @@
       setAddTextButtonState(true, true);
       
       videoEl.addEventListener('seeked', () => {
-        if (els.captureThumbBtn) els.captureThumbBtn.style.display = '';
+        if (els.captureThumbBtn && !userSelectedThumbnail) els.captureThumbBtn.style.display = '';
       });
 
       if (post.image_url) {
@@ -2151,6 +2173,7 @@
     const file = els.fileInput.files[0];
     if (!file) return;
     uploadedFile = file;
+    if (els.addTextBtn) els.addTextBtn.classList.remove('has-overlay');
 
     // Detect if the uploaded file is a video
     const isVideo = file.type.startsWith('video/');
@@ -2178,7 +2201,7 @@
       if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
       
       videoEl.addEventListener('seeked', () => {
-        if (els.captureThumbBtn) els.captureThumbBtn.style.display = '';
+        if (els.captureThumbBtn && !userSelectedThumbnail) els.captureThumbBtn.style.display = '';
       });
       
       validateForm();
@@ -2281,6 +2304,7 @@
           els.capturedThumbPreview.src = base64;
           els.capturedThumbPreview.style.display = 'block';
         }
+        if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
         showToast('Thumbnail captured — uploading...');
 
         // Upload thumbnail to Supabase Storage to get a real public URL
@@ -2299,6 +2323,7 @@
                 const { data: urlData } = supabase.storage.from('media_uploads').getPublicUrl(upData.path);
                 if (urlData?.publicUrl) {
                   userSelectedThumbnail = urlData.publicUrl;
+                  if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
                   showToast('Thumbnail saved!');
                 }
               }
@@ -2307,6 +2332,7 @@
             console.warn('Thumbnail upload failed, using base64 fallback:', thumbErr);
           }
         }
+        if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
       } catch (err) {
         console.warn('Could not capture video thumbnail:', err);
         showToast('Error capturing thumbnail');
