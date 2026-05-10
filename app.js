@@ -221,6 +221,7 @@
     fileInput: $('#fileInput'),
     uploadPreview: $('#uploadPreview'),
     addTextBtn: $('#addTextBtn'),
+    editMediaBtn: $('#editMediaBtn'),
     returnToEditorBtn: $('#returnToEditorBtn'),
     captureThumbBtn: $('#captureThumbBtn'),
     capturedThumbPreview: $('#capturedThumbPreview'),
@@ -2134,6 +2135,7 @@
         els.uploadPreview.style.display = '';
       }
       setAddTextButtonState(true);
+      setEditMediaButtonState(true);
       if (els.addTextBtn) {
         els.addTextBtn.classList.add('has-overlay');
         els.addTextBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit Text';
@@ -2200,9 +2202,16 @@
       : addTextButtonDefaultHtml;
   }
 
+  function setEditMediaButtonState(visible, disabled = false) {
+    if (!els.editMediaBtn) return;
+    els.editMediaBtn.style.display = visible ? '' : 'none';
+    els.editMediaBtn.classList.toggle('is-disabled', disabled);
+    els.editMediaBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+  }
+
   function setReturnToEditorButtonState(visible) {
     if (!els.returnToEditorBtn) return;
-    els.returnToEditorBtn.style.display = visible ? '' : 'none';
+    els.returnToEditorBtn.style.display = 'none';
   }
 
   function openScheduler(date, suggestedTime) {
@@ -2223,6 +2232,7 @@
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
     if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
     setAddTextButtonState(false);
+    setEditMediaButtonState(false);
     setReturnToEditorButtonState(false);
     els.uploadPlaceholder.style.display = '';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
@@ -2261,6 +2271,7 @@
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
     if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
     setAddTextButtonState(false);
+    setEditMediaButtonState(false);
     setReturnToEditorButtonState(false);
     els.uploadPlaceholder.style.display = 'none';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
@@ -2268,13 +2279,17 @@
     userSelectedThumbnail = '';
 
     if (post.video_url) {
+      uploadedFile._isVideo = true;
+      uploadedFile._sourceUrl = post.video_url;
+      uploadedFile._sourceName = 'existing-video.mp4';
       const videoEl = document.createElement('video');
       videoEl.src = post.video_url;
       videoEl.controls = true;
       videoEl.setAttribute('playsinline', '');
       els.uploadZone.appendChild(videoEl);
       if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
-      setAddTextButtonState(true, true);
+      setAddTextButtonState(true);
+      setEditMediaButtonState(true);
       
       videoEl.addEventListener('seeked', () => {
         if (els.captureThumbBtn && !userSelectedThumbnail) els.captureThumbBtn.style.display = '';
@@ -2288,8 +2303,12 @@
         }
       }
     } else if (post.image_url) {
+      uploadedFile._isVideo = false;
+      uploadedFile._sourceUrl = post.image_url;
+      uploadedFile._sourceName = 'existing-image.jpg';
       if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
-      setAddTextButtonState(true, true);
+      setAddTextButtonState(true);
+      setEditMediaButtonState(true);
       els.uploadPreview.src = post.image_url;
       els.uploadPreview.classList.add('visible');
       els.uploadPreview.style.display = '';
@@ -2379,6 +2398,7 @@
     if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
     if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
     setAddTextButtonState(false);
+    setEditMediaButtonState(false);
     setReturnToEditorButtonState(false);
     els.uploadPlaceholder.style.display = '';
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
@@ -2506,7 +2526,7 @@
     if (e.target.closest('video')) return;
     els.fileInput.click();
   });
-  els.fileInput.addEventListener('change', handleFileUpload);
+  els.fileInput.addEventListener('change', () => handleFileUpload());
   els.uploadZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     els.uploadZone.classList.add('drag-over');
@@ -2524,10 +2544,11 @@
   });
 
   function handleFileUpload(fileOverride = null) {
-    const file = fileOverride || els.fileInput.files[0];
+    const file = fileOverride instanceof File ? fileOverride : els.fileInput.files[0];
     if (!file) return;
     uploadedFile = file;
     if (els.addTextBtn) els.addTextBtn.classList.remove('has-overlay');
+    setEditMediaButtonState(false);
     setReturnToEditorButtonState(false);
     uploadedFile._uploadError = false;
 
@@ -2554,6 +2575,7 @@
       els.uploadZone.appendChild(videoEl);
       if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
       setAddTextButtonState(true);
+      setEditMediaButtonState(true);
       if (els.captureThumbBtn) els.captureThumbBtn.style.display = 'none';
       
       videoEl.addEventListener('seeked', () => {
@@ -2568,6 +2590,7 @@
       if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
       if (els.removeMediaBtn) els.removeMediaBtn.style.display = '';
       setAddTextButtonState(true);
+      setEditMediaButtonState(true);
       userSelectedThumbnail = '';
       els.uploadPreview.style.display = '';
       const reader = new FileReader();
@@ -2625,6 +2648,7 @@
           els.uploadPreview.classList.remove('visible');
           els.uploadPlaceholder.style.display = '';
           setAddTextButtonState(false);
+          setEditMediaButtonState(false);
           validateForm();
         }
         return url;
@@ -2712,25 +2736,63 @@
 
   // Remove Media Button logic
   // Add Text button — open the text overlay editor
+  async function resolveTextEditorMediaFile() {
+    if (!uploadedFile) return null;
+    if (!uploadedFile._existing) return uploadedFile;
+
+    const videoEl = els.uploadZone.querySelector('video');
+    const sourceUrl = uploadedFile._sourceUrl || videoEl?.src || els.uploadPreview?.src;
+    if (!sourceUrl) {
+      showToast('Re-upload this media to add text overlays.');
+      return null;
+    }
+
+    try {
+      const response = await fetch(sourceUrl);
+      if (!response.ok) throw new Error(`Could not load media (${response.status})`);
+      const blob = await response.blob();
+      const type = blob.type || (uploadedFile._isVideo ? 'video/mp4' : 'image/jpeg');
+      const name = uploadedFile._sourceName || `existing-media.${uploadedFile._isVideo ? 'mp4' : 'jpg'}`;
+      const file = new File([blob], name, { type });
+      file._isVideo = uploadedFile._isVideo || type.startsWith('video/');
+      return file;
+    } catch (err) {
+      console.error('Could not prepare existing media for text overlay:', err);
+      showToast('Could not open this media for editing. Please re-upload it.');
+      return null;
+    }
+  }
+
   if (els.addTextBtn) {
-    els.addTextBtn.addEventListener('click', (e) => {
+    els.addTextBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       if (!uploadedFile) return;
-      if (uploadedFile._existing || els.addTextBtn.classList.contains('is-disabled')) {
+      if (els.addTextBtn.classList.contains('is-disabled')) {
         showToast('Re-upload this media to add text overlays.');
         return;
       }
-      toeOpen(uploadedFile);
+      const mediaFile = await resolveTextEditorMediaFile();
+      if (mediaFile) toeOpen(mediaFile);
+    });
+  }
+
+  if (els.editMediaBtn) {
+    els.editMediaBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (els.editMediaBtn.classList.contains('is-disabled')) return;
+      showToast('Media editing page is next in the build.');
     });
   }
 
   if (els.returnToEditorBtn) {
-    els.returnToEditorBtn.addEventListener('click', (e) => {
+    els.returnToEditorBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       if (!uploadedFile || !uploadedFile._hasTextOverlay) return;
-      toeOpen(uploadedFile);
+      const mediaFile = await resolveTextEditorMediaFile();
+      if (mediaFile) toeOpen(mediaFile);
     });
   }
 
@@ -2747,6 +2809,7 @@
       if (els.capturedThumbPreview) els.capturedThumbPreview.style.display = 'none';
       if (els.removeMediaBtn) els.removeMediaBtn.style.display = 'none';
       setAddTextButtonState(false);
+      setEditMediaButtonState(false);
       setReturnToEditorButtonState(false);
       
       els.uploadPlaceholder.style.display = '';
