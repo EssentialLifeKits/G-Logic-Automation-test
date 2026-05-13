@@ -2093,7 +2093,7 @@
       return toeClamp((event.clientX - rect.left - 42) / range, 0, 1);
     };
 
-    toeTextTrack.addEventListener('mousedown', (e) => {
+    const beginTextTimingEdit = (e, forcedEdge) => {
       if (e.button !== 0) return;
       const item = toeGetActiveItem() || toeTextElements[0];
       if (!item) return;
@@ -2101,7 +2101,7 @@
       e.stopPropagation();
       toeActiveId = item.id;
       toeNormalizeTextTiming(item);
-      const edge = e.target.closest('[data-trim-edge]')?.dataset.trimEdge || 'move';
+      const edge = forcedEdge || e.target.closest('[data-trim-edge]')?.dataset.trimEdge || 'move';
       const startX = getTrackPct(e);
       const startStart = item.startTime;
       const startEnd = item.endTime;
@@ -2140,6 +2140,17 @@
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
       window.addEventListener('mouseup', onUp);
+    };
+
+    toeTextTrack.addEventListener('mousedown', (e) => {
+      if (e.target.closest('[data-trim-edge]')) return;
+      beginTextTimingEdit(e, 'move');
+    });
+
+    toeTextTrack.querySelectorAll('[data-trim-edge]').forEach(handle => {
+      handle.addEventListener('mousedown', (e) => {
+        beginTextTimingEdit(e, handle.dataset.trimEdge);
+      });
     });
   }
 
