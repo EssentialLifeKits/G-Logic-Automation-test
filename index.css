@@ -5039,15 +5039,19 @@ img {
 
 .toe-text-trim {
   position: absolute;
-  top: -3px;
-  bottom: -3px;
-  width: 16px;
+  top: -6px;
+  bottom: -6px;
+  width: 24px;
   border: 0;
-  background: rgba(87, 240, 164, 0.12);
+  background: rgba(87, 240, 164, 0.18);
   cursor: ew-resize;
-  z-index: 2;
+  z-index: 5;
   display: grid;
   place-items: center;
+  color: #57f0a4;
+  font-size: 0.72rem;
+  font-weight: 900;
+  touch-action: none;
 }
 
 .toe-text-trim::before {
@@ -5059,13 +5063,24 @@ img {
   box-shadow: 0 0 10px rgba(87, 240, 164, 0.75);
 }
 
+.toe-text-trim::after {
+  content: "↔";
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #57f0a4;
+  text-shadow: 0 0 8px rgba(87, 240, 164, 0.75);
+  pointer-events: none;
+}
+
 .toe-text-trim-start {
-  left: -3px;
+  left: -8px;
   border-radius: 7px 0 0 7px;
 }
 
 .toe-text-trim-end {
-  right: -3px;
+  right: -8px;
   border-radius: 0 7px 7px 0;
 }
 

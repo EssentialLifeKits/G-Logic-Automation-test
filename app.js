@@ -872,6 +872,12 @@
     item.endTime = toeClamp(Number(item.endTime ?? 1), item.startTime + 0.04, 1);
   }
 
+  function toeDefaultTextTiming() {
+    const segment = 0.35;
+    const start = toeClamp(toeTimelineProgress || 0, 0, 1 - segment);
+    return { startTime: start, endTime: start + segment };
+  }
+
   function toeGetTimelineRangeWidth() {
     const area = document.getElementById('toeTrackArea');
     if (!area) return 1;
@@ -888,9 +894,15 @@
     }
     toeNormalizeTextTiming(item);
     const rangeWidth = toeGetTimelineRangeWidth();
+    const duration = toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration) && toeSourceMedia.duration > 0
+      ? toeSourceMedia.duration
+      : 8;
     track.style.display = '';
     track.style.marginLeft = `${42 + item.startTime * rangeWidth}px`;
     track.style.width = `${Math.max(44, (item.endTime - item.startTime) * rangeWidth)}px`;
+    track.setAttribute('aria-valuemin', toeFormatTime(item.startTime * duration));
+    track.setAttribute('aria-valuemax', toeFormatTime(item.endTime * duration));
+    track.title = 'Drag to move text timing. Drag either edge to trim start or end.';
     const label = track.querySelector('.toe-track-label-text');
     if (label) label.textContent = `T  ${toeTransformText(item.text || 'Text', item.caseMode).replace(/\s+/g, ' ').trim() || 'Text'}`;
   }
@@ -1186,6 +1198,7 @@
 
   function toeAddTextElement() {
     const id = Date.now();
+    const timing = toeDefaultTextTiming();
     toeTextElements.push({
       id,
       text: 'Text',
@@ -1200,8 +1213,8 @@
       lineHeight: 20,
       letterSpacing: 0,
       caseMode: 'normal',
-      startTime: 0,
-      endTime: 1,
+      startTime: timing.startTime,
+      endTime: timing.endTime,
       strokeWidth: 36,
       bgOpacity: 1,
       bgRadius: 0,
@@ -2093,6 +2106,15 @@
       const startStart = item.startTime;
       const startEnd = item.endTime;
       const minLen = 0.04;
+      let moveLength = startEnd - startStart;
+      let moveStart = startStart;
+      if (edge === 'move' && moveLength > 0.96) {
+        moveLength = 0.35;
+        moveStart = toeClamp(startX - moveLength / 2, 0, 1 - moveLength);
+        item.startTime = moveStart;
+        item.endTime = moveStart + moveLength;
+        toeUpdateTimelineTextTrack();
+      }
       toeTextTrack.classList.add('is-editing');
 
       const onMove = (mv) => {
@@ -2102,8 +2124,8 @@
         } else if (edge === 'end') {
           item.endTime = toeClamp(startEnd + delta, startStart + minLen, 1);
         } else {
-          const length = startEnd - startStart;
-          const nextStart = toeClamp(startStart + delta, 0, 1 - length);
+          const length = moveLength;
+          const nextStart = toeClamp(moveStart + delta, 0, 1 - length);
           item.startTime = nextStart;
           item.endTime = nextStart + length;
         }
@@ -3732,7 +3754,7 @@
     const sbPosts = await loadPostsFromSupabase();
     if (!sbPosts) return;
     state.posts = sbPosts;
-    state.nextId = Math.max(...sbPosts.map(p => (typeof p.id === 'number' ? p.id : 0)), 0) + 1;
+    state.nextId = Math.max(0, ...sbPosts.map(p => (typeof p.id === 'number' ? p.id : 0))) + 1;
     savePosts();
     renderCalendar();
     renderUpcoming();
@@ -3745,9 +3767,9 @@
   async function init() {
     if (isSupabaseConfigured) {
       const sbPosts = await loadPostsFromSupabase();
-      if (sbPosts && sbPosts.length > 0) {
+      if (sbPosts) {
         state.posts = sbPosts;
-        state.nextId = Math.max(...sbPosts.map(p => (typeof p.id === 'number' ? p.id : 0)), 0) + 1;
+        state.nextId = Math.max(0, ...sbPosts.map(p => (typeof p.id === 'number' ? p.id : 0))) + 1;
         savePosts();
       }
     }
@@ -3767,6 +3789,13 @@
 
     // Poll Supabase every 60 seconds to sync post statuses (picks up published/failed from cron)
     setInterval(syncPostsFromSupabase, 60000);
+    setTimeout(syncPostsFromSupabase, 1500);
+    setTimeout(syncPostsFromSupabase, 5000);
+    if (isSupabaseConfigured && supabase?.auth?.onAuthStateChange) {
+      supabase.auth.onAuthStateChange(() => {
+        syncPostsFromSupabase();
+      });
+    }
   }
 
   init();

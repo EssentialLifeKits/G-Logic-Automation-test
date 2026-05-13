@@ -7,9 +7,10 @@
 
    Usage: node publish-posts.js
 
-   Required Environment Variables:
-     SUPABASE_URL           - Your Supabase project URL
-     SUPABASE_SERVICE_KEY   - Your Supabase service_role key (bypasses RLS)
+  Required Environment Variables:
+    SUPABASE_URL              - Your Supabase project URL
+    SUPABASE_SERVICE_KEY      - Your Supabase service_role key (bypasses RLS)
+    SUPABASE_SERVICE_ROLE_KEY - Also accepted as the service_role key name
    ============================================================ */
 
 const GRAPH_API_VERSION = 'v21.0';
@@ -18,18 +19,93 @@ const POLL_INTERVAL_MS = 5000;  // 5 seconds between status checks
 const MAX_POLL_ATTEMPTS = 60;   // Max 5 minutes of polling (60 × 5s)
 
 // ========== SUPABASE SETUP ==========
-async function createSupabaseClient() {
-    // Dynamic import for ESM compatibility
-    const { createClient } = await import('@supabase/supabase-js');
-
+function createSupabaseClient() {
     const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_KEY;
+    const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!url || !key) {
-        throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables');
+        throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY/SUPABASE_SERVICE_ROLE_KEY environment variables');
     }
 
-    return createClient(url, key);
+    const headers = {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+    };
+
+    class QueryBuilder {
+        constructor(table) {
+            this.table = table;
+            this.method = 'GET';
+            this.params = new URLSearchParams();
+            this.body = null;
+            this.singleResult = false;
+            this.returnMinimal = false;
+        }
+
+        select(columns = '*') {
+            this.params.set('select', columns);
+            return this;
+        }
+
+        eq(column, value) {
+            this.params.set(column, `eq.${value}`);
+            return this;
+        }
+
+        lte(column, value) {
+            this.params.set(column, `lte.${value}`);
+            return this;
+        }
+
+        order(column, options = {}) {
+            const direction = options.ascending === false ? 'desc' : 'asc';
+            this.params.set('order', `${column}.${direction}`);
+            return this;
+        }
+
+        single() {
+            this.singleResult = true;
+            this.params.set('limit', '1');
+            return this;
+        }
+
+        update(data) {
+            this.method = 'PATCH';
+            this.body = JSON.stringify(data);
+            this.returnMinimal = true;
+            return this;
+        }
+
+        async execute() {
+            const res = await fetch(`${url}/rest/v1/${this.table}?${this.params.toString()}`, {
+                method: this.method,
+                headers: {
+                    ...headers,
+                    ...(this.returnMinimal ? { Prefer: 'return=minimal' } : {}),
+                },
+                body: this.body,
+            });
+
+            if (!res.ok) {
+                return { data: null, error: { message: await res.text() } };
+            }
+
+            if (this.returnMinimal) return { data: null, error: null };
+            const rows = await res.json();
+            return { data: this.singleResult ? rows[0] || null : rows, error: null };
+        }
+
+        then(resolve, reject) {
+            return this.execute().then(resolve, reject);
+        }
+    }
+
+    return {
+        from(table) {
+            return new QueryBuilder(table);
+        },
+    };
 }
 
 // ========== GRAPH API HELPERS ==========
