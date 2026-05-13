@@ -3212,8 +3212,12 @@ img {
 .custom-logo-img {
   width: 32px !important;
   height: 32px !important;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center;
   border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, rgba(255,122,53,0.24), rgba(236,72,153,0.18) 42%, rgba(15,15,21,0.96) 72%);
+  padding: 2px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 18px rgba(236,72,153,0.22);
 }
 
 /* --- Delete / X button on post cards --- */
@@ -3679,7 +3683,7 @@ img {
 .toe-brand-mark {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   color: #fff;
@@ -3687,6 +3691,12 @@ img {
   letter-spacing: 0;
   background: linear-gradient(135deg, #0f172a, #0ea5e9 48%, #ec4899);
   box-shadow: 0 8px 22px rgba(14, 165, 233, 0.22);
+}
+
+.toe-brand-logo {
+  object-fit: cover;
+  object-position: center;
+  padding: 2px;
 }
 
 .toe-title-label {
@@ -4990,6 +5000,7 @@ img {
 }
 
 .toe-text-track {
+  position: relative;
   height: 38px;
   margin-top: 8px;
   background: #a985f7;
@@ -5000,14 +5011,62 @@ img {
   color: #fff;
   font-size: 0.82rem;
   font-weight: 800;
-  padding: 0 12px;
+  padding: 0 18px;
+  cursor: grab;
+  user-select: none;
+  min-width: 44px;
 }
 
 .toe-text-track:hover,
+.toe-text-track.is-editing,
 .toe-media-track:hover {
   border-color: #57f0a4;
   box-shadow: 0 0 0 2px rgba(87, 240, 164, 0.72), 0 0 24px rgba(87, 240, 164, 0.55);
   filter: brightness(1.08);
+}
+
+.toe-text-track.is-editing {
+  cursor: grabbing;
+}
+
+.toe-track-label-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.toe-text-trim {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 16px;
+  border: 0;
+  background: rgba(87, 240, 164, 0.12);
+  cursor: ew-resize;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+}
+
+.toe-text-trim::before {
+  content: "";
+  width: 4px;
+  height: 22px;
+  border-radius: 999px;
+  background: #57f0a4;
+  box-shadow: 0 0 10px rgba(87, 240, 164, 0.75);
+}
+
+.toe-text-trim-start {
+  left: -3px;
+  border-radius: 7px 0 0 7px;
+}
+
+.toe-text-trim-end {
+  right: -3px;
+  border-radius: 0 7px 7px 0;
 }
 
 .toe-media-track {

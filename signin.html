@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign In — G-Logic Automation</title>
+  <link rel="icon" type="image/png" href="./favicon.png?v=21" />
   <meta name="description"
     content="Sign in to G-Logic Automation to schedule, plan, and automate your Instagram content." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -164,7 +165,11 @@
       width: 34px;
       height: 34px;
       border-radius: 50%;
-      object-fit: contain;
+      object-fit: cover;
+      object-position: center;
+      padding: 2px;
+      background: radial-gradient(circle at 50% 45%, rgba(255,122,53,0.24), rgba(236,72,153,0.18) 42%, rgba(15,15,21,0.96) 72%);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 18px rgba(236,72,153,0.22);
     }
 
     .hp-nav-brand span {
@@ -428,8 +433,12 @@
     .hp-glass-card .auth-logo .custom-logo-img {
       width: 28px !important;
       height: 28px !important;
-      object-fit: contain;
+      object-fit: cover;
+      object-position: center;
       border-radius: 50%;
+      padding: 2px;
+      background: radial-gradient(circle at 50% 45%, rgba(255,122,53,0.24), rgba(236,72,153,0.18) 42%, rgba(15,15,21,0.96) 72%);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 18px rgba(236,72,153,0.22);
     }
     .hp-glass-card .auth-logo span {
       font-weight: 800;
@@ -463,7 +472,7 @@
   <!-- ── Top navbar ── -->
   <nav class="hp-nav">
     <a class="hp-nav-brand" href="#">
-      <img src="./logo.jpg" alt="G-Logic Automation Logo" />
+      <img src="./glogic-logo.png" alt="G-Logic Automation Logo" class="custom-logo-img" />
       <span>G-Logic Automation</span>
     </a>
     <span class="hp-nav-badge">Instagram Planning Suite</span>
@@ -505,7 +514,7 @@
 
         <!-- Small logo inside card -->
         <div class="auth-logo">
-          <img src="./logo.jpg" alt="Logo" class="logo-icon custom-logo-img" />
+          <img src="./glogic-logo.png" alt="G-Logic Automation Logo" class="logo-icon custom-logo-img" />
           <span>G-Logic Automation</span>
         </div>
 

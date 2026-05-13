@@ -5,13 +5,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>G-Logic Automation — Smart Instagram Scheduling</title>
+    <link rel="icon" type="image/png" href="./favicon.png?v=21" />
     <meta name="description"
         content="G-Logic Automation is a professional Instagram scheduling tool for content creators. Plan, schedule, and optimize your posts for maximum engagement." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Montserrat:wght@500;600;700&family=Bebas+Neue&family=Special+Elite&family=Anton&family=Caveat:wght@500;600;700&family=Pacifico&family=Permanent+Marker&family=Bangers&family=Comic+Neue:wght@400;700&family=Chewy&family=Fredoka:wght@400;500;600;700&family=Luckiest+Guy&family=Rubik+Bubbles&family=Oswald:wght@500;600;700&family=Dancing+Script:wght@600;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="index.css?v=20" />
+    <link rel="stylesheet" href="index.css?v=21" />
 </head>
 
 <body>
@@ -21,7 +22,7 @@
             <span></span><span></span><span></span>
         </button>
         <div class="mobile-logo">
-            <img src="./logo.jpg" alt="Logo" class="logo-icon custom-logo-img" />
+            <img src="./glogic-logo.png" alt="G-Logic Automation Logo" class="logo-icon custom-logo-img" />
             <span>G-Logic Automation</span>
         </div>
         <button class="mobile-today-btn" id="mobileTodayBtn">Today</button>
@@ -33,7 +34,7 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">
-            <img src="./logo.jpg" alt="Logo" class="logo-icon custom-logo-img" />
+            <img src="./glogic-logo.png" alt="G-Logic Automation Logo" class="logo-icon custom-logo-img" />
             <span class="logo-text">G-Logic Automation</span>
         </div>
 
@@ -579,7 +580,7 @@
             <!-- Full Sidebar (mirrors Calendar page sidebar) -->
             <aside class="actions-sidebar">
                 <div class="sidebar-logo">
-                    <img src="./logo.jpg" alt="Logo" class="logo-icon custom-logo-img" />
+                    <img src="./glogic-logo.png" alt="G-Logic Automation Logo" class="logo-icon custom-logo-img" />
                     <span class="logo-text">G-Logic Automation</span>
                 </div>
                 <nav class="sidebar-nav actions-sidebar-nav">
@@ -659,7 +660,7 @@
     <div class="toe-overlay" id="toeOverlay" style="display:none;">
         <header class="toe-topbar">
             <div class="toe-topbar-left">
-                <div class="toe-brand-mark" title="G-Logic Automation">G</div>
+                <img src="./glogic-logo.png" alt="G-Logic Automation" class="toe-brand-mark toe-brand-logo" />
                 <button class="toe-icon-btn toe-back-btn" id="toeCancelBtn" type="button" data-tooltip="Back">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
                 </button>
@@ -984,7 +985,11 @@
                     <div class="toe-ruler">
                         <span>00:00</span><span>00:02</span><span>00:04</span><span>00:06</span><span>00:08</span>
                     </div>
-                    <div class="toe-text-track"><span>T&nbsp; Text</span></div>
+                    <div class="toe-text-track" id="toeTextTrack" role="slider" aria-label="Text timing">
+                        <button class="toe-text-trim toe-text-trim-start" type="button" data-trim-edge="start" data-tooltip="Adjust text start"></button>
+                        <span class="toe-track-label-text">T&nbsp; Text</span>
+                        <button class="toe-text-trim toe-text-trim-end" type="button" data-trim-edge="end" data-tooltip="Adjust text end"></button>
+                    </div>
                     <div class="toe-media-track" id="toeTimelineThumbs"></div>
                 </div>
             </div>
@@ -995,7 +1000,7 @@
     <script src="supabase.js"></script>
     <script src="auth.js"></script>
     <script src="instagram-oauth.js"></script>
-    <script src="app.js?v=20"></script>
+    <script src="app.js?v=21"></script>
 </body>
 
 </html>

@@ -866,6 +866,35 @@
     }
   }
 
+  function toeNormalizeTextTiming(item) {
+    if (!item) return;
+    item.startTime = toeClamp(Number(item.startTime ?? 0), 0, 0.96);
+    item.endTime = toeClamp(Number(item.endTime ?? 1), item.startTime + 0.04, 1);
+  }
+
+  function toeGetTimelineRangeWidth() {
+    const area = document.getElementById('toeTrackArea');
+    if (!area) return 1;
+    return Math.max(1, area.getBoundingClientRect().width - 84);
+  }
+
+  function toeUpdateTimelineTextTrack() {
+    const track = document.getElementById('toeTextTrack');
+    if (!track) return;
+    const item = toeGetActiveItem() || toeTextElements[0];
+    if (!item) {
+      track.style.display = 'none';
+      return;
+    }
+    toeNormalizeTextTiming(item);
+    const rangeWidth = toeGetTimelineRangeWidth();
+    track.style.display = '';
+    track.style.marginLeft = `${42 + item.startTime * rangeWidth}px`;
+    track.style.width = `${Math.max(44, (item.endTime - item.startTime) * rangeWidth)}px`;
+    const label = track.querySelector('.toe-track-label-text');
+    if (label) label.textContent = `T  ${toeTransformText(item.text || 'Text', item.caseMode).replace(/\s+/g, ' ').trim() || 'Text'}`;
+  }
+
   function toeSyncTimelineDuration() {
     const durationLabel = document.getElementById('toeDurationTime');
     const duration = toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration) && toeSourceMedia.duration > 0
@@ -1072,6 +1101,7 @@
         toeActiveId = item.id;
         toeRenderAll();
         toeUpdateToolbarToActive();
+        toeUpdateTimelineTextTrack();
         // Begin drag
         const startX = e.clientX;
         const startY = e.clientY;
@@ -1110,6 +1140,7 @@
         item.text = wrap.innerText;
         const inspector = document.getElementById('toeInspectorText');
         if (toeActiveId === item.id && inspector && inspector.value !== item.text) inspector.value = item.text;
+        toeUpdateTimelineTextTrack();
       });
 
       toeTextLayer.appendChild(wrap);
@@ -1150,6 +1181,7 @@
       btn.classList.toggle('active', btn.dataset.caseMode === (item.caseMode || 'normal'));
     });
     toeUpdateStylePreviewButtons(item);
+    toeUpdateTimelineTextTrack();
   }
 
   function toeAddTextElement() {
@@ -1168,6 +1200,8 @@
       lineHeight: 20,
       letterSpacing: 0,
       caseMode: 'normal',
+      startTime: 0,
+      endTime: 1,
       strokeWidth: 36,
       bgOpacity: 1,
       bgRadius: 0,
@@ -1354,13 +1388,17 @@
     toeOverlay.style.flexDirection = 'column';
 
     if (restoredTextElements.length) {
-      toeTextElements = restoredTextElements;
+      toeTextElements = restoredTextElements.map(item => {
+        toeNormalizeTextTiming(item);
+        return item;
+      });
       toeActiveId = toeTextElements[0].id;
       toeRenderAll();
       toeUpdateToolbarToActive();
     } else {
       toeAddTextElement();
     }
+    toeUpdateTimelineTextTrack();
   }
 
   function toeClose() {
@@ -1552,8 +1590,13 @@
     document.getElementById('toeColorPopover')?.classList.remove('active');
   }
 
-  function toeDrawTextItems(ctx, canvasWidth, canvasHeight) {
+  function toeDrawTextItems(ctx, canvasWidth, canvasHeight, currentTime = null, duration = null) {
     toeTextElements.forEach(item => {
+      toeNormalizeTextTiming(item);
+      if (currentTime != null && Number.isFinite(duration) && duration > 0) {
+        const pct = toeClamp(currentTime / duration, 0, 1);
+        if (pct < item.startTime || pct > item.endTime) return;
+      }
       const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
       ctx.font = `${fontConf.weight || 500} ${item.size * 2}px ${fontConf.family}`;
       ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
@@ -1714,7 +1757,7 @@
 
         const drawFrame = () => {
           ctx.drawImage(vidEl, 0, 0, canvas.width, canvas.height);
-          toeDrawTextItems(ctx, canvas.width, canvas.height);
+          toeDrawTextItems(ctx, canvas.width, canvas.height, vidEl.currentTime, vidEl.duration);
           if (Number.isFinite(vidEl.duration) && vidEl.currentTime >= vidEl.duration - 0.05) {
             stopRecording();
             return;
@@ -2019,6 +2062,55 @@
       const onMove = (mv) => toeSetTimelineProgress(setScrubX(mv));
       const onUp = () => {
         toeTrackArea.classList.remove('is-scrubbing');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        window.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      window.addEventListener('mouseup', onUp);
+    });
+  }
+
+  const toeTextTrack = document.getElementById('toeTextTrack');
+  if (toeTextTrack && toeTrackArea) {
+    const getTrackPct = (event) => {
+      const rect = toeTrackArea.getBoundingClientRect();
+      const range = Math.max(1, rect.width - 84);
+      return toeClamp((event.clientX - rect.left - 42) / range, 0, 1);
+    };
+
+    toeTextTrack.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      const item = toeGetActiveItem() || toeTextElements[0];
+      if (!item) return;
+      e.preventDefault();
+      e.stopPropagation();
+      toeActiveId = item.id;
+      toeNormalizeTextTiming(item);
+      const edge = e.target.closest('[data-trim-edge]')?.dataset.trimEdge || 'move';
+      const startX = getTrackPct(e);
+      const startStart = item.startTime;
+      const startEnd = item.endTime;
+      const minLen = 0.04;
+      toeTextTrack.classList.add('is-editing');
+
+      const onMove = (mv) => {
+        const delta = getTrackPct(mv) - startX;
+        if (edge === 'start') {
+          item.startTime = toeClamp(startStart + delta, 0, startEnd - minLen);
+        } else if (edge === 'end') {
+          item.endTime = toeClamp(startEnd + delta, startStart + minLen, 1);
+        } else {
+          const length = startEnd - startStart;
+          const nextStart = toeClamp(startStart + delta, 0, 1 - length);
+          item.startTime = nextStart;
+          item.endTime = nextStart + length;
+        }
+        toeUpdateTimelineTextTrack();
+      };
+      const onUp = () => {
+        toeTextTrack.classList.remove('is-editing');
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
         window.removeEventListener('mouseup', onUp);
@@ -3288,6 +3380,7 @@
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       if (state.currentPage === 'analytics') drawChart();
+      toeUpdateTimelineTextTrack();
     }, 150);
   });
 
