@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cleanup-orphan-media",
+      "schedule": "30 8 * * *"
+    }
+  ]
+}
