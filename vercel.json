@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cleanup-orphan-media",
-      "schedule": "30 8 * * *"
+      "schedule": "30 8 1 * *"
     }
   ]
 }
