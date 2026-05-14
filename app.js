@@ -66,8 +66,9 @@
           contentType: file.type || 'application/octet-stream',
           upsert: false
         });
+      const uploadTimeoutMs = file.type?.startsWith('video/') ? 300000 : 180000;
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Media upload timed out.')), 120000);
+        setTimeout(() => reject(new Error('Media upload timed out.')), uploadTimeoutMs);
       });
       const { data, error } = await Promise.race([uploadPromise, timeoutPromise]);
       if (error) { console.error('Upload error:', error); return null; }
@@ -855,7 +856,8 @@
 
   function toeSetTimelineProgress(progress) {
     toeTimelineProgress = toeClamp(progress || 0, 0, 1);
-    if (toeOverlay) toeOverlay.style.setProperty('--toe-playhead-x', `calc(42px + ${toeTimelineProgress * 90}%)`);
+    const rangeWidth = toeGetTimelineRangeWidth();
+    if (toeOverlay) toeOverlay.style.setProperty('--toe-playhead-x', `${42 + toeTimelineProgress * rangeWidth}px`);
     const current = document.getElementById('toeCurrentTime');
     const duration = toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration)
       ? toeSourceMedia.duration
@@ -864,6 +866,7 @@
     if (toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration) && toeSourceMedia.duration > 0) {
       toeSourceMedia.currentTime = toeSourceMedia.duration * toeTimelineProgress;
     }
+    toeUpdatePreviewVisibility();
   }
 
   function toeNormalizeTextTiming(item) {
@@ -905,6 +908,22 @@
     track.title = 'Drag to move text timing. Drag either edge to trim start or end.';
     const label = track.querySelector('.toe-track-label-text');
     if (label) label.textContent = `T  ${toeTransformText(item.text || 'Text', item.caseMode).replace(/\s+/g, ' ').trim() || 'Text'}`;
+  }
+
+  function toeIsTextVisibleAtProgress(item, progress = toeTimelineProgress) {
+    if (toeSourceMedia?.tagName !== 'VIDEO') return true;
+    toeNormalizeTextTiming(item);
+    return progress >= item.startTime && progress <= item.endTime;
+  }
+
+  function toeUpdatePreviewVisibility() {
+    toeTextElements.forEach(item => {
+      const el = toeGetEl(item.id);
+      if (!el) return;
+      const visible = toeIsTextVisibleAtProgress(item);
+      el.classList.toggle('toe-out-of-time', !visible);
+      el.contentEditable = visible ? 'true' : 'false';
+    });
   }
 
   function toeSyncTimelineDuration() {
@@ -1083,10 +1102,11 @@
       const wrap = document.createElement('div');
       wrap.className = 'toe-text-el' + (item.id === toeActiveId ? ' active-text' : '');
       wrap.id = 'toe-el-' + item.id;
-      wrap.contentEditable = 'true';
+      wrap.contentEditable = toeIsTextVisibleAtProgress(item) ? 'true' : 'false';
       wrap.textContent = toeTransformText(item.text, item.caseMode);
       wrap.draggable = false;
       toeApplyStyle(wrap, item);
+      wrap.classList.toggle('toe-out-of-time', !toeIsTextVisibleAtProgress(item));
 
       // Delete button
       const del = document.createElement('button');
@@ -1157,6 +1177,7 @@
 
       toeTextLayer.appendChild(wrap);
     });
+    toeUpdatePreviewVisibility();
   }
 
   function toeUpdateToolbarToActive() {
@@ -1366,9 +1387,11 @@
       vid.addEventListener('timeupdate', () => {
         if (Number.isFinite(vid.duration) && vid.duration > 0) {
           toeTimelineProgress = toeClamp(vid.currentTime / vid.duration, 0, 1);
-          if (toeOverlay) toeOverlay.style.setProperty('--toe-playhead-x', `calc(42px + ${toeTimelineProgress * 90}%)`);
+          const rangeWidth = toeGetTimelineRangeWidth();
+          if (toeOverlay) toeOverlay.style.setProperty('--toe-playhead-x', `${42 + toeTimelineProgress * rangeWidth}px`);
           const current = document.getElementById('toeCurrentTime');
           if (current) current.textContent = toeFormatTime(vid.currentTime);
+          toeUpdatePreviewVisibility();
         }
       });
     } else {
@@ -1720,17 +1743,24 @@
         canvas.width = fitted.width;
         canvas.height = fitted.height;
         const ctx = canvas.getContext('2d');
-        const stream = canvas.captureStream(24);
+        const exportFps = 30;
+        const stream = canvas.captureStream(exportFps);
         const mediaStream = typeof vidEl.captureStream === 'function' ? vidEl.captureStream() : null;
         mediaStream?.getAudioTracks().forEach(track => stream.addTrack(track));
         const mimeType = [
           'video/mp4;codecs=avc1.42E01E',
           'video/mp4',
-          'video/webm;codecs=vp9',
           'video/webm;codecs=vp8',
+          'video/webm;codecs=vp9',
           'video/webm'
         ].find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
-        const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 1500000 });
+        const pixels = canvas.width * canvas.height;
+        const videoBitsPerSecond = pixels >= 1600000 ? 12000000 : pixels >= 900000 ? 8000000 : 5000000;
+        const recorder = new MediaRecorder(stream, {
+          mimeType,
+          videoBitsPerSecond,
+          audioBitsPerSecond: 160000
+        });
         const chunks = [];
         const durationMs = Number.isFinite(vidEl.duration) && vidEl.duration > 0
           ? Math.min(vidEl.duration * 1000, 30000)
@@ -1779,7 +1809,7 @@
         };
 
         vidEl.onended = stopRecording;
-        recorder.start();
+        recorder.start(1000);
         stopTimer = setTimeout(stopRecording, durationMs + 1250);
         vidEl.muted = false;
         vidEl.volume = 1;
@@ -2224,7 +2254,7 @@
     if (toeTextElements.length === 0) { toeClose(); return; }
     const isVid = toeSourceMedia?.tagName === 'VIDEO';
     toeProcessing.style.display = 'flex';
-    toeProcLabel.textContent = isVid ? 'Processing video... please wait' : 'Processing image...';
+    toeProcLabel.textContent = isVid ? 'Processing HD video... please wait' : 'Processing image...';
     try {
       let blob;
       if (isVid) {

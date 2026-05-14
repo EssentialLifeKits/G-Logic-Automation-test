@@ -5052,6 +5052,12 @@ img {
   cursor: grabbing;
 }
 
+.toe-text-el.toe-out-of-time {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .toe-track-label-text {
   display: block;
   overflow: hidden;
