@@ -15,6 +15,72 @@
         return ADMIN_EMAILS.includes((email || '').toLowerCase().trim());
     }
 
+    async function apiFetch(path, options = {}) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) throw new Error('You are not signed in.');
+
+        const response = await fetch(path, {
+            ...options,
+            headers: {
+                'content-type': 'application/json',
+                authorization: `Bearer ${token}`,
+                ...(options.headers || {}),
+            },
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || 'Request failed.');
+        return payload;
+    }
+
+    function setSubscriptionGate(locked, message = '') {
+        const gate = $('#subscriptionGate');
+        const note = $('#subscriptionGateNote');
+        if (!gate) return;
+
+        document.body.classList.toggle('paywall-locked', locked);
+        gate.hidden = !locked;
+        if (note && message) note.textContent = message;
+    }
+
+    async function enforceSubscriptionGate(session) {
+        if (!isAppPage || !session) return;
+
+        if (isAdminUser(session.user?.email)) {
+            setSubscriptionGate(false);
+            return;
+        }
+
+        try {
+            const status = await apiFetch('/api/subscription-status');
+            if (!status.enabled || status.active) {
+                setSubscriptionGate(false);
+                return;
+            }
+
+            setSubscriptionGate(true, 'Choose a plan to continue using G-Logic Automation.');
+        } catch (error) {
+            console.warn('Subscription status unavailable:', error);
+            setSubscriptionGate(false);
+        }
+    }
+
+    async function startCheckout(billing) {
+        const payload = await apiFetch('/api/create-checkout-session', {
+            method: 'POST',
+            body: JSON.stringify({ billing }),
+        });
+        if (payload.url) window.location.href = payload.url;
+    }
+
+    async function openBillingPortal() {
+        const payload = await apiFetch('/api/create-billing-portal-session', {
+            method: 'POST',
+            body: JSON.stringify({}),
+        });
+        if (payload.url) window.location.href = payload.url;
+    }
+
     // ========== HELPERS ==========
     const $ = (sel) => document.querySelector(sel);
     const isSignInPage = !!$('#authForm');
@@ -60,6 +126,8 @@
             if (adminBtn && isAdminUser(session.user?.email)) {
                 adminBtn.style.display = '';
             }
+
+            await enforceSubscriptionGate(session);
         }
 
         // Populate admin user email label if on admin page
@@ -281,6 +349,51 @@
                 e.preventDefault();
                 await supabase.auth.signOut();
                 window.location.href = 'signin.html';
+            });
+        }
+
+        const subscribeMonthlyBtn = $('#subscribeMonthlyBtn');
+        if (subscribeMonthlyBtn) {
+            subscribeMonthlyBtn.addEventListener('click', async () => {
+                subscribeMonthlyBtn.disabled = true;
+                subscribeMonthlyBtn.textContent = 'Opening Stripe...';
+                try {
+                    await startCheckout('monthly');
+                } catch (error) {
+                    subscribeMonthlyBtn.disabled = false;
+                    subscribeMonthlyBtn.textContent = 'Start Monthly';
+                    alert(error.message);
+                }
+            });
+        }
+
+        const subscribeYearlyBtn = $('#subscribeYearlyBtn');
+        if (subscribeYearlyBtn) {
+            subscribeYearlyBtn.addEventListener('click', async () => {
+                subscribeYearlyBtn.disabled = true;
+                subscribeYearlyBtn.textContent = 'Opening Stripe...';
+                try {
+                    await startCheckout('yearly');
+                } catch (error) {
+                    subscribeYearlyBtn.disabled = false;
+                    subscribeYearlyBtn.textContent = 'Start Yearly';
+                    alert(error.message);
+                }
+            });
+        }
+
+        const manageBillingBtn = $('#manageBillingBtn');
+        if (manageBillingBtn) {
+            manageBillingBtn.addEventListener('click', async () => {
+                manageBillingBtn.disabled = true;
+                manageBillingBtn.textContent = 'Opening billing...';
+                try {
+                    await openBillingPortal();
+                } catch (error) {
+                    manageBillingBtn.disabled = false;
+                    manageBillingBtn.textContent = 'Manage billing';
+                    alert(error.message);
+                }
             });
         }
     }
