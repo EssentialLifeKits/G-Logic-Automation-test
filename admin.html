@@ -1118,15 +1118,20 @@
         var card = header.closest('.admin-section-card');
         var isOpen = card.classList.contains('open');
         document.querySelectorAll('.admin-section-card.open').forEach(function (c) { c.classList.remove('open'); });
+        stopAdminCustomerAutoRefresh();
         if (!isOpen) {
           card.classList.add('open');
-          if (card.id === 'adminSectionUsers') loadAdminCustomers();
+          if (card.id === 'adminSectionUsers') {
+            loadAdminCustomers(true);
+            startAdminCustomerAutoRefresh();
+          }
         }
       });
     });
 
     /* ── Customer / Lead Monitor ── */
     var acmHasLoaded = false;
+    var acmRefreshTimer = null;
 
     function acmEsc(value) {
       return String(value || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1230,6 +1235,25 @@
       acmHasLoaded = false;
       loadAdminCustomers(true);
     });
+
+    function startAdminCustomerAutoRefresh() {
+      stopAdminCustomerAutoRefresh();
+      acmRefreshTimer = setInterval(function() {
+        var section = document.getElementById('adminSectionUsers');
+        if (!section || !section.classList.contains('open')) {
+          stopAdminCustomerAutoRefresh();
+          return;
+        }
+        loadAdminCustomers(true);
+      }, 30000);
+    }
+
+    function stopAdminCustomerAutoRefresh() {
+      if (acmRefreshTimer) {
+        clearInterval(acmRefreshTimer);
+        acmRefreshTimer = null;
+      }
+    }
 
     /* ── Resources Manager ── */
     var STORAGE_KEY = 'glogic_resources_v2';
