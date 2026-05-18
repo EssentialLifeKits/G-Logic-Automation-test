@@ -893,6 +893,7 @@
     const item = toeGetActiveItem() || toeTextElements[0];
     if (!item) {
       track.style.display = 'none';
+      track.classList.add('is-hidden');
       return;
     }
     toeNormalizeTextTiming(item);
@@ -901,6 +902,7 @@
       ? toeSourceMedia.duration
       : 8;
     track.style.display = '';
+    track.classList.remove('is-hidden');
     track.style.marginLeft = `${42 + item.startTime * rangeWidth}px`;
     track.style.width = `${Math.max(44, (item.endTime - item.startTime) * rangeWidth)}px`;
     track.setAttribute('aria-valuemin', toeFormatTime(item.startTime * duration));
@@ -1432,7 +1434,9 @@
       toeRenderAll();
       toeUpdateToolbarToActive();
     } else {
-      toeAddTextElement();
+      toeRenderAll();
+      toeUpdateTimelineTextTrack();
+      toeUpdatePreviewVisibility();
     }
     toeUpdateTimelineTextTrack();
   }
@@ -2239,6 +2243,9 @@
   });
 
   document.getElementById('toeAddTextBtn')?.addEventListener('click', toeAddTextElement);
+  document.getElementById('toeTextToolBtn')?.addEventListener('click', () => {
+    if (!toeTextElements.length) toeAddTextElement();
+  });
   document.getElementById('toeCancelBtn')?.addEventListener('click', toeClose);
   document.getElementById('toeCancelBtnSecondary')?.addEventListener('click', toeClose);
 
@@ -2254,18 +2261,50 @@
     if (toeTextElements.length === 0) { toeClose(); return; }
     const isVid = toeSourceMedia?.tagName === 'VIDEO';
     toeProcessing.style.display = 'flex';
-    toeProcLabel.textContent = isVid ? 'Processing HD video... please wait' : 'Processing image...';
+    toeProcLabel.textContent = isVid ? 'Saving text timing without re-encoding video...' : 'Processing image...';
     try {
-      let blob;
       if (isVid) {
-        blob = await toeBurnVideo(toeSourceMedia);
-      } else {
-        blob = await toeBurnImage(toeSourceMedia);
+        const sourceFile = toeEditingSourceFile || uploadedFile;
+        if (!sourceFile) throw new Error('Missing source video file.');
+        const savedTextElements = JSON.parse(JSON.stringify(toeTextElements));
+        sourceFile._isVideo = true;
+        sourceFile._toeSourceFile = sourceFile;
+        sourceFile._toeTextElements = savedTextElements;
+        sourceFile._hasTextOverlay = savedTextElements.length > 0;
+        sourceFile._uploadError = false;
+        uploadedFile = sourceFile;
+
+        const videoEl = els.uploadZone.querySelector('video') || document.createElement('video');
+        videoEl.src = URL.createObjectURL(sourceFile);
+        videoEl.controls = true;
+        videoEl.muted = false;
+        videoEl.preload = 'metadata';
+        videoEl.playsInline = true;
+        videoEl.style.cssText = 'max-width:100%;border-radius:12px;';
+        els.uploadZone.querySelectorAll('video').forEach(v => {
+          if (v !== videoEl) v.remove();
+        });
+        if (!videoEl.parentElement) els.uploadZone.appendChild(videoEl);
+        els.uploadPreview.style.display = 'none';
+
+        setAddTextButtonState(true);
+        setEditMediaButtonState(true);
+        if (els.addTextBtn) {
+          els.addTextBtn.classList.add('has-overlay');
+          els.addTextBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit Text';
+          els.addTextBtn.title = 'Return to text overlay editor';
+        }
+        setReturnToEditorButtonState(true);
+        showToast('Text timing saved. Original video quality preserved.');
+        toeClose();
+        validateForm();
+        return;
       }
+
+      let blob;
+      blob = await toeBurnImage(toeSourceMedia);
       // Create a new File object from the blob
-      const ext = isVid
-        ? (blob.type.includes('mp4') ? 'mp4' : 'webm')
-        : (blob.type.includes('png') ? 'png' : 'jpg');
+      const ext = blob.type.includes('png') ? 'png' : 'jpg';
       const newFile = new File([blob], `overlay_${Date.now()}.${ext}`, { type: blob.type });
       newFile._isVideo = isVid;
       newFile._toeSourceFile = toeEditingSourceFile || uploadedFile;

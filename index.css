@@ -1850,9 +1850,9 @@ body:not(.paywall-checking) .subscription-loading {
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.2);
+  background: linear-gradient(135deg, rgba(16,185,129,0.92), rgba(6,95,70,0.94));
+  color: #f8fffb;
+  border: 1px solid rgba(87, 240, 164, 0.72);
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 0.75rem;
@@ -1862,13 +1862,15 @@ body:not(.paywall-checking) .subscription-loading {
   display: flex;
   align-items: center;
   gap: 6px;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 0 1px rgba(87,240,164,0.16), 0 0 22px rgba(87,240,164,0.5);
   transition: all 0.2s ease;
 }
 
 .capture-thumb-btn:hover {
-  background: rgba(0, 0, 0, 0.9);
-  border-color: var(--accent-instagram);
+  background: linear-gradient(135deg, rgba(52,211,153,0.98), rgba(16,185,129,0.98));
+  border-color: #57f0a4;
+  box-shadow: 0 0 0 2px rgba(87,240,164,0.35), 0 0 32px rgba(87,240,164,0.74);
   transform: translateX(-50%) scale(1.05);
 }
 
@@ -5228,10 +5230,14 @@ body:not(.paywall-checking) .subscription-loading {
   color: #fff;
   font-size: 0.82rem;
   font-weight: 800;
-  padding: 0 18px;
+  padding: 0 26px;
   cursor: grab;
   user-select: none;
   min-width: 44px;
+}
+
+.toe-text-track.is-hidden {
+  display: none;
 }
 
 .toe-text-track::before,
@@ -5285,15 +5291,15 @@ body:not(.paywall-checking) .subscription-loading {
 
 .toe-text-trim {
   position: absolute;
-  top: -8px;
-  bottom: -8px;
-  width: 34px;
+  top: -7px;
+  bottom: -7px;
+  width: 22px;
   border: 0;
   appearance: none;
   -webkit-appearance: none;
   padding: 0;
   margin: 0;
-  background: rgba(87, 240, 164, 0.24);
+  background: rgba(87, 240, 164, 0.14);
   cursor: ew-resize;
   z-index: 7;
   display: grid;
@@ -5305,30 +5311,34 @@ body:not(.paywall-checking) .subscription-loading {
 }
 
 .toe-text-trim::before {
-  content: "";
-  width: 6px;
-  height: 28px;
-  border-radius: 999px;
-  background: #57f0a4;
-  box-shadow: 0 0 10px rgba(87, 240, 164, 0.75);
+  content: "<|>";
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  color: #57f0a4;
+  font-size: 0.58rem;
+  letter-spacing: -0.08em;
+  text-shadow: 0 0 10px rgba(87, 240, 164, 0.85);
+  box-shadow: none;
 }
 
 .toe-text-trim::after {
   content: "";
   position: absolute;
-  inset: -8px;
+  inset: -7px -3px;
   border: 1px solid rgba(87, 240, 164, 0.55);
   border-radius: 8px;
   box-shadow: 0 0 14px rgba(87, 240, 164, 0.35);
 }
 
 .toe-text-trim-start {
-  left: -14px;
+  left: -18px;
   border-radius: 7px 0 0 7px;
 }
 
 .toe-text-trim-end {
-  right: -14px;
+  right: -18px;
   border-radius: 0 7px 7px 0;
 }
 
