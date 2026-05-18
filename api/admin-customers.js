@@ -56,6 +56,7 @@ function tsToIso(value) {
 function normalizeStripeSubscription(subscription, fallback = {}) {
   if (!subscription) return fallback || null;
   const item = subscription.items?.data?.[0] || {};
+  const scheduledCancelAt = tsToIso(subscription.cancel_at) || fallback.cancel_at || null;
   return {
     ...fallback,
     stripe_customer_id: subscription.customer || fallback.stripe_customer_id || '',
@@ -65,16 +66,23 @@ function normalizeStripeSubscription(subscription, fallback = {}) {
     status: subscription.status || fallback.status || '',
     current_period_start: tsToIso(subscription.current_period_start || item.current_period_start) || fallback.current_period_start || null,
     current_period_end: tsToIso(subscription.current_period_end || item.current_period_end) || fallback.current_period_end || null,
-    cancel_at_period_end: Boolean(subscription.cancel_at_period_end ?? fallback.cancel_at_period_end),
+    cancel_at: scheduledCancelAt,
+    cancel_at_period_end: Boolean(subscription.cancel_at_period_end ?? fallback.cancel_at_period_end ?? scheduledCancelAt),
     canceled_at: tsToIso(subscription.canceled_at) || fallback.canceled_at || null,
+    ended_at: tsToIso(subscription.ended_at) || fallback.ended_at || null,
+    cancellation_details: subscription.cancellation_details || fallback.cancellation_details || null,
     live_stripe_checked_at: new Date().toISOString(),
   };
+}
+
+function isScheduledToCancel(subscription) {
+  return Boolean(subscription?.cancel_at_period_end || subscription?.cancel_at);
 }
 
 function subscriptionLabel(subscription) {
   if (!subscription) return 'Lead';
   if (ACTIVE_STATUSES.has(subscription.status)) {
-    return subscription.cancel_at_period_end ? 'Cancels Soon' : 'Active';
+    return isScheduledToCancel(subscription) ? 'Cancels Soon' : 'Active';
   }
   if (subscription.status === 'canceled') return 'Canceled';
   if (subscription.status === 'past_due') return 'Past Due';
@@ -170,9 +178,11 @@ module.exports = async function handler(req, res) {
         statusLabel: subscriptionLabel(subscription),
         planLabel: planLabel(subscription),
         subscriptionStatus: subscription?.status || 'lead',
-        cancelAtPeriodEnd: Boolean(subscription?.cancel_at_period_end),
+        cancelAtPeriodEnd: isScheduledToCancel(subscription),
+        cancelAt: subscription?.cancel_at || null,
         currentPeriodEnd: subscription?.current_period_end || null,
         canceledAt: subscription?.canceled_at || null,
+        endedAt: subscription?.ended_at || null,
         stripeCustomerId: subscription?.stripe_customer_id || '',
         stripeSubscriptionId: subscription?.stripe_subscription_id || '',
         liveStripeCheckedAt: subscription?.live_stripe_checked_at || null,
@@ -185,7 +195,8 @@ module.exports = async function handler(req, res) {
       updatedAt: new Date().toISOString(),
       counts: {
         total: customers.length,
-        active: customers.filter(customer => customer.statusLabel === 'Active' || customer.statusLabel === 'Cancels Soon').length,
+        active: customers.filter(customer => customer.statusLabel === 'Active').length,
+        canceling: customers.filter(customer => customer.statusLabel === 'Cancels Soon').length,
         leads: customers.filter(customer => customer.statusLabel === 'Lead').length,
         canceled: customers.filter(customer => customer.statusLabel === 'Canceled').length,
       },

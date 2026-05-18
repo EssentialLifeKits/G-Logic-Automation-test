@@ -416,7 +416,7 @@
     }
     .acm-summary {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 10px;
       flex: 1;
     }
@@ -1064,7 +1064,8 @@
             <div class="acm-toolbar">
               <div class="acm-summary" id="acmSummary">
                 <div class="acm-stat"><strong>—</strong><span>Total Users</span></div>
-                <div class="acm-stat"><strong>—</strong><span>Active Subs</span></div>
+                <div class="acm-stat"><strong>—</strong><span>Active</span></div>
+                <div class="acm-stat"><strong>—</strong><span>Canceling</span></div>
                 <div class="acm-stat"><strong>—</strong><span>Leads</span></div>
                 <div class="acm-stat"><strong>—</strong><span>Canceled</span></div>
               </div>
@@ -1153,9 +1154,9 @@
     }
 
     function acmCancellationText(customer) {
-      if (customer.cancelAtPeriodEnd) return 'Cancels ' + acmDate(customer.currentPeriodEnd);
+      if (customer.cancelAtPeriodEnd) return 'Cancels ' + acmDate(customer.cancelAt || customer.currentPeriodEnd);
       if (customer.statusLabel === 'Active') return 'Renews ' + acmDate(customer.currentPeriodEnd);
-      if (customer.canceledAt) return 'Canceled ' + acmDate(customer.canceledAt);
+      if (customer.canceledAt || customer.endedAt) return 'Canceled ' + acmDate(customer.canceledAt || customer.endedAt);
       return '—';
     }
 
@@ -1163,7 +1164,8 @@
       var counts = data.counts || {};
       document.getElementById('acmSummary').innerHTML =
         '<div class="acm-stat"><strong>'+acmEsc(counts.total ?? 0)+'</strong><span>Total Users</span></div>' +
-        '<div class="acm-stat"><strong>'+acmEsc(counts.active ?? 0)+'</strong><span>Active Subs</span></div>' +
+        '<div class="acm-stat"><strong>'+acmEsc(counts.active ?? 0)+'</strong><span>Active</span></div>' +
+        '<div class="acm-stat"><strong>'+acmEsc(counts.canceling ?? 0)+'</strong><span>Canceling</span></div>' +
         '<div class="acm-stat"><strong>'+acmEsc(counts.leads ?? 0)+'</strong><span>Leads</span></div>' +
         '<div class="acm-stat"><strong>'+acmEsc(counts.canceled ?? 0)+'</strong><span>Canceled</span></div>';
 
