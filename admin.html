@@ -466,6 +466,7 @@
     }
     .acm-table-wrap {
       overflow: auto;
+      max-height: 520px;
       border: 1px solid rgba(255,255,255,0.06);
       border-radius: 14px;
       background: rgba(255,255,255,0.02);
@@ -485,12 +486,15 @@
       font-size: 0.76rem;
     }
     .acm-table th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
       color: rgba(255,255,255,0.48);
       font-size: 0.66rem;
       font-weight: 800;
       letter-spacing: 0.07em;
       text-transform: uppercase;
-      background: rgba(255,255,255,0.025);
+      background: #20202a;
     }
     .acm-table tr:last-child td { border-bottom: 0; }
     .acm-primary {
@@ -548,6 +552,21 @@
       color: rgba(255,255,255,0.36);
       font-size: 0.72rem;
       text-align: right;
+    }
+    .acm-table-wrap::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    .acm-table-wrap::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.03);
+      border-radius: 999px;
+    }
+    .acm-table-wrap::-webkit-scrollbar-thumb {
+      background: rgba(192,132,252,0.25);
+      border-radius: 999px;
+    }
+    .acm-table-wrap::-webkit-scrollbar-thumb:hover {
+      background: rgba(52,211,153,0.35);
     }
 
     /* ── Mobile responsive ── */

@@ -123,9 +123,14 @@
 
         // Show admin portal button only to admin users on the app page
         if (isAppPage && session) {
+            const isAdmin = isAdminUser(session.user?.email);
             const adminBtn = $('#adminPortalBtn');
-            if (adminBtn && isAdminUser(session.user?.email)) {
+            if (adminBtn && isAdmin) {
                 adminBtn.style.display = '';
+            }
+            const sidebarBillingBtn = $('#sidebarManageBillingBtn');
+            if (sidebarBillingBtn && isAdmin) {
+                sidebarBillingBtn.style.display = 'none';
             }
 
             await enforceSubscriptionGate(session);

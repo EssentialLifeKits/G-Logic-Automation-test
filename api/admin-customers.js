@@ -49,6 +49,28 @@ function cleanCustomer(customer) {
   };
 }
 
+function tsToIso(value) {
+  return value ? new Date(value * 1000).toISOString() : null;
+}
+
+function normalizeStripeSubscription(subscription, fallback = {}) {
+  if (!subscription) return fallback || null;
+  const item = subscription.items?.data?.[0] || {};
+  return {
+    ...fallback,
+    stripe_customer_id: subscription.customer || fallback.stripe_customer_id || '',
+    stripe_subscription_id: subscription.id || fallback.stripe_subscription_id || '',
+    stripe_price_id: item.price?.id || fallback.stripe_price_id || '',
+    stripe_product_id: item.price?.product || fallback.stripe_product_id || '',
+    status: subscription.status || fallback.status || '',
+    current_period_start: tsToIso(subscription.current_period_start || item.current_period_start) || fallback.current_period_start || null,
+    current_period_end: tsToIso(subscription.current_period_end || item.current_period_end) || fallback.current_period_end || null,
+    cancel_at_period_end: Boolean(subscription.cancel_at_period_end ?? fallback.cancel_at_period_end),
+    canceled_at: tsToIso(subscription.canceled_at) || fallback.canceled_at || null,
+    live_stripe_checked_at: new Date().toISOString(),
+  };
+}
+
 function subscriptionLabel(subscription) {
   if (!subscription) return 'Lead';
   if (ACTIVE_STATUSES.has(subscription.status)) {
@@ -105,8 +127,32 @@ module.exports = async function handler(req, res) {
       }
     }));
 
+    const stripeSubscriptionIds = [...new Set(
+      (subscriptions || [])
+        .map(subscription => subscription.stripe_subscription_id)
+        .filter(Boolean)
+    )];
+
+    const liveSubscriptions = new Map();
+    await Promise.all(stripeSubscriptionIds.map(async id => {
+      try {
+        liveSubscriptions.set(id, normalizeStripeSubscription(
+          await stripeGet(`/subscriptions/${encodeURIComponent(id)}`),
+          (subscriptions || []).find(subscription => subscription.stripe_subscription_id === id) || {}
+        ));
+      } catch (error) {
+        liveSubscriptions.set(id, {
+          ...((subscriptions || []).find(subscription => subscription.stripe_subscription_id === id) || {}),
+          live_stripe_error: error.message,
+        });
+      }
+    }));
+
     const customers = authUsers.map(authUser => {
-      const subscription = subscriptionByUser.get(authUser.id) || null;
+      const storedSubscription = subscriptionByUser.get(authUser.id) || null;
+      const subscription = storedSubscription?.stripe_subscription_id
+        ? liveSubscriptions.get(storedSubscription.stripe_subscription_id) || storedSubscription
+        : storedSubscription;
       const stripeCustomer = subscription?.stripe_customer_id
         ? stripeCustomers.get(subscription.stripe_customer_id) || null
         : null;
@@ -129,6 +175,8 @@ module.exports = async function handler(req, res) {
         canceledAt: subscription?.canceled_at || null,
         stripeCustomerId: subscription?.stripe_customer_id || '',
         stripeSubscriptionId: subscription?.stripe_subscription_id || '',
+        liveStripeCheckedAt: subscription?.live_stripe_checked_at || null,
+        liveStripeError: subscription?.live_stripe_error || '',
         stripeCustomer,
       };
     }).sort((a, b) => new Date(b.signupDate || 0) - new Date(a.signupDate || 0));
