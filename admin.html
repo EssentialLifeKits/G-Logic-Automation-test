@@ -525,9 +525,10 @@
       border: 1px solid rgba(52,211,153,0.24);
     }
     .acm-badge.cancel {
-      color: #fbbf24;
-      background: rgba(251,191,36,0.12);
-      border: 1px solid rgba(251,191,36,0.24);
+      color: #fecaca;
+      background: rgba(239,68,68,0.18);
+      border: 1px solid rgba(248,113,113,0.46);
+      box-shadow: 0 0 14px rgba(248,113,113,0.28);
     }
     .acm-badge.lead {
       color: #93c5fd;
@@ -535,9 +536,21 @@
       border: 1px solid rgba(147,197,253,0.2);
     }
     .acm-badge.off {
-      color: #f87171;
-      background: rgba(248,113,113,0.1);
-      border: 1px solid rgba(248,113,113,0.2);
+      color: #fecaca;
+      background: rgba(248,113,113,0.12);
+      border: 1px solid rgba(248,113,113,0.32);
+      box-shadow: 0 0 12px rgba(248,113,113,0.18);
+    }
+    .acm-cancel-notice {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      color: #fecaca;
+      background: rgba(239,68,68,0.16);
+      border: 1px solid rgba(248,113,113,0.42);
+      box-shadow: 0 0 16px rgba(248,113,113,0.26);
+      font-weight: 900;
     }
     .acm-empty,
     .acm-error {
@@ -1161,6 +1174,8 @@
       } else {
         rows.innerHTML = customers.map(function(customer) {
           var statusClass = acmBadgeClass(customer.statusLabel);
+          var cancellationText = acmCancellationText(customer);
+          var cancellationClass = (customer.cancelAtPeriodEnd || customer.statusLabel === 'Canceled') ? ' acm-cancel-notice' : '';
           var stripeId = customer.stripeCustomerId || '';
           var stripeLink = stripeId ? 'https://dashboard.stripe.com/customers/' + encodeURIComponent(stripeId) : '';
           var stripeHtml = stripeId
@@ -1172,7 +1187,7 @@
             '<td><span class="acm-primary">'+acmEsc(customer.phone || 'No phone')+'</span><span class="acm-secondary">'+acmEsc(customer.company || 'No business name')+'</span><span class="acm-secondary">'+acmEsc(customer.instagram || 'No Instagram handle')+'</span></td>' +
             '<td><span class="acm-badge '+statusClass+'">'+acmEsc(customer.statusLabel)+'</span><span class="acm-secondary">Last sign-in '+acmDate(customer.lastSignIn)+'</span></td>' +
             '<td><span class="acm-primary">'+acmEsc(customer.planLabel)+'</span><span class="acm-secondary">'+acmEsc(customer.subscriptionStatus)+'</span></td>' +
-            '<td><span class="acm-primary">'+acmEsc(acmCancellationText(customer))+'</span><span class="acm-secondary">Period end '+acmDate(customer.currentPeriodEnd)+'</span></td>' +
+            '<td><span class="acm-primary'+cancellationClass+'">'+acmEsc(cancellationText)+'</span><span class="acm-secondary">Period end '+acmDate(customer.currentPeriodEnd)+'</span></td>' +
             '<td>'+stripeHtml+'<span class="acm-secondary">'+acmEsc(customer.stripeSubscriptionId || '')+'</span></td>' +
           '</tr>';
         }).join('');
