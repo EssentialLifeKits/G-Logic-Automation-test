@@ -38,6 +38,7 @@
         const note = $('#subscriptionGateNote');
         if (!gate) return;
 
+        document.body.classList.remove('paywall-checking');
         document.body.classList.toggle('paywall-locked', locked);
         gate.hidden = !locked;
         if (note && message) note.textContent = message;
@@ -382,20 +383,21 @@
             });
         }
 
-        const manageBillingBtn = $('#manageBillingBtn');
-        if (manageBillingBtn) {
+        const manageBillingButtons = [$('#manageBillingBtn'), $('#sidebarManageBillingBtn')].filter(Boolean);
+        manageBillingButtons.forEach((manageBillingBtn) => {
             manageBillingBtn.addEventListener('click', async () => {
+                const originalText = manageBillingBtn.textContent;
                 manageBillingBtn.disabled = true;
                 manageBillingBtn.textContent = 'Opening billing...';
                 try {
                     await openBillingPortal();
                 } catch (error) {
                     manageBillingBtn.disabled = false;
-                    manageBillingBtn.textContent = 'Manage billing';
+                    manageBillingBtn.textContent = originalText;
                     alert(error.message);
                 }
             });
-        }
+        });
     }
 
     checkSession();

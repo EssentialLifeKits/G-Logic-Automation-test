@@ -113,15 +113,60 @@ img {
 }
 
 body.paywall-locked .sidebar,
-body.paywall-locked .mobile-header {
+body.paywall-locked .mobile-header,
+body.paywall-checking .sidebar,
+body.paywall-checking .mobile-header {
   filter: blur(8px);
   pointer-events: none;
   user-select: none;
 }
 
 body.paywall-locked .main-content > .page,
-body.paywall-locked .main-content > .modal-overlay {
+body.paywall-locked .main-content > .modal-overlay,
+body.paywall-checking .main-content > .page,
+body.paywall-checking .main-content > .modal-overlay {
   display: none !important;
+}
+
+.subscription-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(245, 133, 41, 0.12), transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(221, 42, 123, 0.16), transparent 34%),
+    var(--bg-primary);
+}
+
+body:not(.paywall-checking) .subscription-loading {
+  display: none !important;
+}
+
+.subscription-loading-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  background: rgba(18, 18, 26, 0.92);
+  color: var(--text-secondary);
+  font-weight: 800;
+  box-shadow: var(--shadow-lg);
+}
+
+.subscription-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(52, 211, 153, 0.18);
+  border-top-color: var(--success);
+  border-radius: 50%;
+  animation: subscription-spin 0.8s linear infinite;
+}
+
+@keyframes subscription-spin {
+  to { transform: rotate(360deg); }
 }
 
 .subscription-gate {
@@ -3274,6 +3319,39 @@ body.paywall-locked .main-content > .modal-overlay {
 .admin-portal-btn span {
   position: relative;
   z-index: 1;
+}
+
+.manage-subscription-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--success);
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.24);
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+  margin-top: 8px;
+  position: relative;
+}
+
+.manage-subscription-btn:hover {
+  color: #6ee7b7;
+  background: rgba(52, 211, 153, 0.14);
+  border-color: rgba(52, 211, 153, 0.42);
+  transform: translateY(-1px);
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.18);
+}
+
+.manage-subscription-btn svg {
+  width: 18px;
+  height: 18px;
+  color: var(--success);
+  flex-shrink: 0;
 }
 
 /* Connect to Instagram button in sidebar */
