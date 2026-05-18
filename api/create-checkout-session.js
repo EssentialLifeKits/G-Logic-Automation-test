@@ -38,6 +38,7 @@ module.exports = async function handler(req, res) {
       'line_items[0][quantity]': '1',
       'metadata[user_id]': user.id,
       'subscription_data[metadata][user_id]': user.id,
+      'phone_number_collection[enabled]': 'true',
       allow_promotion_codes: 'true',
     };
 

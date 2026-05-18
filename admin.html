@@ -406,11 +406,158 @@
       text-transform: uppercase;
     }
 
+    /* ══════════════ ADMIN CUSTOMER MONITOR ══════════════ */
+    .acm-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 0;
+    }
+    .acm-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      flex: 1;
+    }
+    .acm-stat {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .acm-stat strong {
+      display: block;
+      font-size: 1.15rem;
+      color: #fff;
+      line-height: 1;
+    }
+    .acm-stat span {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.42);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .acm-refresh {
+      border: 1px solid rgba(52,211,153,0.28);
+      border-radius: 10px;
+      background: rgba(52,211,153,0.09);
+      color: #34d399;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 800;
+      padding: 12px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .2s, box-shadow .2s, transform .2s;
+    }
+    .acm-refresh:hover {
+      background: rgba(52,211,153,0.16);
+      box-shadow: 0 0 18px rgba(52,211,153,0.2);
+      transform: translateY(-1px);
+    }
+    .acm-note {
+      margin: 0 0 14px;
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.46);
+      line-height: 1.5;
+    }
+    .acm-table-wrap {
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.02);
+    }
+    .acm-table {
+      width: 100%;
+      min-width: 920px;
+      border-collapse: collapse;
+      color: #fff;
+    }
+    .acm-table th,
+    .acm-table td {
+      padding: 13px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.055);
+      vertical-align: top;
+      font-size: 0.76rem;
+    }
+    .acm-table th {
+      color: rgba(255,255,255,0.48);
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.025);
+    }
+    .acm-table tr:last-child td { border-bottom: 0; }
+    .acm-primary {
+      display: block;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .acm-secondary {
+      display: block;
+      color: rgba(255,255,255,0.46);
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .acm-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 0.68rem;
+      white-space: nowrap;
+    }
+    .acm-badge.active {
+      color: #34d399;
+      background: rgba(52,211,153,0.12);
+      border: 1px solid rgba(52,211,153,0.24);
+    }
+    .acm-badge.cancel {
+      color: #fbbf24;
+      background: rgba(251,191,36,0.12);
+      border: 1px solid rgba(251,191,36,0.24);
+    }
+    .acm-badge.lead {
+      color: #93c5fd;
+      background: rgba(147,197,253,0.1);
+      border: 1px solid rgba(147,197,253,0.2);
+    }
+    .acm-badge.off {
+      color: #f87171;
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.2);
+    }
+    .acm-empty,
+    .acm-error {
+      padding: 28px;
+      text-align: center;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.82rem;
+    }
+    .acm-error { color: #f87171; }
+    .acm-updated {
+      margin-top: 10px;
+      color: rgba(255,255,255,0.36);
+      font-size: 0.72rem;
+      text-align: right;
+    }
+
     /* ── Mobile responsive ── */
     @media (max-width: 768px) {
       .admin-sidebar { width: 240px; transform: translateX(-100%); transition: transform 0.3s ease; }
       .admin-sidebar.open { transform: translateX(0); }
       .admin-main { margin-left: 0; padding: 80px 20px 40px; }
+      .acm-toolbar { flex-direction: column; align-items: stretch; }
+      .acm-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .acm-refresh { width: 100%; }
     }
 
     /* ══════════════ RESOURCES MANAGER EDITOR ══════════════ */
@@ -882,19 +1029,37 @@
             </div>
           </div>
           <div class="admin-section-body">
-            <div class="admin-coming-soon">
-              <div class="admin-coming-soon-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                  <path d="M16 3.13a4 4 0 010 7.75" />
-                </svg>
+            <div class="acm-toolbar">
+              <div class="acm-summary" id="acmSummary">
+                <div class="acm-stat"><strong>—</strong><span>Total Users</span></div>
+                <div class="acm-stat"><strong>—</strong><span>Active Subs</span></div>
+                <div class="acm-stat"><strong>—</strong><span>Leads</span></div>
+                <div class="acm-stat"><strong>—</strong><span>Canceled</span></div>
               </div>
-              <h4>User Monitor</h4>
-              <p>Live list of registered users with session counts, sign-up dates, and last-active timestamps from Supabase.</p>
-              <span class="admin-wip-tag">⚙️ In Development</span>
+              <button class="acm-refresh" id="acmRefreshBtn" type="button">Refresh Live Data</button>
             </div>
+            <p class="acm-note">
+              This monitor combines Supabase signup users with the latest Stripe customer/subscription data.
+              A signup without a paid subscription is shown as a lead in the same customer list.
+            </p>
+            <div class="acm-table-wrap">
+              <table class="acm-table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Contact</th>
+                    <th>Status</th>
+                    <th>Plan</th>
+                    <th>Cancellation / Renewal</th>
+                    <th>Stripe</th>
+                  </tr>
+                </thead>
+                <tbody id="acmRows">
+                  <tr><td colspan="6" class="acm-empty">Open this section to load customers.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="acm-updated" id="acmUpdated"></div>
           </div>
         </div>
 
@@ -920,8 +1085,114 @@
         var card = header.closest('.admin-section-card');
         var isOpen = card.classList.contains('open');
         document.querySelectorAll('.admin-section-card.open').forEach(function (c) { c.classList.remove('open'); });
-        if (!isOpen) { card.classList.add('open'); }
+        if (!isOpen) {
+          card.classList.add('open');
+          if (card.id === 'adminSectionUsers') loadAdminCustomers();
+        }
       });
+    });
+
+    /* ── Customer / Lead Monitor ── */
+    var acmHasLoaded = false;
+
+    function acmEsc(value) {
+      return String(value || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function acmDate(value) {
+      if (!value) return '—';
+      var date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '—';
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function acmDateTime(value) {
+      if (!value) return '—';
+      var date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '—';
+      return date.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+
+    function acmBadgeClass(status) {
+      if (status === 'Active') return 'active';
+      if (status === 'Cancels Soon') return 'cancel';
+      if (status === 'Lead') return 'lead';
+      return 'off';
+    }
+
+    function acmCancellationText(customer) {
+      if (customer.cancelAtPeriodEnd) return 'Cancels ' + acmDate(customer.currentPeriodEnd);
+      if (customer.statusLabel === 'Active') return 'Renews ' + acmDate(customer.currentPeriodEnd);
+      if (customer.canceledAt) return 'Canceled ' + acmDate(customer.canceledAt);
+      return '—';
+    }
+
+    function acmRender(data) {
+      var counts = data.counts || {};
+      document.getElementById('acmSummary').innerHTML =
+        '<div class="acm-stat"><strong>'+acmEsc(counts.total ?? 0)+'</strong><span>Total Users</span></div>' +
+        '<div class="acm-stat"><strong>'+acmEsc(counts.active ?? 0)+'</strong><span>Active Subs</span></div>' +
+        '<div class="acm-stat"><strong>'+acmEsc(counts.leads ?? 0)+'</strong><span>Leads</span></div>' +
+        '<div class="acm-stat"><strong>'+acmEsc(counts.canceled ?? 0)+'</strong><span>Canceled</span></div>';
+
+      var rows = document.getElementById('acmRows');
+      var customers = data.customers || [];
+      if (!customers.length) {
+        rows.innerHTML = '<tr><td colspan="6" class="acm-empty">No users found yet.</td></tr>';
+      } else {
+        rows.innerHTML = customers.map(function(customer) {
+          var statusClass = acmBadgeClass(customer.statusLabel);
+          var stripeId = customer.stripeCustomerId || '';
+          var stripeLink = stripeId ? 'https://dashboard.stripe.com/customers/' + encodeURIComponent(stripeId) : '';
+          var stripeHtml = stripeId
+            ? '<a class="acm-secondary" href="'+stripeLink+'" target="_blank" rel="noopener">'+acmEsc(stripeId)+'</a>'
+            : '<span class="acm-secondary">No Stripe customer yet</span>';
+
+          return '<tr>' +
+            '<td><span class="acm-primary">'+acmEsc(customer.name || 'Unnamed user')+'</span><span class="acm-secondary">'+acmEsc(customer.email)+'</span><span class="acm-secondary">Signed up '+acmDate(customer.signupDate)+'</span></td>' +
+            '<td><span class="acm-primary">'+acmEsc(customer.phone || 'No phone')+'</span><span class="acm-secondary">'+acmEsc(customer.company || 'No business name')+'</span><span class="acm-secondary">'+acmEsc(customer.instagram || 'No Instagram handle')+'</span></td>' +
+            '<td><span class="acm-badge '+statusClass+'">'+acmEsc(customer.statusLabel)+'</span><span class="acm-secondary">Last sign-in '+acmDate(customer.lastSignIn)+'</span></td>' +
+            '<td><span class="acm-primary">'+acmEsc(customer.planLabel)+'</span><span class="acm-secondary">'+acmEsc(customer.subscriptionStatus)+'</span></td>' +
+            '<td><span class="acm-primary">'+acmEsc(acmCancellationText(customer))+'</span><span class="acm-secondary">Period end '+acmDate(customer.currentPeriodEnd)+'</span></td>' +
+            '<td>'+stripeHtml+'<span class="acm-secondary">'+acmEsc(customer.stripeSubscriptionId || '')+'</span></td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      document.getElementById('acmUpdated').textContent = 'Updated ' + acmDateTime(data.updatedAt);
+    }
+
+    async function loadAdminCustomers(force) {
+      if (acmHasLoaded && !force) return;
+      acmHasLoaded = true;
+      var rows = document.getElementById('acmRows');
+      var refresh = document.getElementById('acmRefreshBtn');
+      rows.innerHTML = '<tr><td colspan="6" class="acm-empty">Loading live customer data...</td></tr>';
+      if (refresh) refresh.textContent = 'Refreshing...';
+
+      try {
+        var sessionResult = await window.supabase.auth.getSession();
+        var token = sessionResult && sessionResult.data && sessionResult.data.session
+          ? sessionResult.data.session.access_token
+          : '';
+        if (!token) throw new Error('Admin session not found. Please sign in again.');
+
+        var response = await fetch('/api/admin-customers', {
+          headers: { authorization: 'Bearer ' + token },
+        });
+        var payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'Could not load customers.');
+        acmRender(payload);
+      } catch (error) {
+        rows.innerHTML = '<tr><td colspan="6" class="acm-error">'+acmEsc(error.message)+'</td></tr>';
+      } finally {
+        if (refresh) refresh.textContent = 'Refresh Live Data';
+      }
+    }
+
+    document.getElementById('acmRefreshBtn').addEventListener('click', function() {
+      acmHasLoaded = false;
+      loadAdminCustomers(true);
     });
 
     /* ── Resources Manager ── */
