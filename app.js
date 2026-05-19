@@ -2874,14 +2874,10 @@
           // Re-run validation to re-enable Schedule button now that upload is ready
           validateForm();
         } else {
-          showToast('Media upload failed — please try again.');
-          uploadedFile = null;
-          els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
-          els.uploadPreview.src = '';
-          els.uploadPreview.classList.remove('visible');
-          els.uploadPlaceholder.style.display = '';
-          setAddTextButtonState(false);
-          setEditMediaButtonState(false);
+          uploadTarget._uploadError = true;
+          showToast('Media upload failed — video kept. Tap Retry Media Upload.');
+          setAddTextButtonState(true);
+          setEditMediaButtonState(true);
           validateForm();
         }
         return url;
@@ -2913,18 +2909,21 @@
       try {
         const isOriginalVertical = videoEl.videoHeight > videoEl.videoWidth;
         const tempCanvas = document.createElement('canvas');
+        const maxThumbEdge = window.matchMedia('(max-width: 768px)').matches ? 540 : 720;
         if (isOriginalVertical) {
-          tempCanvas.width = 1080;
-          tempCanvas.height = Math.floor((videoEl.videoHeight / videoEl.videoWidth) * 1080);
+          tempCanvas.width = maxThumbEdge;
+          tempCanvas.height = Math.floor((videoEl.videoHeight / videoEl.videoWidth) * maxThumbEdge);
         } else {
-          tempCanvas.height = 1080;
-          tempCanvas.width = Math.floor((videoEl.videoWidth / videoEl.videoHeight) * 1080);
+          tempCanvas.height = maxThumbEdge;
+          tempCanvas.width = Math.floor((videoEl.videoWidth / videoEl.videoHeight) * maxThumbEdge);
         }
+        if (!Number.isFinite(tempCanvas.width) || tempCanvas.width <= 0) tempCanvas.width = maxThumbEdge;
+        if (!Number.isFinite(tempCanvas.height) || tempCanvas.height <= 0) tempCanvas.height = maxThumbEdge;
         
         const tempCtx = tempCanvas.getContext('2d');
         tempCtx.drawImage(videoEl, 0, 0, tempCanvas.width, tempCanvas.height);
         
-        const base64 = tempCanvas.toDataURL('image/jpeg', 0.8);
+        const base64 = tempCanvas.toDataURL('image/jpeg', 0.72);
         userSelectedThumbnail = base64; // show preview immediately
 
         if (els.capturedThumbPreview) {
