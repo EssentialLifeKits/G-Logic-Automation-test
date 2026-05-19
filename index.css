@@ -3866,6 +3866,39 @@ body:not(.paywall-checking) .subscription-loading {
   box-sizing: border-box;
 }
 
+.toe-overlay.toe-performance-mode *,
+.toe-overlay.toe-performance-mode *::before,
+.toe-overlay.toe-performance-mode *::after {
+  animation: none !important;
+  transition-duration: 0.01ms !important;
+}
+
+.toe-overlay.toe-performance-mode .toe-stage img,
+.toe-overlay.toe-performance-mode .toe-stage video,
+.toe-overlay.toe-performance-mode .toe-text-layer {
+  transition: none !important;
+}
+
+.toe-overlay.toe-performance-mode .toe-preset-tile,
+.toe-overlay.toe-performance-mode .toe-text-track,
+.toe-overlay.toe-performance-mode .toe-media-track,
+.toe-overlay.toe-performance-mode .toe-style-more,
+.toe-overlay.toe-performance-mode .toe-style-options {
+  filter: none !important;
+}
+
+.toe-overlay.toe-performance-mode .toe-left-panel,
+.toe-overlay.toe-performance-mode .toe-right-panel,
+.toe-overlay.toe-performance-mode .toe-canvas-area,
+.toe-overlay.toe-performance-mode .toe-timeline,
+.toe-overlay.toe-performance-mode .toe-stage {
+  contain: layout paint;
+}
+
+.toe-overlay.toe-performance-mode .toe-stage video {
+  will-change: auto;
+}
+
 .toe-topbar {
   height: 72px;
   padding: 0 16px 0 22px;

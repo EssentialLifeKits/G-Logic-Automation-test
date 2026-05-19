@@ -750,6 +750,10 @@
   let toeStageZoom = 100;
   let toeTimelineZoom = 25;
   let toeTimelineProgress = 0;
+  let toeTimelinePaintRaf = null;
+  let toePendingTimelineProgress = 0;
+  let toePendingTimelineSeconds = 0;
+  let toeLastVideoSeekAt = 0;
 
   const toeOverlay    = document.getElementById('toeOverlay');
   const toeStage      = document.getElementById('toeStage');
@@ -829,6 +833,13 @@
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   }
 
+  function toePauseBackgroundMedia() {
+    document.querySelectorAll('video').forEach(video => {
+      if (toeStage?.contains(video)) return;
+      try { video.pause(); } catch (_) {}
+    });
+  }
+
   function toeSetStageZoom(percent) {
     toeStageZoom = toeClamp(Math.round(percent || 100), 50, 200);
     const scale = toeStageZoom / 100;
@@ -854,19 +865,42 @@
     if (range) range.value = toeTimelineZoom;
   }
 
-  function toeSetTimelineProgress(progress) {
-    toeTimelineProgress = toeClamp(progress || 0, 0, 1);
+  function toePaintTimelineProgress(progress, seconds) {
     const rangeWidth = toeGetTimelineRangeWidth();
-    if (toeOverlay) toeOverlay.style.setProperty('--toe-playhead-x', `${42 + toeTimelineProgress * rangeWidth}px`);
+    if (toeOverlay) toeOverlay.style.setProperty('--toe-playhead-x', `${42 + progress * rangeWidth}px`);
     const current = document.getElementById('toeCurrentTime');
+    if (current) current.textContent = toeFormatTime(seconds);
+    toeUpdatePreviewVisibility();
+  }
+
+  function toeScheduleTimelinePaint(progress, seconds) {
+    toePendingTimelineProgress = progress;
+    toePendingTimelineSeconds = seconds;
+    if (toeTimelinePaintRaf) return;
+    toeTimelinePaintRaf = requestAnimationFrame(() => {
+      toeTimelinePaintRaf = null;
+      toePaintTimelineProgress(toePendingTimelineProgress, toePendingTimelineSeconds);
+    });
+  }
+
+  function toeSeekSourceToProgress(progress, force = false) {
+    if (!(toeSourceMedia?.tagName === 'VIDEO') || !Number.isFinite(toeSourceMedia.duration) || toeSourceMedia.duration <= 0) return;
+    const now = performance.now();
+    if (!force && now - toeLastVideoSeekAt < 120) return;
+    toeLastVideoSeekAt = now;
+    const nextTime = toeSourceMedia.duration * progress;
+    if (Math.abs((toeSourceMedia.currentTime || 0) - nextTime) > 0.04) {
+      toeSourceMedia.currentTime = nextTime;
+    }
+  }
+
+  function toeSetTimelineProgress(progress, forceSeek = false) {
+    toeTimelineProgress = toeClamp(progress || 0, 0, 1);
     const duration = toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration)
       ? toeSourceMedia.duration
       : 8;
-    if (current) current.textContent = toeFormatTime(duration * toeTimelineProgress);
-    if (toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration) && toeSourceMedia.duration > 0) {
-      toeSourceMedia.currentTime = toeSourceMedia.duration * toeTimelineProgress;
-    }
-    toeUpdatePreviewVisibility();
+    toeScheduleTimelinePaint(toeTimelineProgress, duration * toeTimelineProgress);
+    toeSeekSourceToProgress(toeTimelineProgress, forceSeek);
   }
 
   function toeNormalizeTextTiming(item) {
@@ -1349,6 +1383,7 @@
 
   function toeOpen(mediaFile) {
     toeRemoveLegacyEditors();
+    toePauseBackgroundMedia();
     const editableMediaFile = mediaFile?._toeSourceFile || mediaFile;
     const restoredTextElements = Array.isArray(mediaFile?._toeTextElements)
       ? JSON.parse(JSON.stringify(mediaFile._toeTextElements))
@@ -1363,8 +1398,10 @@
     if (toeProcessing) toeProcessing.style.display = 'none';
     if (toeProcLabel) toeProcLabel.textContent = 'Processing video...';
     toeSetTheme(toeGetSavedTheme());
+    toeOverlay?.classList.add('toe-performance-mode');
     toeSetStageZoom(100);
     toeSetTimelineZoom(25);
+    toeSourceMedia = null;
     toeSetTimelineProgress(0);
     toeSetTimelineHeight(176);
 
@@ -1389,11 +1426,7 @@
       vid.addEventListener('timeupdate', () => {
         if (Number.isFinite(vid.duration) && vid.duration > 0) {
           toeTimelineProgress = toeClamp(vid.currentTime / vid.duration, 0, 1);
-          const rangeWidth = toeGetTimelineRangeWidth();
-          if (toeOverlay) toeOverlay.style.setProperty('--toe-playhead-x', `${42 + toeTimelineProgress * rangeWidth}px`);
-          const current = document.getElementById('toeCurrentTime');
-          if (current) current.textContent = toeFormatTime(vid.currentTime);
-          toeUpdatePreviewVisibility();
+          toeScheduleTimelinePaint(toeTimelineProgress, vid.currentTime);
         }
       });
     } else {
@@ -1442,7 +1475,12 @@
   }
 
   function toeClose() {
+    if (toeTimelinePaintRaf) {
+      cancelAnimationFrame(toeTimelinePaintRaf);
+      toeTimelinePaintRaf = null;
+    }
     toeOverlay.style.display = 'none';
+    toeOverlay?.classList.remove('toe-performance-mode');
     toeStage.querySelectorAll('img,video').forEach(e => { URL.revokeObjectURL(e.src); e.remove(); });
   }
 
@@ -2108,6 +2146,7 @@
       toeSetTimelineProgress(setScrubX(e));
       const onMove = (mv) => toeSetTimelineProgress(setScrubX(mv));
       const onUp = () => {
+        toeSetTimelineProgress(toeTimelineProgress, true);
         toeTrackArea.classList.remove('is-scrubbing');
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
