@@ -958,7 +958,7 @@
       if (!el) return;
       const visible = toeIsTextVisibleAtProgress(item);
       el.classList.toggle('toe-out-of-time', !visible);
-      el.contentEditable = visible ? 'true' : 'false';
+      el.contentEditable = 'false';
     });
   }
 
@@ -1077,27 +1077,24 @@
     const dyPx = event.clientY - start.y;
     let nextWidth = start.width;
     let nextX = start.itemX;
-    if (handle.startsWith('m')) {
-      nextWidth = start.width + dxPct * 2;
-      nextX = start.itemX;
-    } else if (handle.startsWith('r')) {
+    if (handle === 'r') {
       nextWidth = start.width + dxPct;
       nextX = start.itemX + dxPct / 2;
-    } else {
+    } else if (handle === 'l') {
       nextWidth = start.width - dxPct;
       nextX = start.itemX + dxPct / 2;
+    } else if (handle === 'b') {
+      item.size = toeClamp(Math.round(start.size + dyPx * 0.18), 12, 120);
+      toeSize = item.size;
+      toeApplyStyle(toeGetEl(item.id), item);
+      return;
     }
     const clampedWidth = toeClamp(nextWidth, 8, 88);
     if (clampedWidth !== nextWidth) {
-      nextX += handle.startsWith('m') ? 0 : (nextWidth - clampedWidth) / (handle.startsWith('r') ? -2 : 2);
+      nextX += (nextWidth - clampedWidth) / (handle === 'r' ? -2 : 2);
     }
     item.width = clampedWidth;
     item.x = toeClamp(nextX, 5, 95);
-    if (handle.endsWith('t') || handle.endsWith('b')) {
-      const direction = handle.endsWith('b') ? 1 : -1;
-      item.size = toeClamp(Math.round(start.size + dyPx * direction * 0.18), 12, 120);
-      toeSize = item.size;
-    }
     toeApplyStyle(toeGetEl(item.id), item);
   }
 
@@ -1106,29 +1103,39 @@
     btn.className = `toe-resize-handle toe-resize-${handle}`;
     btn.type = 'button';
     btn.dataset.resizeHandle = handle;
-    btn.setAttribute('aria-label', 'Resize text box');
-    btn.addEventListener('mousedown', (e) => {
+    btn.setAttribute('aria-label', handle === 'b' ? 'Resize text size' : 'Resize text width');
+    const startResize = (e) => {
       e.preventDefault();
       e.stopPropagation();
+      const point = e.touches?.[0] || e;
       toeActiveId = item.id;
       const start = {
-        x: e.clientX,
-        y: e.clientY,
+        x: point.clientX,
+        y: point.clientY,
         width: item.width || 24,
         itemX: item.x,
         size: item.size || toeSize
       };
-      const onMove = (mv) => toeResizeTextElement(item, handle, start, mv);
+      const onMove = (mv) => {
+        const movePoint = mv.touches?.[0] || mv;
+        toeResizeTextElement(item, handle, start, movePoint);
+      };
       const onUp = () => {
         toeUpdateToolbarToActive();
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onUp);
         window.removeEventListener('mouseup', onUp);
       };
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend', onUp);
       window.addEventListener('mouseup', onUp);
-    });
+    };
+    btn.addEventListener('mousedown', startResize);
+    btn.addEventListener('touchstart', startResize, { passive: false });
     return btn;
   }
 
@@ -1138,7 +1145,7 @@
       const wrap = document.createElement('div');
       wrap.className = 'toe-text-el' + (item.id === toeActiveId ? ' active-text' : '');
       wrap.id = 'toe-el-' + item.id;
-      wrap.contentEditable = toeIsTextVisibleAtProgress(item) ? 'true' : 'false';
+      wrap.contentEditable = 'false';
       wrap.textContent = toeTransformText(item.text, item.caseMode);
       wrap.draggable = false;
       toeApplyStyle(wrap, item);
@@ -1162,13 +1169,13 @@
       wrap.appendChild(del);
 
       if (item.id === toeActiveId) {
-        ['lt', 'mt', 'rt', 'lm', 'rm', 'lb', 'mb', 'rb'].forEach(handle => {
+        ['l', 'r', 'b'].forEach(handle => {
           wrap.appendChild(toeCreateResizeHandle(item, handle));
         });
       }
 
       // Click to activate
-      wrap.addEventListener('mousedown', (e) => {
+      const startTextDrag = (e) => {
         if (e.target.classList.contains('toe-delete-btn') || e.target.closest('.toe-resize-handle')) return;
         e.preventDefault();
         toeActiveId = item.id;
@@ -1176,15 +1183,17 @@
         toeUpdateToolbarToActive();
         toeUpdateTimelineTextTrack();
         // Begin drag
-        const startX = e.clientX;
-        const startY = e.clientY;
+        const point = e.touches?.[0] || e;
+        const startX = point.clientX;
+        const startY = point.clientY;
         const startPX = item.x;
         const startPY = item.y;
         const rect = toeStage.getBoundingClientRect();
         toeSetCenterGuides(Math.abs(item.y - 50) <= 1, Math.abs(item.x - 50) <= 1);
         const onMove = (mv) => {
-          const dx = ((mv.clientX - startX) / rect.width)  * 100;
-          const dy = ((mv.clientY - startY) / rect.height) * 100;
+          const movePoint = mv.touches?.[0] || mv;
+          const dx = ((movePoint.clientX - startX) / rect.width)  * 100;
+          const dy = ((movePoint.clientY - startY) / rect.height) * 100;
           let nextX = Math.max(5, Math.min(95, startPX + dx));
           let nextY = Math.max(5, Math.min(95, startPY + dy));
           const nearX = Math.abs(nextX - 50) <= 2;
@@ -1201,21 +1210,20 @@
           toeSetCenterGuides(Math.abs(item.y - 50) <= 1, Math.abs(item.x - 50) <= 1);
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
+          document.removeEventListener('touchmove', onMove);
+          document.removeEventListener('touchend', onUp);
           window.removeEventListener('mouseup', onUp);
         };
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onUp);
         window.addEventListener('mouseup', onUp);
-      });
+      };
+      wrap.addEventListener('mousedown', startTextDrag);
+      wrap.addEventListener('touchstart', startTextDrag, { passive: false });
 
       // Save text on input
-      wrap.addEventListener('input', () => {
-        item.text = wrap.innerText;
-        const inspector = document.getElementById('toeInspectorText');
-        if (toeActiveId === item.id && inspector && inspector.value !== item.text) inspector.value = item.text;
-        toeUpdateTimelineTextTrack();
-      });
-
       toeTextLayer.appendChild(wrap);
     });
     toeUpdatePreviewVisibility();
@@ -2165,14 +2173,17 @@
 
   const toeTextTrack = document.getElementById('toeTextTrack');
   if (toeTextTrack && toeTrackArea) {
+    const getTrackPoint = (event) => event.touches?.[0] || event;
+
     const getTrackPct = (event) => {
+      const point = getTrackPoint(event);
       const rect = toeTrackArea.getBoundingClientRect();
       const range = Math.max(1, rect.width - 84);
-      return toeClamp((event.clientX - rect.left - 42) / range, 0, 1);
+      return toeClamp((point.clientX - rect.left - 42) / range, 0, 1);
     };
 
     const beginTextTimingEdit = (e, forcedEdge) => {
-      if (e.button !== 0) return;
+      if (e.type === 'mousedown' && e.button !== 0) return;
       const item = toeGetActiveItem() || toeTextElements[0];
       if (!item) return;
       e.preventDefault();
@@ -2202,7 +2213,8 @@
       };
 
       const onMove = (mv) => {
-        const pct = toeClamp((mv.clientX - trackRect.left - 42) / trackRange, 0, 1);
+        const point = getTrackPoint(mv);
+        const pct = toeClamp((point.clientX - trackRect.left - 42) / trackRange, 0, 1);
         const delta = pct - startX;
         if (edge === 'start') {
           item.startTime = toeClamp(startStart + delta, 0, startEnd - minLen);
@@ -2221,10 +2233,14 @@
         toeUpdateTimelineTextTrack();
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onUp);
         window.removeEventListener('mouseup', onUp);
       };
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend', onUp);
       window.addEventListener('mouseup', onUp);
     };
 
@@ -2237,6 +2253,9 @@
       handle.addEventListener('mousedown', (e) => {
         beginTextTimingEdit(e, handle.dataset.trimEdge);
       });
+      handle.addEventListener('touchstart', (e) => {
+        beginTextTimingEdit(e, handle.dataset.trimEdge);
+      }, { passive: false });
     });
   }
 

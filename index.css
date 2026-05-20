@@ -4503,6 +4503,7 @@ body:not(.paywall-checking) .subscription-loading {
   transform: translate(-50%, -50%);
   outline: 0;
   z-index: 6;
+  will-change: left, top;
 }
 
 .toe-text-el.active-text {
@@ -4552,48 +4553,87 @@ body:not(.paywall-checking) .subscription-loading {
 
 .toe-resize-handle {
   position: absolute;
-  z-index: 8;
-  width: 13px;
-  height: 13px;
-  border: 2px solid #15cce3;
-  border-radius: 2px;
-  background: #76f5ff;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.16);
+  z-index: 12;
+  border: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  touch-action: none;
+}
+
+.toe-resize-handle::before {
+  content: "";
+  position: absolute;
+  display: block;
+  background: #57f0a4;
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(87, 240, 164, 0.5);
+}
+
+.toe-resize-l,
+.toe-resize-r {
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  cursor: ew-resize;
+}
+
+.toe-resize-l {
+  left: -16px;
+}
+
+.toe-resize-r {
+  right: -16px;
+}
+
+.toe-resize-l::before,
+.toe-resize-r::before {
+  top: 20%;
+  bottom: 20%;
+  width: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.toe-resize-b {
+  left: 50%;
+  bottom: -18px;
+  width: 42px;
+  height: 26px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.toe-resize-b::before {
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  height: 5px;
+  transform: translateY(-50%);
+}
+
+/* Legacy eight-handle styles are intentionally disabled. The rebuilt editor uses
+   two width rails and one bottom size rail to keep dragging predictable. */
+.toe-resize-lt,
+.toe-resize-mt,
+.toe-resize-rt,
+.toe-resize-lm,
+.toe-resize-rm,
+.toe-resize-lb,
+.toe-resize-mb,
+.toe-resize-rb {
+  display: none !important;
 }
 
 .toe-resize-handle::after {
-  position: absolute;
-  inset: -18px;
-  display: grid;
-  place-items: center;
-  color: #15cce3;
-  font-size: 0.72rem;
-  font-weight: 900;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-  opacity: 0;
+  display: none;
 }
 
 .toe-resize-handle:hover::after {
-  opacity: 1;
+  display: none;
 }
-
-.toe-resize-lt { left: 0; top: 0; cursor: nwse-resize; }
-.toe-resize-mt { left: 50%; top: 0; cursor: ns-resize; }
-.toe-resize-lm { left: 0; top: 50%; cursor: ew-resize; }
-.toe-resize-lb { left: 0; top: 100%; cursor: nesw-resize; }
-.toe-resize-rt { left: 100%; top: 0; cursor: nesw-resize; }
-.toe-resize-rm { left: 100%; top: 50%; cursor: ew-resize; }
-.toe-resize-mb { left: 50%; top: 100%; cursor: ns-resize; }
-.toe-resize-rb { left: 100%; top: 100%; cursor: nwse-resize; }
-.toe-resize-lm::after,
-.toe-resize-rm::after { content: "↔"; }
-.toe-resize-mt::after,
-.toe-resize-mb::after { content: "↕"; }
-.toe-resize-lt::after,
-.toe-resize-rb::after { content: "↘"; }
-.toe-resize-lb::after,
-.toe-resize-rt::after { content: "↗"; }
 
 .toe-bg-semi {
   background: rgba(0,0,0,0.58);
@@ -5276,6 +5316,7 @@ body:not(.paywall-checking) .subscription-loading {
   user-select: none;
   min-width: 44px;
   touch-action: none;
+  overflow: visible;
 }
 
 .toe-text-track.is-hidden {
@@ -5306,13 +5347,15 @@ body:not(.paywall-checking) .subscription-loading {
   text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: none;
+  width: 100%;
+  text-align: left;
 }
 
 .toe-text-trim {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 24px;
+  top: -5px;
+  bottom: -5px;
+  width: 28px;
   border: 0;
   appearance: none;
   -webkit-appearance: none;
@@ -5347,13 +5390,13 @@ body:not(.paywall-checking) .subscription-loading {
 }
 
 .toe-text-trim-start {
-  left: -2px;
-  border-radius: 7px 0 0 7px;
+  left: -17px;
+  border-radius: 999px;
 }
 
 .toe-text-trim-end {
-  right: -2px;
-  border-radius: 0 7px 7px 0;
+  right: -17px;
+  border-radius: 999px;
 }
 
 .toe-media-track {
