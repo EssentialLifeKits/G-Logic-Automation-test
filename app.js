@@ -1148,12 +1148,17 @@
       const del = document.createElement('button');
       del.className = 'toe-delete-btn';
       del.innerHTML = '×';
-      del.addEventListener('mousedown', (e) => {
+      const deleteTextItem = (e) => {
+        e.preventDefault();
         e.stopPropagation();
         toeTextElements = toeTextElements.filter(t => t.id !== item.id);
         if (toeActiveId === item.id) toeActiveId = null;
         toeRenderAll();
-      });
+        toeUpdateTimelineTextTrack();
+      };
+      del.addEventListener('mousedown', deleteTextItem);
+      del.addEventListener('click', deleteTextItem);
+      del.addEventListener('touchstart', deleteTextItem, { passive: false });
       wrap.appendChild(del);
 
       if (item.id === toeActiveId) {
@@ -2178,6 +2183,8 @@
       const startX = getTrackPct(e);
       const startStart = item.startTime;
       const startEnd = item.endTime;
+      const trackRect = toeTrackArea.getBoundingClientRect();
+      const trackRange = Math.max(1, trackRect.width - 84);
       const minLen = 0.04;
       let moveLength = startEnd - startStart;
       let moveStart = startStart;
@@ -2189,9 +2196,14 @@
         toeUpdateTimelineTextTrack();
       }
       toeTextTrack.classList.add('is-editing');
+      const applyTrackPosition = () => {
+        toeTextTrack.style.marginLeft = `${42 + item.startTime * trackRange}px`;
+        toeTextTrack.style.width = `${Math.max(44, (item.endTime - item.startTime) * trackRange)}px`;
+      };
 
       const onMove = (mv) => {
-        const delta = getTrackPct(mv) - startX;
+        const pct = toeClamp((mv.clientX - trackRect.left - 42) / trackRange, 0, 1);
+        const delta = pct - startX;
         if (edge === 'start') {
           item.startTime = toeClamp(startStart + delta, 0, startEnd - minLen);
         } else if (edge === 'end') {
@@ -2202,10 +2214,11 @@
           item.startTime = nextStart;
           item.endTime = nextStart + length;
         }
-        toeUpdateTimelineTextTrack();
+        applyTrackPosition();
       };
       const onUp = () => {
         toeTextTrack.classList.remove('is-editing');
+        toeUpdateTimelineTextTrack();
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
         window.removeEventListener('mouseup', onUp);
