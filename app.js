@@ -194,12 +194,22 @@
     { time: '7:00 PM', day: 'Mon–Fri', engagement: '+22%', desc: 'Evening browsing window' },
   ];
 
-  const HOW_TO_VIDEO = {
+  const HOW_TO_STORAGE_KEY = 'glogic_howto_video_v1';
+  const HOW_TO_VIDEO_DEFAULTS = {
     title: 'How To Use G-Logic',
     description: 'Watch this short walkthrough to get the most out of G-Logic Automation.',
     youtubeUrl: '',
     downloadUrl: '',
   };
+
+  function getHowToVideoConfig() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(HOW_TO_STORAGE_KEY) || 'null');
+      return { ...HOW_TO_VIDEO_DEFAULTS, ...(saved || {}) };
+    } catch (_) {
+      return { ...HOW_TO_VIDEO_DEFAULTS };
+    }
+  }
 
   // ========== DOM ELEMENTS ==========
   const $ = (sel) => document.querySelector(sel);
@@ -727,7 +737,8 @@
 
   function setHowToPlayback(shouldLoad) {
     if (!els.howToIframe) return;
-    const embedUrl = HOW_TO_VIDEO.youtubeUrl ? getYouTubeEmbedUrl(HOW_TO_VIDEO.youtubeUrl) : '';
+    const config = getHowToVideoConfig();
+    const embedUrl = config.youtubeUrl ? getYouTubeEmbedUrl(config.youtubeUrl) : '';
     els.howToIframe.src = shouldLoad && embedUrl ? embedUrl : 'about:blank';
     els.howToIframe.hidden = !shouldLoad || !embedUrl;
     if (els.howToEmptyState) {
@@ -737,8 +748,9 @@
 
   function openHowToVideo() {
     if (!els.howToOverlay) return;
-    if (els.howToTitle) els.howToTitle.textContent = HOW_TO_VIDEO.title;
-    if (els.howToDescription) els.howToDescription.textContent = HOW_TO_VIDEO.description;
+    const config = getHowToVideoConfig();
+    if (els.howToTitle) els.howToTitle.textContent = config.title;
+    if (els.howToDescription) els.howToDescription.textContent = config.description;
     els.howToOverlay.classList.add('active');
     els.howToOverlay.setAttribute('aria-hidden', 'false');
     document.body.classList.add('howto-open');
@@ -761,7 +773,8 @@
   }
 
   function downloadHowToVideo() {
-    const targetUrl = HOW_TO_VIDEO.downloadUrl || HOW_TO_VIDEO.youtubeUrl;
+    const config = getHowToVideoConfig();
+    const targetUrl = config.downloadUrl || config.youtubeUrl;
     const downloadUrl = getGoogleDriveDownloadUrl(targetUrl);
     if (!downloadUrl) {
       showToast('How To download link coming soon.');
@@ -783,6 +796,13 @@
       if (e.key === 'Escape' && els.howToOverlay?.classList.contains('active')) {
         closeHowToVideo();
       }
+    });
+    window.addEventListener('storage', (event) => {
+      if (event.key !== HOW_TO_STORAGE_KEY || !els.howToOverlay?.classList.contains('active')) return;
+      const config = getHowToVideoConfig();
+      if (els.howToTitle) els.howToTitle.textContent = config.title;
+      if (els.howToDescription) els.howToDescription.textContent = config.description;
+      setHowToPlayback(true);
     });
   }
 

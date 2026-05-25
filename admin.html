@@ -279,6 +279,13 @@
       box-shadow: 0 0 0 1px rgba(192, 132, 252, 0.06), 0 8px 32px rgba(0,0,0,0.3);
     }
 
+    #adminSectionUsers { order: 1; }
+    #adminSectionHowTo { order: 2; }
+    #adminSectionBranding { order: 3; }
+    #adminSectionResources { order: 4; }
+    #adminSectionAffiliate { order: 5; }
+    #adminSectionSettings { order: 6; }
+
     .admin-section-header {
       display: flex;
       align-items: center;
@@ -580,6 +587,115 @@
     }
     .acm-table-wrap::-webkit-scrollbar-thumb:hover {
       background: rgba(52,211,153,0.35);
+    }
+
+    /* ══════════════ HOW TO VIDEO CARD ══════════════ */
+    .howto-admin-form {
+      display: grid;
+      gap: 14px;
+      padding-top: 18px;
+    }
+    .howto-admin-note {
+      margin: 0;
+      color: rgba(255,255,255,0.46);
+      font-size: 0.78rem;
+      line-height: 1.55;
+    }
+    .howto-admin-label {
+      display: grid;
+      gap: 7px;
+      color: rgba(255,255,255,0.42);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+    .howto-admin-input,
+    .howto-admin-textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      background: rgba(0,0,0,0.24);
+      color: #fff;
+      font: inherit;
+      font-size: 0.84rem;
+      outline: none;
+      padding: 12px 14px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .howto-admin-textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+    .howto-admin-input:focus,
+    .howto-admin-textarea:focus {
+      border-color: rgba(52,211,153,0.45);
+      box-shadow: 0 0 0 3px rgba(52,211,153,0.08);
+    }
+    .howto-admin-help {
+      color: rgba(255,255,255,0.34);
+      font-size: 0.72rem;
+      line-height: 1.45;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 600;
+    }
+    .howto-admin-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .howto-admin-btn {
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #fff;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }
+    .howto-admin-btn.primary {
+      background: linear-gradient(135deg,#22c55e,#16a34a);
+      box-shadow: 0 8px 26px rgba(34,197,94,0.22);
+    }
+    .howto-admin-btn.secondary {
+      background: rgba(255,255,255,0.03);
+      color: #93c5fd;
+      border-color: rgba(147,197,253,0.28);
+    }
+    .howto-admin-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+    }
+    .howto-admin-status {
+      min-height: 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .howto-admin-status.ok { color: #34d399; }
+    .howto-admin-status.err { color: #f87171; }
+    .howto-admin-preview {
+      display: none;
+      margin-top: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 16 / 9;
+    }
+    .howto-admin-preview.active {
+      display: block;
+    }
+    .howto-admin-preview iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #000;
     }
 
     /* ── Mobile responsive ── */
@@ -1096,6 +1212,56 @@
           </div>
         </div>
 
+        <!-- ── Section 6: How To Video Card ── -->
+        <div class="admin-section-card" id="adminSectionHowTo">
+          <div class="admin-section-header" data-section="HowTo">
+            <div class="admin-section-header-left">
+              <div class="admin-section-title">🎬 How To Video Card</div>
+              <div class="admin-section-desc">Controls the dashboard How To modal, YouTube player, and Google Drive download button</div>
+            </div>
+            <div class="admin-section-toggle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </div>
+          </div>
+          <div class="admin-section-body">
+            <div class="howto-admin-form">
+              <p class="howto-admin-note">
+                Paste the unlisted YouTube link for the dashboard player and the matching Google Drive link for downloads.
+                Saved changes sync to the Dashboard How To button immediately in this browser.
+              </p>
+              <label class="howto-admin-label" for="howToAdminTitle">
+                Video Title
+                <input class="howto-admin-input" id="howToAdminTitle" type="text" placeholder="How To Use G-Logic" />
+              </label>
+              <label class="howto-admin-label" for="howToAdminDescription">
+                Short Description
+                <textarea class="howto-admin-textarea" id="howToAdminDescription" placeholder="Watch this short walkthrough to get the most out of G-Logic Automation."></textarea>
+              </label>
+              <label class="howto-admin-label" for="howToAdminYoutube">
+                YouTube Unlisted Link
+                <input class="howto-admin-input" id="howToAdminYoutube" type="url" placeholder="https://youtu.be/..." />
+                <span class="howto-admin-help">Supports youtu.be links, youtube.com/watch links, and YouTube embed links.</span>
+              </label>
+              <label class="howto-admin-label" for="howToAdminDrive">
+                Google Drive Download Link
+                <input class="howto-admin-input" id="howToAdminDrive" type="url" placeholder="https://drive.google.com/file/d/.../view" />
+                <span class="howto-admin-help">Use a Drive share link for the same video. This powers the Download in Google Drive button.</span>
+              </label>
+              <div class="howto-admin-actions">
+                <button class="howto-admin-btn secondary" id="howToPreviewBtn" type="button">👁 Preview Card</button>
+                <button class="howto-admin-btn primary" id="howToSaveBtn" type="button">💾 Save Video Card</button>
+              </div>
+              <div class="howto-admin-status" id="howToAdminStatus"></div>
+              <div class="howto-admin-preview" id="howToAdminPreview">
+                <iframe id="howToAdminPreviewFrame" title="How To video preview" allow="autoplay; fullscreen" allowfullscreen></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
       <!-- /admin-sections -->
 
@@ -1254,6 +1420,92 @@
         acmRefreshTimer = null;
       }
     }
+
+    /* ── How To Video Card ── */
+    var HOWTO_KEY = 'glogic_howto_video_v1';
+    var HOWTO_DEFAULTS = {
+      title: 'How To Use G-Logic',
+      description: 'Watch this short walkthrough to get the most out of G-Logic Automation.',
+      youtubeUrl: '',
+      downloadUrl: '',
+    };
+
+    function getYouTubeVideoIdAdmin(url) {
+      if (!url) return null;
+      return url.match(/youtu\.be\/([^?&#]+)/)?.[1]
+        || url.match(/[?&]v=([^&#]+)/)?.[1]
+        || url.match(/\/embed\/([^?&#]+)/)?.[1]
+        || null;
+    }
+
+    function getYouTubeEmbedUrlAdmin(url) {
+      var id = getYouTubeVideoIdAdmin(url);
+      return id ? 'https://www.youtube.com/embed/' + id + '?rel=0&modestbranding=1' : '';
+    }
+
+    function readHowToSettings() {
+      try {
+        var saved = JSON.parse(localStorage.getItem(HOWTO_KEY) || 'null');
+        return Object.assign({}, HOWTO_DEFAULTS, saved || {});
+      } catch(e) {
+        return Object.assign({}, HOWTO_DEFAULTS);
+      }
+    }
+
+    function writeHowToStatus(message, ok) {
+      var status = document.getElementById('howToAdminStatus');
+      if (!status) return;
+      status.textContent = message;
+      status.className = 'howto-admin-status ' + (ok ? 'ok' : 'err');
+    }
+
+    function populateHowToForm() {
+      var settings = readHowToSettings();
+      document.getElementById('howToAdminTitle').value = settings.title || '';
+      document.getElementById('howToAdminDescription').value = settings.description || '';
+      document.getElementById('howToAdminYoutube').value = settings.youtubeUrl || '';
+      document.getElementById('howToAdminDrive').value = settings.downloadUrl || '';
+    }
+
+    function saveHowToForm() {
+      var settings = {
+        title: document.getElementById('howToAdminTitle').value.trim() || HOWTO_DEFAULTS.title,
+        description: document.getElementById('howToAdminDescription').value.trim() || HOWTO_DEFAULTS.description,
+        youtubeUrl: document.getElementById('howToAdminYoutube').value.trim(),
+        downloadUrl: document.getElementById('howToAdminDrive').value.trim(),
+      };
+      if (settings.youtubeUrl && !getYouTubeVideoIdAdmin(settings.youtubeUrl)) {
+        writeHowToStatus('Please enter a valid YouTube unlisted link.', false);
+        return;
+      }
+      try {
+        localStorage.setItem(HOWTO_KEY, JSON.stringify(settings));
+        writeHowToStatus('✓ Saved! The Dashboard How To modal now uses these links.', true);
+      } catch(e) {
+        writeHowToStatus('Save failed: ' + e.message, false);
+      }
+    }
+
+    function previewHowToVideo() {
+      var youtubeUrl = document.getElementById('howToAdminYoutube').value.trim();
+      var embedUrl = getYouTubeEmbedUrlAdmin(youtubeUrl);
+      var preview = document.getElementById('howToAdminPreview');
+      var frame = document.getElementById('howToAdminPreviewFrame');
+      if (!preview || !frame) return;
+      if (!embedUrl) {
+        preview.classList.remove('active');
+        frame.src = 'about:blank';
+        writeHowToStatus('Add a valid YouTube link before previewing.', false);
+        return;
+      }
+      frame.src = embedUrl;
+      preview.classList.add('active');
+      writeHowToStatus('Preview loaded. Save when it looks right.', true);
+    }
+
+    document.getElementById('howToSaveBtn').addEventListener('click', saveHowToForm);
+    document.getElementById('howToPreviewBtn').addEventListener('click', previewHowToVideo);
+    populateHowToForm();
 
     /* ── Resources Manager ── */
     var STORAGE_KEY = 'glogic_resources_v2';
