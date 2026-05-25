@@ -681,6 +681,26 @@ body:not(.paywall-checking) .subscription-loading {
   flex-wrap: wrap;
 }
 
+.btn-how-to {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(52, 211, 153, 0.34);
+  background: rgba(52, 211, 153, 0.1);
+  color: #57f0a4;
+  font-size: 0.78rem;
+  font-weight: 800;
+  box-shadow: 0 0 22px rgba(52, 211, 153, 0.12);
+  transition: all var(--duration) var(--ease);
+}
+
+.btn-how-to:hover {
+  border-color: rgba(52, 211, 153, 0.68);
+  background: rgba(52, 211, 153, 0.17);
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.18), 0 12px 30px rgba(52, 211, 153, 0.18);
+}
+
 .view-toggle {
   display: flex;
   background: var(--bg-card);
@@ -1963,6 +1983,215 @@ body:not(.paywall-checking) .subscription-loading {
   transform: translateX(4px);
 }
 
+/* --- How To Video Modal --- */
+body.howto-open {
+  overflow: hidden;
+}
+
+.howto-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.84);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration) var(--ease);
+}
+
+.howto-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.howto-modal {
+  width: min(100%, 980px);
+  max-height: min(92vh, 860px);
+  overflow-y: auto;
+  padding: 32px;
+  border: 1px solid rgba(129, 52, 175, 0.44);
+  border-radius: 26px;
+  background:
+    linear-gradient(140deg, rgba(245, 133, 41, 0.08), rgba(221, 42, 123, 0.08) 45%, rgba(81, 91, 212, 0.08)),
+    var(--bg-secondary);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.58), 0 0 0 1px rgba(52, 211, 153, 0.08);
+  transform: translateY(18px) scale(0.96);
+  transition: transform var(--duration) var(--ease);
+}
+
+.howto-overlay.active .howto-modal {
+  transform: translateY(0) scale(1);
+}
+
+.howto-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.howto-header h2 {
+  font-size: clamp(1.35rem, 3vw, 1.9rem);
+  font-weight: 900;
+  line-height: 1.08;
+  color: #57f0a4;
+  margin-bottom: 12px;
+}
+
+.howto-header p {
+  color: var(--text-secondary);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.howto-close {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  transition: all var(--duration) var(--ease);
+}
+
+.howto-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.18);
+}
+
+.howto-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.howto-player-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  color: var(--text-tertiary);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.howto-fullscreen-btn {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid #FBBF24;
+  color: #FBBF24;
+  font-weight: 900;
+  transition: all var(--duration) var(--ease);
+}
+
+.howto-fullscreen-btn:hover {
+  background: rgba(251, 191, 36, 0.12);
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.18);
+}
+
+.howto-fullscreen-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.howto-video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 280px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.howto-video-frame iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+}
+
+.howto-stop-video {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: all var(--duration) var(--ease);
+}
+
+.howto-stop-video:hover {
+  background: rgba(221, 42, 123, 0.82);
+}
+
+.howto-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.howto-empty strong {
+  color: var(--text-primary);
+  font-size: 1.05rem;
+}
+
+.howto-empty[hidden],
+.howto-video-frame iframe[hidden] {
+  display: none;
+}
+
+.howto-download-btn {
+  width: 100%;
+  min-height: 68px;
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #FBBF24, #FEDA75);
+  color: #1a1320;
+  font-size: 1rem;
+  font-weight: 900;
+  box-shadow: 0 16px 46px rgba(251, 191, 36, 0.18);
+  transition: all var(--duration) var(--ease);
+}
+
+.howto-download-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 56px rgba(251, 191, 36, 0.28);
+}
+
 /* --- Modal --- */
 .modal-overlay {
   position: fixed;
@@ -3055,6 +3284,35 @@ body:not(.paywall-checking) .subscription-loading {
     grid-template-columns: 1fr;
   }
 
+  .howto-overlay {
+    padding: 14px;
+    align-items: flex-start;
+  }
+
+  .howto-modal {
+    padding: 22px;
+    border-radius: 22px;
+    max-height: calc(100vh - 28px);
+  }
+
+  .howto-header {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .howto-player-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .howto-fullscreen-btn {
+    justify-content: center;
+  }
+
+  .howto-video-frame {
+    min-height: 190px;
+  }
+
   .widgets-column {
     grid-template-columns: 1fr;
   }
@@ -3151,6 +3409,34 @@ body:not(.paywall-checking) .subscription-loading {
   .btn-new-post {
     padding: 8px 14px;
     font-size: 0.78rem;
+  }
+
+  .btn-how-to {
+    flex: 1;
+    min-width: 92px;
+  }
+
+  .howto-modal {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .howto-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .howto-header p {
+    font-size: 0.86rem;
+  }
+
+  .howto-close {
+    width: 38px;
+    height: 38px;
+  }
+
+  .howto-download-btn {
+    min-height: 58px;
+    font-size: 0.9rem;
   }
 
   .dashboard-stat-grid {

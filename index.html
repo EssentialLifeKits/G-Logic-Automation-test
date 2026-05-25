@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Montserrat:wght@500;600;700&family=Bebas+Neue&family=Special+Elite&family=Anton&family=Caveat:wght@500;600;700&family=Pacifico&family=Permanent+Marker&family=Bangers&family=Comic+Neue:wght@400;700&family=Chewy&family=Fredoka:wght@400;500;600;700&family=Luckiest+Guy&family=Rubik+Bubbles&family=Oswald:wght@500;600;700&family=Dancing+Script:wght@600;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="index.css?v=27" />
+    <link rel="stylesheet" href="index.css?v=28" />
 </head>
 
 <body class="paywall-checking">
@@ -176,6 +176,9 @@
                         <span class="today-dot"></span>
                         <span class="today-day-name-common">Today</span>
                     </span>
+                    <button class="btn-how-to" id="dashboardHowToBtn" type="button">
+                        How To
+                    </button>
                     <button class="btn-new-post" id="dashboardNewPostBtn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="12" y1="5" x2="12" y2="19" />
@@ -607,6 +610,52 @@
 
         </section>
     </main>
+
+    <!-- ============ HOW TO VIDEO MODAL ============ -->
+    <div class="howto-overlay" id="howToOverlay" aria-hidden="true">
+        <div class="howto-modal" role="dialog" aria-modal="true" aria-labelledby="howToTitle">
+            <div class="howto-header">
+                <div>
+                    <h2 id="howToTitle">How To Use G-Logic</h2>
+                    <p id="howToDescription">Watch this short walkthrough to get the most out of G-Logic Automation.</p>
+                </div>
+                <button class="howto-close" id="howToCloseBtn" type="button" aria-label="Close how to video">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="howto-player-toolbar">
+                <span>▶ Video Player</span>
+                <button class="howto-fullscreen-btn" id="howToFullscreenBtn" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+                        <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+                        <path d="M8 21H5a2 2 0 0 1-2-2v-3" />
+                        <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                    </svg>
+                    <span>Full Screen</span>
+                </button>
+            </div>
+
+            <div class="howto-video-frame" id="howToVideoFrame">
+                <button class="howto-stop-video" id="howToStopVideoBtn" type="button" aria-label="Stop video">×</button>
+                <iframe id="howToIframe" title="G-Logic how to video" allow="autoplay; fullscreen; picture-in-picture"
+                    allowfullscreen loading="lazy"></iframe>
+                <div class="howto-empty" id="howToEmptyState">
+                    <strong>Video coming soon</strong>
+                    <span>Add the unlisted YouTube URL in the How To config when the demo is ready.</span>
+                </div>
+            </div>
+
+            <button class="howto-download-btn" id="howToDownloadBtn" type="button">
+                <span>📥</span>
+                <strong>Download in Google Drive</strong>
+            </button>
+        </div>
+    </div>
 
     <!-- ============ SCHEDULE POST MODAL ============ -->
     <div class="modal-overlay" id="modalOverlay">
@@ -1210,7 +1259,7 @@
     <script src="supabase.js"></script>
     <script src="auth.js"></script>
     <script src="instagram-oauth.js"></script>
-    <script src="app.js?v=27"></script>
+    <script src="app.js?v=28"></script>
 </body>
 
 </html>

@@ -194,6 +194,13 @@
     { time: '7:00 PM', day: 'Mon–Fri', engagement: '+22%', desc: 'Evening browsing window' },
   ];
 
+  const HOW_TO_VIDEO = {
+    title: 'How To Use G-Logic',
+    description: 'Watch this short walkthrough to get the most out of G-Logic Automation.',
+    youtubeUrl: '',
+    downloadUrl: '',
+  };
+
   // ========== DOM ELEMENTS ==========
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
@@ -221,6 +228,17 @@
     dashboardStudioTextBtn: $('#dashboardStudioTextBtn'),
     dashboardStudioEditorBtn: $('#dashboardStudioEditorBtn'),
     dashboardStudioAudioBtn: $('#dashboardStudioAudioBtn'),
+    dashboardHowToBtn: $('#dashboardHowToBtn'),
+    howToOverlay: $('#howToOverlay'),
+    howToCloseBtn: $('#howToCloseBtn'),
+    howToFullscreenBtn: $('#howToFullscreenBtn'),
+    howToStopVideoBtn: $('#howToStopVideoBtn'),
+    howToIframe: $('#howToIframe'),
+    howToVideoFrame: $('#howToVideoFrame'),
+    howToDownloadBtn: $('#howToDownloadBtn'),
+    howToEmptyState: $('#howToEmptyState'),
+    howToTitle: $('#howToTitle'),
+    howToDescription: $('#howToDescription'),
     dashTodayCount: $('#dashTodayCount'),
     dashTodayMeta: $('#dashTodayMeta'),
     dashUpcomingCount: $('#dashUpcomingCount'),
@@ -681,6 +699,91 @@
       observer.observe(igButton, { attributes: true, attributeFilter: ['class'] });
       if (igText) observer.observe(igText, { childList: true, characterData: true, subtree: true });
     }
+  }
+
+  function getYouTubeVideoId(url) {
+    if (!url) return null;
+    return url.match(/youtu\.be\/([^?&#]+)/)?.[1]
+      || url.match(/[?&]v=([^&#]+)/)?.[1]
+      || url.match(/\/embed\/([^?&#]+)/)?.[1]
+      || null;
+  }
+
+  function getYouTubeEmbedUrl(url) {
+    const id = getYouTubeVideoId(url);
+    return id ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1` : url;
+  }
+
+  function getGoogleDriveFileId(url) {
+    if (!url) return null;
+    return url.match(/\/file\/d\/([^/?#]+)/)?.[1] || url.match(/[?&]id=([^&#]+)/)?.[1] || null;
+  }
+
+  function getGoogleDriveDownloadUrl(url) {
+    if (!url || !url.includes('drive.google.com')) return url || '';
+    const id = getGoogleDriveFileId(url);
+    return id ? `https://drive.google.com/uc?export=download&id=${id}` : url;
+  }
+
+  function setHowToPlayback(shouldLoad) {
+    if (!els.howToIframe) return;
+    const embedUrl = HOW_TO_VIDEO.youtubeUrl ? getYouTubeEmbedUrl(HOW_TO_VIDEO.youtubeUrl) : '';
+    els.howToIframe.src = shouldLoad && embedUrl ? embedUrl : 'about:blank';
+    els.howToIframe.hidden = !shouldLoad || !embedUrl;
+    if (els.howToEmptyState) {
+      els.howToEmptyState.hidden = !!embedUrl;
+    }
+  }
+
+  function openHowToVideo() {
+    if (!els.howToOverlay) return;
+    if (els.howToTitle) els.howToTitle.textContent = HOW_TO_VIDEO.title;
+    if (els.howToDescription) els.howToDescription.textContent = HOW_TO_VIDEO.description;
+    els.howToOverlay.classList.add('active');
+    els.howToOverlay.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('howto-open');
+    setHowToPlayback(true);
+  }
+
+  function closeHowToVideo() {
+    if (!els.howToOverlay) return;
+    setHowToPlayback(false);
+    els.howToOverlay.classList.remove('active');
+    els.howToOverlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('howto-open');
+  }
+
+  function openHowToFullscreen() {
+    const frame = els.howToVideoFrame;
+    if (!frame) return;
+    if (frame.requestFullscreen) frame.requestFullscreen();
+    else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
+  }
+
+  function downloadHowToVideo() {
+    const targetUrl = HOW_TO_VIDEO.downloadUrl || HOW_TO_VIDEO.youtubeUrl;
+    const downloadUrl = getGoogleDriveDownloadUrl(targetUrl);
+    if (!downloadUrl) {
+      showToast('How To download link coming soon.');
+      return;
+    }
+    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  function initHowToVideo() {
+    els.dashboardHowToBtn?.addEventListener('click', openHowToVideo);
+    els.howToCloseBtn?.addEventListener('click', closeHowToVideo);
+    els.howToStopVideoBtn?.addEventListener('click', () => setHowToPlayback(false));
+    els.howToFullscreenBtn?.addEventListener('click', openHowToFullscreen);
+    els.howToDownloadBtn?.addEventListener('click', downloadHowToVideo);
+    els.howToOverlay?.addEventListener('click', (e) => {
+      if (e.target === els.howToOverlay) closeHowToVideo();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && els.howToOverlay?.classList.contains('active')) {
+        closeHowToVideo();
+      }
+    });
   }
 
   function renderModalBestTimes() {
@@ -4123,6 +4226,7 @@
     renderCalendar();
     renderBestTimes();
     initDashboardActions();
+    initHowToVideo();
     cleanExpiredPosts();
     renderUpcoming();
     renderDashboard();
