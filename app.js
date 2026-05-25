@@ -242,7 +242,6 @@
     howToOverlay: $('#howToOverlay'),
     howToCloseBtn: $('#howToCloseBtn'),
     howToFullscreenBtn: $('#howToFullscreenBtn'),
-    howToStopVideoBtn: $('#howToStopVideoBtn'),
     howToIframe: $('#howToIframe'),
     howToVideoFrame: $('#howToVideoFrame'),
     howToDownloadBtn: $('#howToDownloadBtn'),
@@ -786,7 +785,6 @@
   function initHowToVideo() {
     els.dashboardHowToBtn?.addEventListener('click', openHowToVideo);
     els.howToCloseBtn?.addEventListener('click', closeHowToVideo);
-    els.howToStopVideoBtn?.addEventListener('click', () => setHowToPlayback(false));
     els.howToFullscreenBtn?.addEventListener('click', openHowToFullscreen);
     els.howToDownloadBtn?.addEventListener('click', downloadHowToVideo);
     els.howToOverlay?.addEventListener('click', (e) => {
