@@ -732,7 +732,7 @@
   function getGoogleDriveDownloadUrl(url) {
     if (!url || !url.includes('drive.google.com')) return url || '';
     const id = getGoogleDriveFileId(url);
-    return id ? `https://drive.google.com/uc?export=download&id=${id}` : url;
+    return id ? `https://drive.google.com/file/d/${id}/view?usp=sharing` : url;
   }
 
   function setHowToPlayback(shouldLoad) {
