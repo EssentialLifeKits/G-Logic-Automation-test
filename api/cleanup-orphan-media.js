@@ -1,5 +1,6 @@
 const DEFAULT_BUCKET = 'media_uploads';
 const DEFAULT_MAX_AGE_HOURS = 24;
+const PROTECTED_PREFIXES = ['app_settings/'];
 
 function json(res, status, payload) {
   res.statusCode = status;
@@ -107,7 +108,9 @@ async function runCleanup({ apply }) {
   }
 
   const candidates = files.filter(file => (
-    !referencedPaths.has(file.path) && fileAgeHours(file) >= maxAgeHours
+    !PROTECTED_PREFIXES.some(prefix => file.path.startsWith(prefix))
+    && !referencedPaths.has(file.path)
+    && fileAgeHours(file) >= maxAgeHours
   ));
 
   let deleted = 0;

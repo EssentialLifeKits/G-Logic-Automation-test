@@ -201,14 +201,34 @@
     youtubeUrl: '',
     downloadUrl: '',
   };
+  let howToVideoConfigCache = null;
 
   function getHowToVideoConfig() {
+    if (howToVideoConfigCache) return howToVideoConfigCache;
     try {
       const saved = JSON.parse(localStorage.getItem(HOW_TO_STORAGE_KEY) || 'null');
-      return { ...HOW_TO_VIDEO_DEFAULTS, ...(saved || {}) };
+      howToVideoConfigCache = { ...HOW_TO_VIDEO_DEFAULTS, ...(saved || {}) };
     } catch (_) {
-      return { ...HOW_TO_VIDEO_DEFAULTS };
+      howToVideoConfigCache = { ...HOW_TO_VIDEO_DEFAULTS };
     }
+    return howToVideoConfigCache;
+  }
+
+  async function loadHowToVideoConfig() {
+    try {
+      const response = await fetch('/api/howto-settings', { cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Could not load How To settings.');
+      const localConfig = getHowToVideoConfig();
+      const remoteConfig = { ...HOW_TO_VIDEO_DEFAULTS, ...(payload.settings || {}) };
+      const hasLocalVideo = Boolean(localConfig.youtubeUrl || localConfig.downloadUrl);
+      const hasRemoteVideo = Boolean(remoteConfig.youtubeUrl || remoteConfig.downloadUrl);
+      howToVideoConfigCache = hasLocalVideo && !hasRemoteVideo ? localConfig : remoteConfig;
+      localStorage.setItem(HOW_TO_STORAGE_KEY, JSON.stringify(howToVideoConfigCache));
+    } catch (_) {
+      howToVideoConfigCache = getHowToVideoConfig();
+    }
+    return howToVideoConfigCache;
   }
 
   // ========== DOM ELEMENTS ==========
@@ -745,14 +765,17 @@
     }
   }
 
-  function openHowToVideo() {
+  async function openHowToVideo() {
     if (!els.howToOverlay) return;
-    const config = getHowToVideoConfig();
+    let config = getHowToVideoConfig();
     if (els.howToTitle) els.howToTitle.textContent = config.title;
     if (els.howToDescription) els.howToDescription.textContent = config.description;
     els.howToOverlay.classList.add('active');
     els.howToOverlay.setAttribute('aria-hidden', 'false');
     document.body.classList.add('howto-open');
+    config = await loadHowToVideoConfig();
+    if (els.howToTitle) els.howToTitle.textContent = config.title;
+    if (els.howToDescription) els.howToDescription.textContent = config.description;
     setHowToPlayback(true);
   }
 
@@ -783,7 +806,7 @@
   }
 
   function initHowToVideo() {
-    els.dashboardHowToBtn?.addEventListener('click', openHowToVideo);
+    els.dashboardHowToBtn?.addEventListener('click', () => { openHowToVideo(); });
     els.howToCloseBtn?.addEventListener('click', closeHowToVideo);
     els.howToFullscreenBtn?.addEventListener('click', openHowToFullscreen);
     els.howToDownloadBtn?.addEventListener('click', downloadHowToVideo);

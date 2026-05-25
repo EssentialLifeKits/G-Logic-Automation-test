@@ -1230,7 +1230,7 @@
             <div class="howto-admin-form">
               <p class="howto-admin-note">
                 Paste the unlisted YouTube link for the dashboard player and the matching Google Drive link for downloads.
-                Saved changes sync to the Dashboard How To button immediately in this browser.
+                Saved changes publish to the Dashboard How To button on desktop and mobile.
               </p>
               <label class="howto-admin-label" for="howToAdminTitle">
                 Video Title
@@ -1452,6 +1452,22 @@
       }
     }
 
+    async function fetchHowToSettings() {
+      var localSettings = readHowToSettings();
+      try {
+        var response = await fetch('/api/howto-settings', { cache: 'no-store' });
+        var payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'Could not load saved How To settings.');
+        var remoteSettings = Object.assign({}, HOWTO_DEFAULTS, payload.settings || {});
+        var hasLocalVideo = Boolean(localSettings.youtubeUrl || localSettings.downloadUrl);
+        var hasRemoteVideo = Boolean(remoteSettings.youtubeUrl || remoteSettings.downloadUrl);
+        return hasLocalVideo && !hasRemoteVideo ? localSettings : remoteSettings;
+      } catch(e) {
+        writeHowToStatus('Using this browser’s saved How To settings. Save again to publish to mobile.', false);
+        return localSettings;
+      }
+    }
+
     function writeHowToStatus(message, ok) {
       var status = document.getElementById('howToAdminStatus');
       if (!status) return;
@@ -1459,15 +1475,15 @@
       status.className = 'howto-admin-status ' + (ok ? 'ok' : 'err');
     }
 
-    function populateHowToForm() {
-      var settings = readHowToSettings();
+    async function populateHowToForm() {
+      var settings = await fetchHowToSettings();
       document.getElementById('howToAdminTitle').value = settings.title || '';
       document.getElementById('howToAdminDescription').value = settings.description || '';
       document.getElementById('howToAdminYoutube').value = settings.youtubeUrl || '';
       document.getElementById('howToAdminDrive').value = settings.downloadUrl || '';
     }
 
-    function saveHowToForm() {
+    async function saveHowToForm() {
       var settings = {
         title: document.getElementById('howToAdminTitle').value.trim() || HOWTO_DEFAULTS.title,
         description: document.getElementById('howToAdminDescription').value.trim() || HOWTO_DEFAULTS.description,
@@ -1480,7 +1496,25 @@
       }
       try {
         localStorage.setItem(HOWTO_KEY, JSON.stringify(settings));
-        writeHowToStatus('✓ Saved! The Dashboard How To modal now uses these links.', true);
+        var sessionResult = await window.supabase.auth.getSession();
+        var token = sessionResult && sessionResult.data && sessionResult.data.session
+          ? sessionResult.data.session.access_token
+          : '';
+        if (!token) throw new Error('Admin session not found. Please sign in again.');
+
+        var response = await fetch('/api/howto-settings', {
+          method: 'POST',
+          headers: {
+            authorization: 'Bearer ' + token,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify(settings),
+        });
+        var payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'Could not publish How To settings.');
+
+        localStorage.setItem(HOWTO_KEY, JSON.stringify(payload.settings || settings));
+        writeHowToStatus('✓ Saved globally! Desktop and mobile now use these How To links.', true);
       } catch(e) {
         writeHowToStatus('Save failed: ' + e.message, false);
       }
