@@ -1,7 +1,7 @@
 const { getAuthUser, isAdminEmail, json } = require('../lib/paywall-utils');
 
 const DEFAULT_BUCKET = 'media_uploads';
-const SETTINGS_PATH = 'app_settings/howto-video.json';
+const SETTINGS_PATH = 'app_settings/howto-video.txt';
 
 const DEFAULTS = {
   title: 'How To Use G-Logic',
@@ -79,7 +79,7 @@ async function writeStoredSettings(settings) {
     headers: {
       ...headers,
       'cache-control': '3600',
-      'content-type': 'application/json',
+      'content-type': 'text/plain; charset=utf-8',
       'x-upsert': 'true',
     },
     body: JSON.stringify(settings),
