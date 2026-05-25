@@ -160,7 +160,7 @@
   // ========== STATE ==========
   const now = new Date();
   const state = {
-    currentPage: 'calendar',
+    currentPage: 'dashboard',
     currentView: 'month',
     currentDate: new Date(now.getFullYear(), now.getMonth(), 1),
     today: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
@@ -212,6 +212,31 @@
     viewMonthBtn: $('#viewMonthBtn'),
     viewWeekBtn: $('#viewWeekBtn'),
     newPostBtn: $('#newPostBtn'),
+    dashboardNewPostBtn: $('#dashboardNewPostBtn'),
+    dashboardOpenCalendarBtn: $('#dashboardOpenCalendarBtn'),
+    dashboardOpenActionsBtn: $('#dashboardOpenActionsBtn'),
+    dashboardTodayCalendarBtn: $('#dashboardTodayCalendarBtn'),
+    dashboardQueueActionsBtn: $('#dashboardQueueActionsBtn'),
+    dashboardConnectIgBtn: $('#dashboardConnectIgBtn'),
+    dashboardStudioTextBtn: $('#dashboardStudioTextBtn'),
+    dashboardStudioEditorBtn: $('#dashboardStudioEditorBtn'),
+    dashboardStudioAudioBtn: $('#dashboardStudioAudioBtn'),
+    dashTodayCount: $('#dashTodayCount'),
+    dashTodayMeta: $('#dashTodayMeta'),
+    dashUpcomingCount: $('#dashUpcomingCount'),
+    dashNextPostMeta: $('#dashNextPostMeta'),
+    dashMonthCount: $('#dashMonthCount'),
+    dashTypeBreakdown: $('#dashTypeBreakdown'),
+    dashAttentionCount: $('#dashAttentionCount'),
+    dashAttentionMeta: $('#dashAttentionMeta'),
+    dashboardHeroTitle: $('#dashboardHeroTitle'),
+    dashboardHeroMeta: $('#dashboardHeroMeta'),
+    dashboardTodayList: $('#dashboardTodayList'),
+    dashboardQueueList: $('#dashboardQueueList'),
+    dashboardActivityList: $('#dashboardActivityList'),
+    dashboardIgStatus: $('#dashboardIgStatus'),
+    dashboardIgHandle: $('#dashboardIgHandle'),
+    dashboardLastPublish: $('#dashboardLastPublish'),
     mobileTodayBtn: $('#mobileTodayBtn'),
     bestTimesList: $('#bestTimesList'),
     upcomingList: $('#upcomingList'),
@@ -274,6 +299,7 @@
       renderAnalyticsCards();
       drawChart();
     }
+    if (page === 'dashboard') renderDashboard();
   }
 
   els.navItems.forEach(item => {
@@ -324,6 +350,7 @@
     } else {
       renderWeekView();
     }
+    renderDashboard();
   }
 
   function renderMonthView(year, month) {
@@ -486,6 +513,174 @@
         openScheduler(todayStr, item.dataset.time);
       });
     });
+  }
+
+  // ========== DASHBOARD ==========
+  function isActiveScheduledPost(post) {
+    const status = (post?.status || 'pending').toLowerCase();
+    return ['pending', 'active', 'scheduled', 'failed', 'permanently_failed'].includes(status);
+  }
+
+  function getSortedActivePosts() {
+    return state.posts
+      .filter(p => shouldShowPostInUpcoming(p) && isActiveScheduledPost(p))
+      .sort((a, b) => (getPostScheduledDate(a)?.getTime() || 0) - (getPostScheduledDate(b)?.getTime() || 0));
+  }
+
+  function getTodayDateString() {
+    return formatDate(state.today.getFullYear(), state.today.getMonth(), state.today.getDate());
+  }
+
+  function renderDashboardPostItem(post, compact = false) {
+    const typeConf = POST_TYPES[post.type] || POST_TYPES.post;
+    const statusStr = getStatusClass(post.status);
+    const statusLabel = getStatusLabel(post.status);
+    const thumbContent = post.image_url
+      ? `<img src="${post.image_url}" alt="" loading="lazy">`
+      : typeConf.icon;
+    return `
+      <button class="dashboard-feed-item" data-post-id="${post.id}" type="button">
+        <span class="dashboard-feed-thumb" style="border-left-color:${typeConf.color};">${thumbContent}</span>
+        <span class="dashboard-feed-copy">
+          <strong>${escapeHtml(post.caption || 'Untitled')}</strong>
+          <small>${compact ? '' : `${formatDisplayDate(post.date)} · `}${formatTime12(post.time)} · ${typeConf.label}</small>
+        </span>
+        <span class="upcoming-status status-${statusStr}">${statusLabel}</span>
+      </button>`;
+  }
+
+  function attachDashboardPostHandlers(root) {
+    if (!root) return;
+    root.querySelectorAll('.dashboard-feed-item[data-post-id]').forEach(item => {
+      item.addEventListener('click', () => openEditModal(item.dataset.postId));
+    });
+  }
+
+  function renderDashboard() {
+    if (!els.dashTodayCount) return;
+    const todayStr = getTodayDateString();
+    const activePosts = getSortedActivePosts();
+    const todayPosts = activePosts.filter(p => p.date === todayStr);
+    const month = state.today.getMonth();
+    const year = state.today.getFullYear();
+    const monthPosts = state.posts.filter(p => {
+      if (!p.date || isPublishedPost(p)) return false;
+      const d = new Date(p.date + 'T00:00:00');
+      return d.getMonth() === month && d.getFullYear() === year;
+    });
+    const failedPosts = state.posts.filter(p => ['failed', 'permanently_failed'].includes((p.status || '').toLowerCase()));
+    const draftPosts = state.posts.filter(p => (p.status || '').toLowerCase() === 'draft');
+    const nextPost = activePosts[0];
+    const publishedPosts = state.posts
+      .filter(isPublishedPost)
+      .sort((a, b) => (getPostScheduledDate(b)?.getTime() || 0) - (getPostScheduledDate(a)?.getTime() || 0));
+    const typeCounts = {
+      post: monthPosts.filter(p => p.type === 'post').length,
+      reel: monthPosts.filter(p => p.type === 'reel').length,
+      story: monthPosts.filter(p => p.type === 'story').length,
+    };
+
+    els.dashTodayCount.textContent = todayPosts.length;
+    els.dashTodayMeta.textContent = todayPosts.length === 1 ? '1 post today' : `${todayPosts.length} posts today`;
+    els.dashUpcomingCount.textContent = activePosts.length;
+    els.dashNextPostMeta.textContent = nextPost
+      ? `Next ${formatDisplayDate(nextPost.date)} at ${formatTime12(nextPost.time)}`
+      : 'Nothing queued';
+    els.dashMonthCount.textContent = monthPosts.length;
+    els.dashTypeBreakdown.textContent = `Post ${typeCounts.post} · Reel ${typeCounts.reel} · Story ${typeCounts.story}`;
+    els.dashAttentionCount.textContent = failedPosts.length + draftPosts.length;
+    els.dashAttentionMeta.textContent = failedPosts.length
+      ? `${failedPosts.length} failed item${failedPosts.length === 1 ? '' : 's'}`
+      : draftPosts.length
+        ? `${draftPosts.length} draft${draftPosts.length === 1 ? '' : 's'}`
+        : 'All clear';
+
+    if (els.dashboardHeroTitle) {
+      els.dashboardHeroTitle.textContent = todayPosts.length
+        ? `${todayPosts.length} scheduled for today`
+        : nextPost
+          ? 'Queue is ready'
+          : 'Ready for today';
+    }
+    if (els.dashboardHeroMeta) {
+      els.dashboardHeroMeta.textContent = nextPost
+        ? `Next: ${formatDisplayDate(nextPost.date)} at ${formatTime12(nextPost.time)} · ${(POST_TYPES[nextPost.type] || POST_TYPES.post).label}`
+        : 'No upcoming posts queued.';
+    }
+
+    if (els.dashboardTodayList) {
+      els.dashboardTodayList.innerHTML = todayPosts.length
+        ? todayPosts.slice(0, 4).map(p => renderDashboardPostItem(p, true)).join('')
+        : '<p class="dashboard-empty">No posts scheduled today.</p>';
+      attachDashboardPostHandlers(els.dashboardTodayList);
+    }
+
+    if (els.dashboardQueueList) {
+      els.dashboardQueueList.innerHTML = activePosts.length
+        ? activePosts.slice(0, 6).map(p => renderDashboardPostItem(p)).join('')
+        : '<p class="dashboard-empty">No upcoming posts queued.</p>';
+      attachDashboardPostHandlers(els.dashboardQueueList);
+    }
+
+    if (els.dashboardActivityList) {
+      const activity = state.posts
+        .slice()
+        .sort((a, b) => (getPostScheduledDate(b)?.getTime() || 0) - (getPostScheduledDate(a)?.getTime() || 0))
+        .slice(0, 6);
+      els.dashboardActivityList.innerHTML = activity.length
+        ? activity.map(p => {
+            const typeConf = POST_TYPES[p.type] || POST_TYPES.post;
+            return `<button class="dashboard-activity-item" data-post-id="${p.id}" type="button">
+              <span class="dashboard-activity-dot" style="background:${typeConf.color};"></span>
+              <span><strong>${typeConf.label}</strong><small>${formatDisplayDate(p.date)} · ${formatTime12(p.time)} · ${getStatusLabel(p.status)}</small></span>
+            </button>`;
+          }).join('')
+        : '<p class="dashboard-empty">No recent activity yet.</p>';
+      els.dashboardActivityList.querySelectorAll('.dashboard-activity-item[data-post-id]').forEach(item => {
+        item.addEventListener('click', () => openEditModal(item.dataset.postId));
+      });
+    }
+
+    const igButton = document.getElementById('connectInstagramBtn');
+    const igText = document.getElementById('igStatusText')?.textContent?.trim() || 'Connect Instagram';
+    const connected = !!igButton?.classList.contains('connected');
+    const expired = !!igButton?.classList.contains('expired');
+    if (els.dashboardIgStatus) {
+      els.dashboardIgStatus.textContent = expired ? 'Reconnect' : connected ? 'Connected' : 'Not Connected';
+      els.dashboardIgStatus.classList.toggle('connected', connected && !expired);
+      els.dashboardIgStatus.classList.toggle('expired', expired);
+    }
+    if (els.dashboardIgHandle) els.dashboardIgHandle.textContent = igText;
+    if (els.dashboardLastPublish) {
+      els.dashboardLastPublish.textContent = publishedPosts[0]
+        ? `Last published ${formatDisplayDate(publishedPosts[0].date)} at ${formatTime12(publishedPosts[0].time)}`
+        : 'Last publish unavailable';
+    }
+  }
+
+  function initDashboardActions() {
+    els.dashboardNewPostBtn?.addEventListener('click', () => openScheduler(getTodayDateString()));
+    els.dashboardOpenCalendarBtn?.addEventListener('click', () => navigateTo('calendar'));
+    els.dashboardTodayCalendarBtn?.addEventListener('click', () => navigateTo('calendar'));
+    els.dashboardOpenActionsBtn?.addEventListener('click', openActionsPage);
+    els.dashboardQueueActionsBtn?.addEventListener('click', openActionsPage);
+    els.dashboardConnectIgBtn?.addEventListener('click', () => document.getElementById('connectInstagramBtn')?.click());
+    els.dashboardStudioTextBtn?.addEventListener('click', () => openScheduler(getTodayDateString()));
+    els.dashboardStudioEditorBtn?.addEventListener('click', () => {
+      openScheduler(getTodayDateString());
+      showToast('Media editor workspace is next in the build.');
+    });
+    els.dashboardStudioAudioBtn?.addEventListener('click', () => {
+      openScheduler(getTodayDateString());
+      showToast('Audio upload workspace is next in the build.');
+    });
+    const igButton = document.getElementById('connectInstagramBtn');
+    const igText = document.getElementById('igStatusText');
+    if (igButton && window.MutationObserver) {
+      const observer = new MutationObserver(renderDashboard);
+      observer.observe(igButton, { attributes: true, attributeFilter: ['class'] });
+      if (igText) observer.observe(igText, { childList: true, characterData: true, subtree: true });
+    }
   }
 
   function renderModalBestTimes() {
@@ -3927,8 +4122,10 @@
     renderCalendarHeader();
     renderCalendar();
     renderBestTimes();
+    initDashboardActions();
     cleanExpiredPosts();
     renderUpcoming();
+    renderDashboard();
     renderAnalyticsCards();
     renderTopPosts();
     attachStatCardListeners();

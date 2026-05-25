@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Montserrat:wght@500;600;700&family=Bebas+Neue&family=Special+Elite&family=Anton&family=Caveat:wght@500;600;700&family=Pacifico&family=Permanent+Marker&family=Bangers&family=Comic+Neue:wght@400;700&family=Chewy&family=Fredoka:wght@400;500;600;700&family=Luckiest+Guy&family=Rubik+Bubbles&family=Oswald:wght@500;600;700&family=Dancing+Script:wght@600;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="index.css?v=26" />
+    <link rel="stylesheet" href="index.css?v=27" />
 </head>
 
 <body class="paywall-checking">
@@ -39,7 +39,16 @@
         </div>
 
         <nav class="sidebar-nav">
-            <a href="#" class="nav-item active" data-page="calendar" id="navCalendar">
+            <a href="#" class="nav-item active" data-page="dashboard" id="navDashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-page="calendar" id="navCalendar">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                     <rect x="3" y="4" width="18" height="18" rx="2" />
                     <line x1="16" y1="2" x2="16" y2="6" />
@@ -155,8 +164,156 @@
             </div>
         </section>
 
+        <!-- ============ DASHBOARD PAGE ============ -->
+        <section class="page page-dashboard active" id="pageDashboard">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <h1 class="page-title">Dashboard</h1>
+                    <p class="page-subtitle" id="dashboardSubtitle">Your content command center</p>
+                </div>
+                <div class="top-bar-right">
+                    <span class="today-day-badge">
+                        <span class="today-dot"></span>
+                        <span class="today-day-name-common">Today</span>
+                    </span>
+                    <button class="btn-new-post" id="dashboardNewPostBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        <span>+ New Post</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="home-dashboard">
+                <section class="dashboard-hero card">
+                    <div>
+                        <span class="dashboard-kicker">G-Logic Pro</span>
+                        <h2 id="dashboardHeroTitle">Ready for today</h2>
+                        <p id="dashboardHeroMeta">No upcoming posts queued.</p>
+                    </div>
+                    <div class="dashboard-hero-actions">
+                        <button class="dashboard-action primary" id="dashboardOpenCalendarBtn" type="button">Open Calendar</button>
+                        <button class="dashboard-action" id="dashboardOpenActionsBtn" type="button">All Scheduled Actions</button>
+                    </div>
+                </section>
+
+                <section class="dashboard-stat-grid">
+                    <div class="dashboard-stat-card card">
+                        <span class="dashboard-stat-label">Today</span>
+                        <strong id="dashTodayCount">0</strong>
+                        <small id="dashTodayMeta">No posts today</small>
+                    </div>
+                    <div class="dashboard-stat-card card">
+                        <span class="dashboard-stat-label">Upcoming</span>
+                        <strong id="dashUpcomingCount">0</strong>
+                        <small id="dashNextPostMeta">Nothing queued</small>
+                    </div>
+                    <div class="dashboard-stat-card card">
+                        <span class="dashboard-stat-label">This Month</span>
+                        <strong id="dashMonthCount">0</strong>
+                        <small id="dashTypeBreakdown">Post 0 · Reel 0 · Story 0</small>
+                    </div>
+                    <div class="dashboard-stat-card card">
+                        <span class="dashboard-stat-label">Needs Attention</span>
+                        <strong id="dashAttentionCount">0</strong>
+                        <small id="dashAttentionMeta">All clear</small>
+                    </div>
+                </section>
+
+                <section class="dashboard-main-grid">
+                    <div class="card dashboard-panel dashboard-today-panel">
+                        <div class="widget-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                Today
+                            </h3>
+                            <button class="dashboard-link-btn" id="dashboardTodayCalendarBtn" type="button">Calendar</button>
+                        </div>
+                        <div class="dashboard-feed-list" id="dashboardTodayList"></div>
+                    </div>
+
+                    <div class="card dashboard-panel dashboard-queue-panel">
+                        <div class="widget-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                                Upcoming Queue
+                            </h3>
+                            <button class="dashboard-link-btn" id="dashboardQueueActionsBtn" type="button">View All</button>
+                        </div>
+                        <div class="dashboard-feed-list" id="dashboardQueueList"></div>
+                    </div>
+
+                    <div class="card dashboard-panel dashboard-health-panel">
+                        <div class="widget-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <rect x="2" y="2" width="20" height="20" rx="5" />
+                                    <circle cx="12" cy="12" r="5" />
+                                    <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" />
+                                </svg>
+                                Instagram
+                            </h3>
+                            <span class="dashboard-health-pill" id="dashboardIgStatus">Not Connected</span>
+                        </div>
+                        <div class="dashboard-health-body">
+                            <strong id="dashboardIgHandle">Connect Instagram</strong>
+                            <span id="dashboardLastPublish">Last publish unavailable</span>
+                        </div>
+                        <button class="dashboard-action full" id="dashboardConnectIgBtn" type="button">Connection Settings</button>
+                    </div>
+
+                    <div class="card dashboard-panel dashboard-studio-panel">
+                        <div class="widget-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                                </svg>
+                                G-Logic Studio
+                            </h3>
+                        </div>
+                        <div class="studio-shortcuts">
+                            <button class="studio-shortcut" id="dashboardStudioTextBtn" type="button">
+                                <span>T</span>
+                                <strong>Text Overlay</strong>
+                            </button>
+                            <button class="studio-shortcut" id="dashboardStudioEditorBtn" type="button">
+                                <span>✎</span>
+                                <strong>Editor</strong>
+                            </button>
+                            <button class="studio-shortcut" id="dashboardStudioAudioBtn" type="button">
+                                <span>♪</span>
+                                <strong>Audio</strong>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card dashboard-panel dashboard-activity-panel">
+                        <div class="widget-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path d="M3 3v18h18" />
+                                    <path d="m19 9-5 5-4-4-3 3" />
+                                </svg>
+                                Recent Activity
+                            </h3>
+                        </div>
+                        <div class="dashboard-activity-list" id="dashboardActivityList"></div>
+                    </div>
+                </section>
+            </div>
+        </section>
+
         <!-- ============ CALENDAR PAGE ============ -->
-        <section class="page page-calendar active" id="pageCalendar">
+        <section class="page page-calendar" id="pageCalendar">
             <!-- Top Bar -->
             <div class="top-bar">
                 <div class="top-bar-left">
@@ -628,6 +785,15 @@
                     <span class="logo-text">G-Logic Automation</span>
                 </div>
                 <nav class="sidebar-nav actions-sidebar-nav">
+                    <a href="#" class="nav-item" data-page="dashboard">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
                     <a href="#" class="nav-item" data-page="calendar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -1044,7 +1210,7 @@
     <script src="supabase.js"></script>
     <script src="auth.js"></script>
     <script src="instagram-oauth.js"></script>
-    <script src="app.js?v=26"></script>
+    <script src="app.js?v=27"></script>
 </body>
 
 </html>
