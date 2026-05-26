@@ -740,7 +740,9 @@
 
   function getYouTubeEmbedUrl(url) {
     const id = getYouTubeVideoId(url);
-    return id ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1` : url;
+    return id
+      ? `https://www.youtube.com/embed/${id}?rel=0&controls=1&playsinline=1&fs=1&cc_load_policy=0&modestbranding=1`
+      : url;
   }
 
   function getGoogleDriveFileId(url) {

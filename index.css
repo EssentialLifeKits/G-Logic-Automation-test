@@ -3288,7 +3288,7 @@ body.howto-open {
   }
 
   .howto-video-frame {
-    min-height: 190px;
+    min-height: clamp(240px, 58vw, 320px);
   }
 
   .widgets-column {
