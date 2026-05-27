@@ -1388,7 +1388,7 @@
     el.style.top        = item.y + '%';
     el.style.width      = (item.width || 24) + '%';
     el.style.textShadow = toeComposeTextShadow(item);
-    el.style.webkitTextStroke = '';
+    el.style.webkitTextStroke = item.stroke ? `${toeStrokePixels(item)}px ${item.stroke}` : '';
     el.style.opacity = item.opacity == null ? '1' : String(item.opacity);
     el.style.lineHeight = String(1 + ((item.lineHeight ?? 20) / 100));
     el.style.letterSpacing = `${((item.letterSpacing ?? 0) / 100) * item.size}px`;
@@ -1519,10 +1519,14 @@
       const startTextDrag = (e) => {
         if (e.target.classList.contains('toe-delete-btn') || e.target.closest('.toe-resize-handle')) return;
         e.preventDefault();
+        const wasActive = toeActiveId === item.id;
         toeActiveId = item.id;
-        toeRenderAll();
         toeUpdateToolbarToActive();
         toeUpdateTimelineTextTrack();
+        if (!wasActive) {
+          toeRenderAll();
+          return;
+        }
         // Begin drag
         const point = e.touches?.[0] || e;
         const startX = point.clientX;
@@ -1873,8 +1877,7 @@
   }
 
   function toeComposeTextShadow(item) {
-    const outline = item.stroke ? toeBuildStrokeShadow(item.stroke, toeStrokePixels(item)) : '';
-    return [outline, item.shadow || ''].filter(Boolean).join(', ');
+    return item.shadow || '';
   }
 
   function toeUpdateStylePreviewButtons(item = toeGetActiveItem()) {
@@ -2495,6 +2498,7 @@
     toeTrackArea.addEventListener('mousemove', setScrubX);
     toeTrackArea.addEventListener('mousedown', (e) => {
       if (e.button !== 0) return;
+      if (e.target.closest('#toeTextTrack')) return;
       e.preventDefault();
       toeTrackArea.classList.add('is-scrubbing');
       toeSetTimelineProgress(setScrubX(e));
@@ -2568,10 +2572,12 @@
           item.endTime = nextStart + length;
         }
         applyTrackPosition();
+        toeUpdatePreviewVisibility();
       };
       const onUp = () => {
         toeTextTrack.classList.remove('is-editing');
         toeUpdateTimelineTextTrack();
+        toeUpdatePreviewVisibility();
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
         document.removeEventListener('touchmove', onMove);

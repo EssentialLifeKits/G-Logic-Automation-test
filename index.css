@@ -5906,7 +5906,7 @@ body.howto-open {
   color: #fff;
   font-size: 0.82rem;
   font-weight: 800;
-  padding: 0 26px;
+  padding: 0 18px;
   cursor: grab;
   user-select: none;
   min-width: 44px;
@@ -5948,15 +5948,15 @@ body.howto-open {
 
 .toe-text-trim {
   position: absolute;
-  top: -5px;
-  bottom: -5px;
-  width: 28px;
+  top: -6px;
+  bottom: -6px;
+  width: 22px;
   border: 0;
   appearance: none;
   -webkit-appearance: none;
   padding: 0;
   margin: 0;
-  background: #57f0a4;
+  background: transparent;
   cursor: ew-resize;
   z-index: 7;
   display: grid;
@@ -5969,15 +5969,17 @@ body.howto-open {
 
 .toe-text-trim::before {
   content: "↔";
-  width: auto;
-  height: auto;
-  border-radius: 0;
-  background: transparent;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #57f0a4;
   color: #092016;
   font-size: 0.78rem;
   letter-spacing: 0;
   text-shadow: none;
-  box-shadow: none;
+  box-shadow: 0 0 14px rgba(87, 240, 164, 0.58);
+  display: grid;
+  place-items: center;
 }
 
 .toe-text-trim::after {
@@ -5985,12 +5987,12 @@ body.howto-open {
 }
 
 .toe-text-trim-start {
-  left: -17px;
+  left: -25px;
   border-radius: 999px;
 }
 
 .toe-text-trim-end {
-  right: -17px;
+  right: -25px;
   border-radius: 999px;
 }
 
