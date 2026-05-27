@@ -5101,6 +5101,11 @@ body.howto-open {
   will-change: left, top;
 }
 
+.toe-text-content {
+  display: block;
+  pointer-events: none;
+}
+
 .toe-text-el.active-text {
   outline: 3px solid #15cce3;
   outline-offset: 0;
@@ -5942,6 +5947,7 @@ body.howto-open {
   text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: none;
+  min-width: 0;
   width: 100%;
   text-align: left;
 }
@@ -6090,6 +6096,10 @@ body.howto-open {
   color: #8a8a8a;
   text-align: center;
   font: 700 0.82rem/1.35 Inter, sans-serif;
+}
+
+.toe-preset-deferred {
+  min-height: 116px;
 }
 
 .toe-timeline {

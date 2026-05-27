@@ -1095,6 +1095,8 @@
   let toePendingTimelineProgress = 0;
   let toePendingTimelineSeconds = 0;
   let toeLastVideoSeekAt = 0;
+  let toeFontOptionsReady = false;
+  let toePresetGridsReady = false;
 
   const toeOverlay    = document.getElementById('toeOverlay');
   const toeStage      = document.getElementById('toeStage');
@@ -1134,6 +1136,32 @@
       return text.toLowerCase().replace(/\b([a-z])/g, char => char.toUpperCase());
     }
     return text;
+  }
+
+  function toeGetTextContentNode(el) {
+    if (!el) return null;
+    let node = el.querySelector('.toe-text-content');
+    if (!node) {
+      node = document.createElement('span');
+      node.className = 'toe-text-content';
+      el.insertBefore(node, el.firstChild);
+    }
+    return node;
+  }
+
+  function toeSyncTextContent(el, item) {
+    const node = toeGetTextContentNode(el);
+    if (node && item) node.textContent = toeTransformText(item.text || 'Text', item.caseMode);
+  }
+
+  function toeUpdateTextDom(item) {
+    if (!item) return;
+    const el = toeGetEl(item.id);
+    if (!el) return;
+    toeSyncTextContent(el, item);
+    toeApplyStyle(el, item);
+    el.classList.toggle('toe-out-of-time', !toeIsTextVisibleAtProgress(item));
+    toeUpdateTimelineTextTrack();
   }
 
   function toeSetCenterGuides(showX = false, showY = false) {
@@ -1321,11 +1349,15 @@
     };
   }
 
-  function toeRenderFontOptions() {
+  function toeRenderFontOptions(force = false) {
     const fontSelect = document.getElementById('toeFontSelect');
     if (!fontSelect) return;
     const keys = Object.keys(TOE_FONTS);
     if (!keys.includes(toeFont)) toeFont = keys[0] || 'classic';
+    if (toeFontOptionsReady && !force) {
+      fontSelect.value = toeFont;
+      return;
+    }
     fontSelect.innerHTML = TOE_FONT_CATEGORIES.map(category => {
       const categoryKeys = category.key === 'all'
         ? keys
@@ -1338,6 +1370,7 @@
       return `<optgroup label="${category.label}">${options}</optgroup>`;
     }).join('');
     fontSelect.value = toeFont;
+    toeFontOptionsReady = true;
   }
 
   function toeLoadFavoritePresets() {
@@ -1373,7 +1406,7 @@
       ? saved.filter(item => item.favoriteId !== favoriteId)
       : [{ ...preset, key: preset.originalKey || preset.key, favoriteId, sourceCategory: preset.sourceCategory || toePresetCategory }, ...saved];
     toeSaveFavoritePresets(next);
-    toeRenderPresetGrids();
+    toeRenderPresetGrids(true);
   }
 
   function toeApplyStyle(el, item) {
@@ -1487,9 +1520,9 @@
       wrap.className = 'toe-text-el' + (item.id === toeActiveId ? ' active-text' : '');
       wrap.id = 'toe-el-' + item.id;
       wrap.contentEditable = 'false';
-      wrap.textContent = toeTransformText(item.text, item.caseMode);
       wrap.draggable = false;
       toeApplyStyle(wrap, item);
+      toeSyncTextContent(wrap, item);
       wrap.classList.toggle('toe-out-of-time', !toeIsTextVisibleAtProgress(item));
 
       // Delete button
@@ -1654,7 +1687,7 @@
     const item = toeGetActiveItem();
     if (!item) return;
     item[prop] = val;
-    toeApplyStyle(toeGetEl(item.id), item);
+    toeUpdateTextDom(item);
   }
 
   function toeApplyPreset(preset) {
@@ -1673,7 +1706,7 @@
     toeFont = item.font || toeFont;
     toeColor = item.color || toeColor;
     toeBg = item.bg || toeBg;
-    toeRenderAll();
+    toeUpdateTextDom(item);
     toeUpdateToolbarToActive();
   }
 
@@ -1688,7 +1721,22 @@
     </button>`;
   }
 
-  function toeRenderPresetGrids() {
+  function toeSetPresetGridPlaceholder() {
+    toeRenderedPresets = new Map();
+    const html = '<div class="toe-empty-favorites toe-preset-deferred">Open Presets to load style presets.</div>';
+    const left = document.getElementById('toeLeftPresetGrid');
+    const right = document.getElementById('toeRightPresetGrid');
+    if (left) left.innerHTML = html;
+    if (right) right.innerHTML = html;
+  }
+
+  function toeRenderPresetGrids(force = false) {
+    if (toePresetGridsReady && !force) {
+      document.querySelectorAll('.toe-preset-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.preset === toePresetCategory);
+      });
+      return;
+    }
     toeRenderedPresets = new Map();
     const basePresets = toePresetCategory === 'favorite'
       ? toeLoadFavoritePresets()
@@ -1713,6 +1761,7 @@
     document.querySelectorAll('.toe-preset-tab').forEach(tab => {
       tab.classList.toggle('active', tab.dataset.preset === toePresetCategory);
     });
+    toePresetGridsReady = true;
   }
 
   function toeFindPresetByRenderedKey(renderedKey) {
@@ -1726,6 +1775,7 @@
     document.querySelectorAll('.toe-inspector-tab').forEach(tab => {
       tab.classList.toggle('active', tab.dataset.paneTarget === name);
     });
+    if (name === 'presets') toeRenderPresetGrids(true);
   }
 
   function toeRenderTimelineThumbs(mediaEl) {
@@ -1752,6 +1802,7 @@
     toeActiveId = null;
     toeFont = 'classic'; toeColor = '#ffffff'; toeSize = 32; toeBg = 'none'; toeAlign = 'center';
     toePresetCategory = 'trending';
+    toePresetGridsReady = false;
     toeTextLayer.innerHTML = '';
     if (toeProcessing) toeProcessing.style.display = 'none';
     if (toeProcLabel) toeProcLabel.textContent = 'Processing video...';
@@ -1811,7 +1862,7 @@
     if (colorPopover) colorPopover.classList.remove('active');
     toeStyleTarget = 'fill';
     toeSetRightPane('basic');
-    toeRenderPresetGrids();
+    toeSetPresetGridPlaceholder();
 
     toeOverlay.style.display = 'flex';
     toeOverlay.style.flexDirection = 'column';
@@ -1947,7 +1998,7 @@
       item.color = color;
       toeColor = color;
     }
-    toeApplyStyle(toeGetEl(item.id), item);
+    toeUpdateTextDom(item);
     toeUpdateToolbarToActive();
     toeUpdateStylePreviewButtons(item);
   }
@@ -2315,7 +2366,7 @@
       const item = toeGetActiveItem();
       if (!item) return;
       item.text = toeInspectorText.value;
-      toeRenderAll();
+      toeUpdateTextDom(item);
     });
   }
 
@@ -2363,7 +2414,6 @@
   document.querySelectorAll('[data-case-mode]').forEach(btn => {
     btn.addEventListener('click', () => {
       toeUpdateActive('caseMode', btn.dataset.caseMode || 'normal');
-      toeRenderAll();
       toeUpdateToolbarToActive();
     });
   });
@@ -2389,7 +2439,7 @@
       const tab = e.target.closest('.toe-preset-tab');
       if (!tab) return;
       toePresetCategory = tab.dataset.preset || 'trending';
-      toeRenderPresetGrids();
+      toeRenderPresetGrids(true);
     });
   });
 
