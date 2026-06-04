@@ -915,344 +915,62 @@
         <span id="toastMessage">Post scheduled successfully!</span>
     </div>
 
-    <!-- ===== PREMIUM TEXT OVERLAY EDITOR ===== -->
-    <div class="toe-overlay" id="toeOverlay" style="display:none;">
-        <header class="toe-topbar">
-            <div class="toe-topbar-left">
-                <img src="./glogic-logo.png" alt="G-Logic Automation" class="toe-brand-mark toe-brand-logo" />
-                <button class="toe-icon-btn toe-back-btn" id="toeCancelBtn" type="button" data-tooltip="Back">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <span class="toe-title-label">G-Logic Multimedia Project</span>
-            </div>
-            <div class="toe-topbar-center">
-                <button class="toe-icon-btn active" type="button" data-tooltip="Select">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 4 7.2 16 2.1-6.7L20 11.2 4 4z"/></svg>
-                </button>
-                <button class="toe-icon-btn" type="button" data-tooltip="Hand tool">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 11V6a2 2 0 1 1 4 0v5"/><path d="M12 10V5a2 2 0 1 1 4 0v7"/><path d="M16 12V7a2 2 0 1 1 4 0v8a7 7 0 0 1-14 0v-3a2 2 0 1 1 4 0v1"/></svg>
-                </button>
-                <button class="toe-icon-btn" type="button" data-tooltip="Undo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-2"/></svg>
-                </button>
-                <button class="toe-icon-btn is-muted" type="button" data-tooltip="Redo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h2"/></svg>
-                </button>
-                <div class="toe-zoom-menu">
-                    <button class="toe-zoom-btn" id="toeZoomBtn" type="button" data-tooltip="Zoom">100%⌄</button>
-                    <div class="toe-zoom-popover">
-                        <span>Zoom to</span>
-                        <div class="toe-zoom-control">
-                            <input id="toeCanvasZoomRange" type="range" min="50" max="200" value="100">
-                            <strong id="toeCanvasZoomValue">100%</strong>
-                        </div>
-                        <button type="button" data-toe-zoom="fit">Zoom to fit</button>
-                        <button type="button" data-toe-zoom="50">Zoom to 50%</button>
-                        <button type="button" data-toe-zoom="100">Zoom to 100%</button>
-                        <button type="button" data-toe-zoom="200">Zoom to 200%</button>
-                    </div>
-                </div>
-                <div class="toe-theme-toggle" role="group" aria-label="Editor theme">
-                    <button class="active" type="button" data-toe-theme="brand">Brand</button>
-                    <button type="button" data-toe-theme="light">Light</button>
-                </div>
-            </div>
-            <div class="toe-topbar-actions">
-                <button class="toe-cancel-btn" id="toeCancelBtnSecondary" type="button">Cancel</button>
-                <button class="toe-done-btn" id="toeDoneBtn" type="button">Save</button>
-            </div>
-        </header>
+    <!-- ===== LIGHTWEIGHT TEXT EDITOR ===== -->
+    <div class="toe2-overlay" id="toeOverlay" style="display:none;">
+      <header class="toe2-bar">
+        <button class="toe2-ghost" id="toeCancelBtn" type="button">Cancel</button>
+        <span class="toe2-title">Text Editor</span>
+        <button class="toe2-primary" id="toeDoneBtn" type="button">Save</button>
+      </header>
 
-        <div class="toe-editor-body">
-            <aside class="toe-tool-rail">
-                <button class="toe-tool-btn active" id="toeTextToolBtn" type="button" data-tooltip="Text">
-                    <strong>T</strong>
-                    <span>Text</span>
-                </button>
-                <button class="toe-tool-btn" type="button" data-tooltip="Sounds">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                    <span>Sounds</span>
-                </button>
-            </aside>
-
-            <aside class="toe-left-panel">
-                <div class="toe-panel-header">
-                    <h3>Text</h3>
-                    <button class="toe-panel-close" type="button" data-tooltip="Close">×</button>
-                </div>
-                <section class="toe-panel-section">
-                    <h4>Basic</h4>
-                    <button class="toe-add-text-btn" id="toeAddTextBtn" type="button">Add text</button>
-                </section>
-                <section class="toe-panel-section">
-                    <h4>Presets</h4>
-                    <div class="toe-preset-tabs" data-preset-tabs>
-                        <button class="toe-preset-tab" data-preset="favorite" type="button">Favorite</button>
-                        <button class="toe-preset-tab active" data-preset="trending" type="button">Trending</button>
-                        <button class="toe-preset-tab" data-preset="basic" type="button">Basic</button>
-                        <button class="toe-preset-tab" data-preset="background" type="button">Background</button>
-                        <button class="toe-preset-tab" data-preset="glow" type="button">Glow</button>
-                        <button class="toe-preset-tab" data-preset="shadow" type="button">Shadow</button>
-                        <button class="toe-preset-tab" data-preset="stroke" type="button">Stroke</button>
-                        <button class="toe-preset-tab" data-preset="red" type="button">Red</button>
-                        <button class="toe-preset-tab" data-preset="blue" type="button">Blue</button>
-                        <button class="toe-preset-tab" data-preset="yellow" type="button">Yellow</button>
-                        <button class="toe-preset-tab" data-preset="pink" type="button">Pink</button>
-                        <button class="toe-preset-tab" data-preset="green" type="button">Green</button>
-                    </div>
-                    <div class="toe-preset-grid" id="toeLeftPresetGrid"></div>
-                </section>
-            </aside>
-
-            <main class="toe-canvas-area">
-                <div class="toe-stage-shell">
-                    <div class="toe-stage" id="toeStage">
-                        <canvas id="toeCanvas" style="display:none;"></canvas>
-                        <div class="toe-center-guides" id="toeCenterGuides" aria-hidden="true">
-                            <span class="toe-center-guide-x"></span>
-                            <span class="toe-center-guide-y"></span>
-                        </div>
-                        <div class="toe-text-layer" id="toeTextLayer"></div>
-                        <div class="toe-processing" id="toeProcessing" style="display:none;">
-                            <div class="toe-processing-inner">
-                                <div class="toe-spinner"></div>
-                                <span id="toeProcessingLabel">Processing video...</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="toe-expand-btn" type="button" data-tooltip="Fit canvas">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
-                    </button>
-                </div>
-            </main>
-
-            <aside class="toe-right-panel">
-                <div class="toe-right-pane active" data-pane="basic">
-                    <div class="toe-panel-header">
-                        <h3>Basic</h3>
-                        <button class="toe-panel-close" type="button" data-tooltip="Close">×</button>
-                    </div>
-                    <textarea id="toeInspectorText" class="toe-text-input">Text</textarea>
-                    <div class="toe-font-controls">
-                        <select id="toeFontSelect" class="toe-font-select" aria-label="Font"></select>
-                        <select id="toeSizeSelect" class="toe-size-select" aria-label="Font size">
-                            <option value="12">12</option>
-                            <option value="13">13</option>
-                            <option value="14">14</option>
-                            <option value="15">15</option>
-                            <option value="16">16</option>
-                            <option value="17">17</option>
-                            <option value="18">18</option>
-                            <option value="19">19</option>
-                            <option value="20">20</option>
-                            <option value="24">24</option>
-                            <option value="28">28</option>
-                            <option value="32" selected>32</option>
-                            <option value="36">36</option>
-                            <option value="42">42</option>
-                            <option value="48">48</option>
-                            <option value="56">56</option>
-                            <option value="64">64</option>
-                            <option value="72">72</option>
-                            <option value="80">80</option>
-                            <option value="96">96</option>
-                        </select>
-                    </div>
-                    <input type="range" id="toeSizeSlider" min="12" max="100" value="32" class="toe-size-slider">
-                    <div class="toe-format-row">
-                        <button type="button" data-tooltip="Bold"><strong>B</strong></button>
-                        <button type="button" data-tooltip="Italic"><em>I</em></button>
-                        <button type="button" data-tooltip="Underline"><u>U</u></button>
-                        <button class="toe-align-btn" data-align="left" type="button" data-tooltip="Align left">≡</button>
-                        <button class="toe-align-btn active" data-align="center" type="button" data-tooltip="Align center">≣</button>
-                        <button class="toe-align-btn" data-align="right" type="button" data-tooltip="Align right">≡</button>
-                        <button id="toeCaseBtn" type="button" data-tooltip="Case">Aa⌃</button>
-                        <button id="toeSpacingBtn" type="button" data-tooltip="Spacing">↕A⌃</button>
-                    </div>
-                    <div class="toe-format-popover toe-case-popover" id="toeCasePopover">
-                        <span>Case</span>
-                        <button type="button" data-case-mode="upper">AG</button>
-                        <button type="button" data-case-mode="lower">ag</button>
-                        <button type="button" data-case-mode="title">Ag</button>
-                    </div>
-                    <div class="toe-format-popover toe-spacing-popover" id="toeSpacingPopover">
-                        <label>
-                            <span>Line height</span>
-                            <div class="toe-spacing-control">
-                                <input id="toeLineHeightSlider" type="range" min="0" max="80" value="20">
-                                <input id="toeLineHeightValue" type="number" min="0" max="80" value="20">
-                            </div>
-                        </label>
-                        <label>
-                            <span>Letter spacing</span>
-                            <div class="toe-spacing-control">
-                                <input id="toeLetterSpacingSlider" type="range" min="0" max="100" value="0">
-                                <div class="toe-number-suffix">
-                                    <input id="toeLetterSpacingValue" type="number" min="0" max="100" value="0">
-                                    <span>%</span>
-                                </div>
-                            </div>
-                        </label>
-                    </div>
-                    <div class="toe-style-section">
-                        <div class="toe-style-title">
-                            <h4>Style</h4>
-                            <button class="toe-reset-btn" type="button" data-tooltip="Reset">↻</button>
-                        </div>
-                        <div class="toe-style-row">
-                            <span>Fill</span>
-                            <button class="toe-style-more" type="button" data-style-popover="fill" data-tooltip="Fill color">+</button>
-                        </div>
-                        <div class="toe-style-row">
-                            <span>Stroke</span>
-                            <div class="toe-style-actions">
-                                <button class="toe-style-options" type="button" data-style-options="stroke" data-tooltip="Stroke options">...</button>
-                                <button class="toe-style-more" type="button" data-style-popover="stroke" data-tooltip="Stroke">+</button>
-                            </div>
-                        </div>
-                        <div class="toe-style-row">
-                            <span>Background</span>
-                            <div class="toe-style-actions">
-                                <button class="toe-style-options" type="button" data-style-options="background" data-tooltip="Background options">...</button>
-                                <button class="toe-style-more" type="button" data-style-popover="background" data-tooltip="Background">+</button>
-                            </div>
-                        </div>
-                        <div class="toe-style-row">
-                            <span>Shadow</span>
-                            <div class="toe-style-actions">
-                                <button class="toe-style-options" type="button" data-style-options="shadow" data-tooltip="Shadow options">...</button>
-                                <button class="toe-style-more" type="button" data-style-popover="shadow" data-tooltip="Shadow">+</button>
-                            </div>
-                        </div>
-                        <div class="toe-style-options-popover" id="toeStyleOptionsPopover"></div>
-                        <div class="toe-color-popover" id="toeColorPopover">
-                            <strong id="toeColorPopoverTitle">Select color</strong>
-                            <p id="toeColorPopoverHint">Choose a color for the selected text style.</p>
-                            <small>Recent</small>
-                            <div class="toe-recent-colors">
-                                <button class="toe-eyedropper-btn" id="toeEyedropperBtn" type="button" title="Eyedropper" aria-label="Eyedropper">⌕</button>
-                                <button class="toe-color-custom" id="toeColorCustom" type="button" title="Custom color">
-                                    <input type="color" id="toeColorPicker" value="#ffffff">
-                                    <span></span>
-                                </button>
-                                <button class="toe-color-swatch active" data-color="#ffffff" style="background:#ffffff;" title="White"></button>
-                            </div>
-                            <small>Recommended</small>
-                            <div class="toe-colors">
-                                <button class="toe-color-swatch" data-color="#000000" style="background:#000000;" title="Black"></button>
-                                <button class="toe-color-swatch" data-color="#ffffff" style="background:#ffffff;" title="White"></button>
-                                <button class="toe-color-swatch" data-color="#E1306C" style="background:#E1306C;" title="Pink"></button>
-                                <button class="toe-color-swatch" data-color="#FFD700" style="background:#FFD700;" title="Gold"></button>
-                                <button class="toe-color-swatch" data-color="#00CED1" style="background:#00CED1;" title="Cyan"></button>
-                                <button class="toe-color-swatch" data-color="#FF6B35" style="background:#FF6B35;" title="Orange"></button>
-                                <button class="toe-color-swatch" data-color="#A8FF3E" style="background:#A8FF3E;" title="Lime"></button>
-                                <button class="toe-color-swatch" data-color="#4F46E5" style="background:#4F46E5;" title="Blue"></button>
-                                <button class="toe-color-swatch" data-color="#22C55E" style="background:#22C55E;" title="Green"></button>
-                                <button class="toe-color-swatch" data-color="#A855F7" style="background:#A855F7;" title="Purple"></button>
-                                <button class="toe-color-swatch" data-color="#EF4444" style="background:#EF4444;" title="Red"></button>
-                                <button class="toe-color-swatch" data-color="#78350F" style="background:#78350F;" title="Brown"></button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="toe-opacity-section">
-                        <div class="toe-style-title">
-                            <h4>Opacity</h4>
-                            <button class="toe-reset-btn" type="button" data-tooltip="Reset">↻</button>
-                        </div>
-                        <div class="toe-opacity-row">
-                            <input type="range" min="0" max="100" value="100">
-                            <span>100%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="toe-right-pane" data-pane="presets">
-                    <div class="toe-panel-header">
-                        <h3>Presets</h3>
-                        <button class="toe-panel-close" type="button" data-tooltip="Close">×</button>
-                    </div>
-                    <div class="toe-preset-tabs" data-preset-tabs>
-                        <button class="toe-preset-tab active" data-preset="trending" type="button">Trending</button>
-                        <button class="toe-preset-tab" data-preset="basic" type="button">Basic</button>
-                        <button class="toe-preset-tab" data-preset="background" type="button">Background</button>
-                        <button class="toe-preset-tab" data-preset="glow" type="button">Glow</button>
-                        <button class="toe-preset-tab" data-preset="shadow" type="button">Shadow</button>
-                        <button class="toe-preset-tab" data-preset="stroke" type="button">Stroke</button>
-                        <button class="toe-preset-tab" data-preset="red" type="button">Red</button>
-                        <button class="toe-preset-tab" data-preset="blue" type="button">Blue</button>
-                        <button class="toe-preset-tab" data-preset="yellow" type="button">Yellow</button>
-                        <button class="toe-preset-tab" data-preset="pink" type="button">Pink</button>
-                        <button class="toe-preset-tab" data-preset="green" type="button">Green</button>
-                    </div>
-                    <div class="toe-preset-grid" id="toeRightPresetGrid"></div>
-                </div>
-            </aside>
-
-            <aside class="toe-inspector-rail">
-                <button class="toe-inspector-tab active" type="button" data-pane-target="basic" data-tooltip="Basic">
-                    <span>Aa</span>
-                    <small>Basic</small>
-                </button>
-                <button class="toe-inspector-tab" type="button" data-pane-target="presets" data-tooltip="Presets">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
-                    <small>Presets</small>
-                </button>
-            </aside>
+      <div class="toe2-stage" id="toeStage">
+        <div class="toe2-textlayer" id="toeTextLayer"></div>
+        <div class="toe2-processing" id="toeProcessing" style="display:none;">
+          <div class="toe2-spinner"></div>
+          <span id="toeProcessingLabel">Processing...</span>
         </div>
+      </div>
 
-        <footer class="toe-timeline">
-            <div class="toe-timeline-toolbar">
-                <div class="toe-timeline-left">
-                    <button type="button" data-tooltip="Split">{|}</button>
-                    <button type="button" data-tooltip="Delete">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/></svg>
-                    </button>
-                </div>
-                <div class="toe-playback">
-                    <button type="button" data-tooltip="Play">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                    </button>
-                    <span id="toeCurrentTime">00:00:00</span>
-                    <em>/</em>
-                    <span class="muted" id="toeDurationTime">00:08:00</span>
-                </div>
-                <div class="toe-timeline-right">
-                    <button id="toeTimelineZoomOut" type="button" data-tooltip="Zoom out">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/></svg>
-                    </button>
-                    <input id="toeTimelineZoomRange" type="range" min="0" max="100" value="25" aria-label="Timeline zoom">
-                    <button id="toeTimelineZoomIn" type="button" data-tooltip="Zoom in">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6M11 8v6"/></svg>
-                    </button>
-                    <button id="toeTimelineHideBtn" type="button" data-tooltip="Hide timeline" aria-label="Hide timeline">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="12" rx="2"/><path d="M8 21h8"/></svg>
-                    </button>
-                </div>
-            </div>
-            <button id="toeTimelineDragHandle" class="toe-timeline-drag-handle" type="button" data-tooltip="Drag timeline" aria-label="Drag timeline">
-                <span>↕</span>
-            </button>
-            <div class="toe-timeline-body">
-                <div class="toe-track-labels">
-                    <span></span>
-                    <span data-tooltip="Mute">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg>
-                    </span>
-                </div>
-                <div class="toe-track-area" id="toeTrackArea">
-                    <div class="toe-playhead"></div>
-                    <div class="toe-ruler">
-                        <span>00:00</span><span>00:02</span><span>00:04</span><span>00:06</span><span>00:08</span>
-                    </div>
-                    <div class="toe-text-track" id="toeTextTrack" role="slider" aria-label="Text timing">
-                        <button class="toe-text-trim toe-text-trim-start" type="button" data-trim-edge="start" data-tooltip="Adjust text start"></button>
-                        <span class="toe-track-label-text">T&nbsp; Text</span>
-                        <button class="toe-text-trim toe-text-trim-end" type="button" data-trim-edge="end" data-tooltip="Adjust text end"></button>
-                    </div>
-                    <div class="toe-media-track" id="toeTimelineThumbs"></div>
-                </div>
-            </div>
-        </footer>
+      <div class="toe2-videobar" id="toeVideoBar" style="display:none;">
+        <button class="toe2-play" id="toePlayBtn" type="button" aria-label="Play / Pause">&#9654;</button>
+        <span class="toe2-time" id="toeTimeLabel">0:00 / 0:00</span>
+        <input class="toe2-seek" id="toeSeek" type="range" min="0" max="1000" value="0" aria-label="Seek">
+        <div class="toe2-trackrail">
+          <div class="toe2-texttrack" id="toeTextTrack" title="Drag to move when text appears; drag edges to trim">
+            <span class="toe2-trim" data-edge="start"></span>
+            <span class="toe2-track-label" id="toeTrackLabel">Text</span>
+            <span class="toe2-trim" data-edge="end"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="toe2-toolbar">
+        <button class="toe2-add" id="toeAddTextBtn" type="button">+ Add Text</button>
+        <select class="toe2-select" id="toeFontSelect" aria-label="Font">
+          <option value="classic">Classic</option>
+          <option value="modern">Modern</option>
+          <option value="strong">Strong</option>
+          <option value="neon">Neon</option>
+          <option value="type">Typewriter</option>
+        </select>
+        <input class="toe2-sizeslider" id="toeSizeSlider" type="range" min="14" max="120" value="40" aria-label="Text size">
+        <div class="toe2-colors">
+          <button class="toe2-sw active" data-color="#ffffff" style="background:#ffffff;" title="White"></button>
+          <button class="toe2-sw" data-color="#000000" style="background:#000000;" title="Black"></button>
+          <button class="toe2-sw" data-color="#E1306C" style="background:#E1306C;" title="Pink"></button>
+          <button class="toe2-sw" data-color="#FFD700" style="background:#FFD700;" title="Gold"></button>
+          <button class="toe2-sw" data-color="#00CED1" style="background:#00CED1;" title="Cyan"></button>
+          <button class="toe2-sw" data-color="#22C55E" style="background:#22C55E;" title="Green"></button>
+          <label class="toe2-sw toe2-sw-custom" title="Custom color"><input type="color" id="toeColorPicker" value="#ffffff"></label>
+        </div>
+        <div class="toe2-align" id="toeAlign">
+          <button class="toe2-al" data-align="left" type="button" title="Left">&#8676;</button>
+          <button class="toe2-al active" data-align="center" type="button" title="Center">&#8801;</button>
+          <button class="toe2-al" data-align="right" type="button" title="Right">&#8677;</button>
+        </div>
+        <button class="toe2-bg" id="toeBgBtn" type="button">Bg: Off</button>
+        <button class="toe2-del" id="toeDeleteBtn" type="button">Delete</button>
+      </div>
     </div>
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

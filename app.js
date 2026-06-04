@@ -950,1902 +950,427 @@
     });
   }
 
-  // ========== TEXT OVERLAY EDITOR ==========
+  // ========== TEXT OVERLAY EDITOR (lightweight rebuild) ==========
+  // Goals: zero lag, instant text drag, reliable video play/pause/stop,
+  // text element shown + trimmable on the timeline. No filmstrip, no preset
+  // gallery, no continuous repaint loop, no heavy CSS effects.
+
   const TOE_FONTS = {
-    classic:    { label:'Classic', family:"Inter, 'Helvetica Neue', Arial, sans-serif", cls:'toe-font-classic', category:'basic', weight:500 },
-    sansMedium: { label:'TikTokSans-Medium', family:"Inter, 'Helvetica Neue', Arial, sans-serif", cls:'toe-font-modern', category:'trending', weight:600 },
-    sansRegular:{ label:'TikTokSans-Regular', family:"Inter, 'Helvetica Neue', Arial, sans-serif", cls:'toe-font-modern', category:'basic', weight:400 },
-    satishy:    { label:'Satishy', family:"'Dancing Script', cursive", cls:'toe-font-script', category:'trending', weight:700 },
-    script:     { label:'Script', family:"'Pacifico', cursive", cls:'toe-font-script', category:'handwritten', weight:400 },
-    serene:     { label:'Serene', family:"'Playfair Display', Georgia, serif", cls:'toe-font-classic', category:'basic', weight:600 },
-    serif:      { label:'Serif', family:"Georgia, 'Times New Roman', serif", cls:'toe-font-classic', category:'basic', weight:600 },
-    slab:       { label:'Slab', family:"'Roboto Slab', Georgia, serif", cls:'toe-font-classic', category:'retro', weight:700 },
-    technic:    { label:'Technic', family:"'Oswald', Impact, sans-serif", cls:'toe-font-strong', category:'retro', weight:600 },
-    telegraph:  { label:'Telegraph', family:"'Special Elite', 'Courier New', monospace", cls:'toe-font-typewriter', category:'retro', weight:400 },
-    modern:     { label:'Modern', family:"'Montserrat','Helvetica Neue',sans-serif", cls:'toe-font-modern', category:'basic', weight:600 },
-    strong:     { label:'Strong', family:"'Anton',Impact,sans-serif", cls:'toe-font-strong', category:'decorative', weight:400 },
-    neon:       { label:'Neon', family:"'Bebas Neue',Impact,sans-serif", cls:'toe-font-neon', category:'decorative', weight:400 },
-    typewriter: { label:'Typewriter', family:"'Special Elite','Courier New',monospace", cls:'toe-font-typewriter', category:'retro', weight:400 },
-    marker:     { label:'Marker', family:"'Permanent Marker', cursive", cls:'toe-font-marker', category:'handwritten', weight:400 },
-    caveat:     { label:'Caveat', family:"'Caveat', cursive", cls:'toe-font-script', category:'handwritten', weight:700 },
-    bangers:    { label:'Bangers', family:"'Bangers', Impact, sans-serif", cls:'toe-font-comic', category:'comic', weight:400 },
-    comic:      { label:'Comic', family:"'Comic Neue', 'Comic Sans MS', cursive", cls:'toe-font-comic', category:'comic', weight:700 },
-    chewy:      { label:'Chewy', family:"'Chewy', cursive", cls:'toe-font-cute', category:'cute', weight:400 },
-    fredoka:    { label:'Fredoka', family:"'Fredoka', Inter, sans-serif", cls:'toe-font-cute', category:'cute', weight:600 },
-    lucky:      { label:'Luckiest', family:"'Luckiest Guy', Impact, sans-serif", cls:'toe-font-decorative', category:'decorative', weight:400 },
-    bubbles:    { label:'Bubbles', family:"'Rubik Bubbles', cursive", cls:'toe-font-decorative', category:'decorative', weight:400 },
-  };
-  const TOE_FONT_CATEGORIES = [
-    { key:'all', label:'All fonts' },
-    { key:'trending', label:'Trending' },
-    { key:'basic', label:'Basic' },
-    { key:'handwritten', label:'Handwritten' },
-    { key:'retro', label:'Retro' },
-    { key:'comic', label:'Comic' },
-    { key:'cute', label:'Cute' },
-    { key:'decorative', label:'Decorative' },
-  ];
-  const TOE_FAVORITES_KEY = 'glogic_toe_favorite_presets';
-  const TOE_THEME_KEY = 'glogic_toe_theme';
-
-  const TOE_PRESET_CATEGORIES = ['favorite','trending','basic','background','glow','shadow','stroke','red','blue','yellow','pink','green'];
-  const TOE_PRESET_LIBRARY = {
-    favorite: [
-      { key:'none', label:'⊘', cls:'toe-preset-none', style:{} },
-      { key:'outline', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', shadow:'1px 1px 0 #111' } },
-      { key:'pop', cls:'toe-preset-s-pop', style:{ color:'#facc15', bg:'none', shadow:'2px 2px 0 #ef4444' } },
-      { key:'blue', cls:'toe-preset-s-blue', style:{ color:'#93c5fd', bg:'none', shadow:'0 0 8px #38bdf8' } },
-      { key:'black', cls:'toe-preset-s-black', style:{ color:'#ffffff', bg:'solid' } },
-      { key:'pink', cls:'toe-preset-s-pink', style:{ color:'#f0abfc', bg:'none', shadow:'0 2px 0 #2563eb' } },
-      { key:'green', cls:'toe-preset-s-green', style:{ color:'#bbf7d0', bg:'none', shadow:'0 0 8px #22c55e' } },
-      { key:'yellow', cls:'toe-preset-s-yellow', style:{ color:'#111111', bg:'semi' } },
-    ],
-    trending: [
-      { key:'none', label:'⊘', cls:'toe-preset-none', style:{} },
-      { key:'outline', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', shadow:'1px 1px 0 #111' } },
-      { key:'pop', cls:'toe-preset-s-pop', style:{ color:'#facc15', bg:'none', shadow:'2px 2px 0 #ef4444' } },
-      { key:'red', cls:'toe-preset-s-red', style:{ color:'#ffffff', bg:'none', shadow:'0 0 8px #ef4444' } },
-      { key:'purple', cls:'toe-preset-s-purple', style:{ color:'#ffffff', bg:'none', shadow:'2px 2px 0 #312e81' } },
-      { key:'soft', cls:'toe-preset-s-soft', style:{ color:'#ffffff', bg:'none', shadow:'0 2px 0 #999' } },
-      { key:'yellow', cls:'toe-preset-s-yellow', style:{ color:'#111111', bg:'semi' } },
-      { key:'neon', cls:'toe-preset-s-neon', style:{ color:'#ffffff', bg:'none', font:'neon', shadow:'0 0 12px #fb7185' } },
-      { key:'blue', cls:'toe-preset-s-blue', style:{ color:'#93c5fd', bg:'none', shadow:'0 0 8px #38bdf8' } },
-      { key:'black', cls:'toe-preset-s-black', style:{ color:'#ffffff', bg:'solid' } },
-      { key:'pink', cls:'toe-preset-s-pink', style:{ color:'#f0abfc', bg:'none', shadow:'0 2px 0 #2563eb' } },
-      { key:'green', cls:'toe-preset-s-green', style:{ color:'#bbf7d0', bg:'none', shadow:'0 0 8px #22c55e' } },
-    ],
-    basic: [
-      { key:'white', cls:'toe-preset-s-soft', style:{ color:'#ffffff', bg:'none', shadow:'0 1px 2px rgba(0,0,0,.45)' } },
-      { key:'black', cls:'toe-preset-s-black', style:{ color:'#ffffff', bg:'solid' } },
-      { key:'bold', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', font:'strong' } },
-      { key:'serif', cls:'toe-preset-s-purple', style:{ color:'#ffffff', bg:'none', font:'classic' } },
-      { key:'type', cls:'toe-preset-s-yellow', style:{ color:'#111111', bg:'semi', font:'typewriter' } },
-      { key:'clean', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', font:'modern' } },
-    ],
-    background: [
-      { key:'dark', cls:'toe-preset-s-black', style:{ color:'#ffffff', bg:'solid' } },
-      { key:'semi', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'semi' } },
-      { key:'gold', cls:'toe-preset-s-yellow', style:{ color:'#111111', bg:'semi' } },
-      { key:'pink-bg', cls:'toe-preset-s-pink', style:{ color:'#ffffff', bg:'semi', shadow:'0 0 8px #ec4899' } },
-      { key:'blue-bg', cls:'toe-preset-s-blue', style:{ color:'#ffffff', bg:'semi', shadow:'0 0 8px #2563eb' } },
-      { key:'green-bg', cls:'toe-preset-s-green', style:{ color:'#ffffff', bg:'semi', shadow:'0 0 8px #22c55e' } },
-    ],
-    glow: [
-      { key:'rose', cls:'toe-preset-s-neon', style:{ color:'#ffffff', bg:'none', font:'neon', shadow:'0 0 14px #fb7185' } },
-      { key:'cyan', cls:'toe-preset-s-blue', style:{ color:'#e0f2fe', bg:'none', font:'neon', shadow:'0 0 14px #06b6d4' } },
-      { key:'lime', cls:'toe-preset-s-green', style:{ color:'#ecfccb', bg:'none', font:'neon', shadow:'0 0 14px #84cc16' } },
-      { key:'violet', cls:'toe-preset-s-pink', style:{ color:'#f5d0fe', bg:'none', font:'neon', shadow:'0 0 14px #a855f7' } },
-    ],
-    shadow: [
-      { key:'dark-shadow', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', shadow:'3px 3px 0 #111' } },
-      { key:'red-shadow', cls:'toe-preset-s-red', style:{ color:'#ffffff', bg:'none', shadow:'3px 3px 0 #dc2626' } },
-      { key:'blue-shadow', cls:'toe-preset-s-blue', style:{ color:'#ffffff', bg:'none', shadow:'3px 3px 0 #2563eb' } },
-      { key:'pink-shadow', cls:'toe-preset-s-pink', style:{ color:'#ffffff', bg:'none', shadow:'3px 3px 0 #db2777' } },
-    ],
-    stroke: [
-      { key:'black-stroke', cls:'toe-preset-s-outline', style:{ color:'#ffffff', bg:'none', stroke:'#111111' } },
-      { key:'red-stroke', cls:'toe-preset-s-red', style:{ color:'#ffffff', bg:'none', stroke:'#ef4444' } },
-      { key:'blue-stroke', cls:'toe-preset-s-blue', style:{ color:'#ffffff', bg:'none', stroke:'#2563eb' } },
-      { key:'purple-stroke', cls:'toe-preset-s-purple', style:{ color:'#ffffff', bg:'none', stroke:'#7c3aed' } },
-    ],
-    red: [
-      { key:'red-1', cls:'toe-preset-s-red', style:{ color:'#ef4444', bg:'none', shadow:'0 1px 0 #111' } },
-      { key:'red-2', cls:'toe-preset-s-red', style:{ color:'#ffffff', bg:'semi', shadow:'0 0 8px #ef4444' } },
-      { key:'red-3', cls:'toe-preset-s-red', style:{ color:'#fecaca', bg:'none', font:'neon', shadow:'0 0 14px #dc2626' } },
-    ],
-    blue: [
-      { key:'blue-1', cls:'toe-preset-s-blue', style:{ color:'#3b82f6', bg:'none', shadow:'0 1px 0 #111' } },
-      { key:'blue-2', cls:'toe-preset-s-blue', style:{ color:'#dbeafe', bg:'semi', shadow:'0 0 8px #2563eb' } },
-      { key:'blue-3', cls:'toe-preset-s-blue', style:{ color:'#bae6fd', bg:'none', font:'neon', shadow:'0 0 14px #0284c7' } },
-    ],
-    yellow: [
-      { key:'yellow-1', cls:'toe-preset-s-yellow', style:{ color:'#111111', bg:'semi' } },
-      { key:'yellow-2', cls:'toe-preset-s-pop', style:{ color:'#facc15', bg:'none', shadow:'2px 2px 0 #111' } },
-      { key:'yellow-3', cls:'toe-preset-s-yellow', style:{ color:'#fef3c7', bg:'none', font:'neon', shadow:'0 0 12px #f59e0b' } },
-    ],
-    pink: [
-      { key:'pink-1', cls:'toe-preset-s-pink', style:{ color:'#ec4899', bg:'none', shadow:'0 1px 0 #111' } },
-      { key:'pink-2', cls:'toe-preset-s-pink', style:{ color:'#fce7f3', bg:'semi', shadow:'0 0 8px #db2777' } },
-      { key:'pink-3', cls:'toe-preset-s-pink', style:{ color:'#f5d0fe', bg:'none', font:'neon', shadow:'0 0 14px #d946ef' } },
-    ],
-    green: [
-      { key:'green-1', cls:'toe-preset-s-green', style:{ color:'#22c55e', bg:'none', shadow:'0 1px 0 #111' } },
-      { key:'green-2', cls:'toe-preset-s-green', style:{ color:'#dcfce7', bg:'semi', shadow:'0 0 8px #16a34a' } },
-      { key:'green-3', cls:'toe-preset-s-green', style:{ color:'#bbf7d0', bg:'none', font:'neon', shadow:'0 0 14px #22c55e' } },
-    ],
+    classic:    "'Playfair Display', Georgia, serif",
+    modern:     "'Montserrat', 'Helvetica Neue', sans-serif",
+    strong:     "'Anton', Impact, sans-serif",
+    neon:       "'Bebas Neue', Impact, sans-serif",
+    type:       "'Special Elite', 'Courier New', monospace",
   };
 
-  let toeTextElements = [];   // { id, text, font, color, size, bg, align, x, y }
+  let toeItems = [];          // {id,text,font,color,size,align,bg,xPct,yPct,start,end}
   let toeActiveId = null;
   let toeFont = 'classic';
   let toeColor = '#ffffff';
-  let toeSize = 32;
-  let toeBg = 'none';         // none | semi | solid
+  let toeSize = 40;
   let toeAlign = 'center';
-  let toeSourceMedia = null;  // the img or video element in the stage
-  let toeEditingSourceFile = null;
-  let toeDragState = null;
-  let toePresetCategory = 'trending';
-  let toeStyleTarget = 'fill';
-  let toeRenderedPresets = new Map();
-  let toeStageZoom = 100;
-  let toeTimelineZoom = 25;
-  let toeTimelineProgress = 0;
-  let toeTimelinePaintRaf = null;
-  let toePendingTimelineProgress = 0;
-  let toePendingTimelineSeconds = 0;
-  let toeLastVideoSeekAt = 0;
-  let toeFontOptionsReady = false;
-  let toePresetGridsReady = false;
+  let toeBg = 'none';         // none | dark | solid
+  let toeMediaEl = null;      // <img> or <video> in the stage
+  let toeIsVideo = false;
+  let toeSourceFile = null;   // original (un-burned) file for re-editing
 
-  const toeOverlay    = document.getElementById('toeOverlay');
-  const toeStage      = document.getElementById('toeStage');
-  const toeTextLayer  = document.getElementById('toeTextLayer');
-  const toeCanvas     = document.getElementById('toeCanvas');
+  const toeOverlay   = document.getElementById('toeOverlay');
+  const toeStage     = document.getElementById('toeStage');
+  const toeTextLayer = document.getElementById('toeTextLayer');
   const toeProcessing = document.getElementById('toeProcessing');
   const toeProcLabel  = document.getElementById('toeProcessingLabel');
-  const toeCenterGuides = document.getElementById('toeCenterGuides');
+  const toeVideoBar  = document.getElementById('toeVideoBar');
+  const toePlayBtn   = document.getElementById('toePlayBtn');
+  const toeTimeLabel = document.getElementById('toeTimeLabel');
+  const toeSeek      = document.getElementById('toeSeek');
+  const toeTextTrack = document.getElementById('toeTextTrack');
+  const toeTrackLabel = document.getElementById('toeTrackLabel');
 
-  function toeRemoveLegacyEditors() {
-    [
-      'textOverlayEditor',
-      'textOverlayModal',
-      'textEditorOverlay',
-      'textOverlayPage',
-      'legacyTextOverlay',
-      'overlayTextEditor',
-      'textEditorModal'
-    ].forEach(id => {
-      const node = document.getElementById(id);
-      if (node) node.remove();
-    });
-    document
-      .querySelectorAll('.text-overlay-editor, .text-overlay-modal, .legacy-text-overlay, .text-editor-overlay')
-      .forEach(node => node.remove());
-  }
-
-  toeRemoveLegacyEditors();
-
-  function toeGetEl(id) { return document.getElementById('toe-el-' + id); }
-  function toeGetActiveItem() { return toeTextElements.find(t => t.id === toeActiveId); }
-
-  function toeTransformText(text = '', caseMode = 'normal') {
-    if (caseMode === 'upper') return text.toUpperCase();
-    if (caseMode === 'lower') return text.toLowerCase();
-    if (caseMode === 'title') {
-      return text.toLowerCase().replace(/\b([a-z])/g, char => char.toUpperCase());
-    }
-    return text;
-  }
-
-  function toeGetTextContentNode(el) {
-    if (!el) return null;
-    let node = el.querySelector('.toe-text-content');
-    if (!node) {
-      node = document.createElement('span');
-      node.className = 'toe-text-content';
-      el.insertBefore(node, el.firstChild);
-    }
-    return node;
-  }
-
-  function toeSyncTextContent(el, item) {
-    const node = toeGetTextContentNode(el);
-    if (node && item) node.textContent = toeTransformText(item.text || 'Text', item.caseMode);
-  }
-
-  function toeUpdateTextDom(item) {
-    if (!item) return;
-    const el = toeGetEl(item.id);
-    if (!el) return;
-    toeSyncTextContent(el, item);
-    toeApplyStyle(el, item);
-    el.classList.toggle('toe-out-of-time', !toeIsTextVisibleAtProgress(item));
-    toeUpdateTimelineTextTrack();
-  }
-
-  function toeSetCenterGuides(showX = false, showY = false) {
-    if (!toeCenterGuides) return;
-    toeCenterGuides.classList.toggle('show-x', showX);
-    toeCenterGuides.classList.toggle('show-y', showY);
-  }
-
-  function toeSetTheme(theme) {
-    if (!toeOverlay) return;
-    const next = theme === 'light' ? 'light' : 'brand';
-    toeOverlay.classList.toggle('theme-light', next === 'light');
-    toeOverlay.classList.toggle('theme-brand', next === 'brand');
-    document.querySelectorAll('[data-toe-theme]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.toeTheme === next);
-    });
-    try { localStorage.setItem(TOE_THEME_KEY, next); } catch (_) {}
-  }
-
-  function toeGetSavedTheme() {
-    try {
-      return localStorage.getItem(TOE_THEME_KEY) === 'light' ? 'light' : 'brand';
-    } catch (_) {
-      return 'brand';
-    }
-  }
-
-  function toeClamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
-  }
-
-  function toeFormatTime(seconds = 0, includeHours = true) {
-    const safe = Math.max(0, Math.floor(seconds || 0));
-    const h = Math.floor(safe / 3600);
-    const m = Math.floor((safe % 3600) / 60);
-    const s = safe % 60;
-    if (!includeHours && h === 0) return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  }
-
-  function toePauseBackgroundMedia() {
-    document.querySelectorAll('video').forEach(video => {
-      if (toeStage?.contains(video)) return;
-      try { video.pause(); } catch (_) {}
-    });
-  }
-
-  function toeSetStageZoom(percent) {
-    toeStageZoom = toeClamp(Math.round(percent || 100), 50, 200);
-    const scale = toeStageZoom / 100;
-    if (toeStage) toeStage.style.setProperty('--toe-stage-scale', String(scale));
-    const zoomBtn = document.getElementById('toeZoomBtn');
-    const zoomRange = document.getElementById('toeCanvasZoomRange');
-    const zoomValue = document.getElementById('toeCanvasZoomValue');
-    if (zoomBtn) zoomBtn.textContent = `${toeStageZoom}%⌄`;
-    if (zoomRange) zoomRange.value = toeStageZoom;
-    if (zoomValue) zoomValue.textContent = `${toeStageZoom}%`;
-    document.querySelectorAll('[data-toe-zoom]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.toeZoom === String(toeStageZoom));
-    });
-  }
-
-  function toeSetTimelineZoom(value) {
-    toeTimelineZoom = toeClamp(Math.round(value || 0), 0, 100);
-    if (toeOverlay) {
-      toeOverlay.style.setProperty('--toe-timeline-track-width', `${100 + toeTimelineZoom * 2.8}%`);
-      toeOverlay.style.setProperty('--toe-timeline-clip-width', `${44 + toeTimelineZoom * 0.72}%`);
-    }
-    const range = document.getElementById('toeTimelineZoomRange');
-    if (range) range.value = toeTimelineZoom;
-  }
-
-  function toePaintTimelineProgress(progress, seconds) {
-    const rangeWidth = toeGetTimelineRangeWidth();
-    if (toeOverlay) toeOverlay.style.setProperty('--toe-playhead-x', `${42 + progress * rangeWidth}px`);
-    const current = document.getElementById('toeCurrentTime');
-    if (current) current.textContent = toeFormatTime(seconds);
-    toeUpdatePreviewVisibility();
-  }
-
-  function toeScheduleTimelinePaint(progress, seconds) {
-    toePendingTimelineProgress = progress;
-    toePendingTimelineSeconds = seconds;
-    if (toeTimelinePaintRaf) return;
-    toeTimelinePaintRaf = requestAnimationFrame(() => {
-      toeTimelinePaintRaf = null;
-      toePaintTimelineProgress(toePendingTimelineProgress, toePendingTimelineSeconds);
-    });
-  }
-
-  function toeSeekSourceToProgress(progress, force = false) {
-    if (!(toeSourceMedia?.tagName === 'VIDEO') || !Number.isFinite(toeSourceMedia.duration) || toeSourceMedia.duration <= 0) return;
-    const now = performance.now();
-    if (!force && now - toeLastVideoSeekAt < 120) return;
-    toeLastVideoSeekAt = now;
-    const nextTime = toeSourceMedia.duration * progress;
-    if (Math.abs((toeSourceMedia.currentTime || 0) - nextTime) > 0.04) {
-      toeSourceMedia.currentTime = nextTime;
-    }
-  }
-
-  function toeSetTimelineProgress(progress, forceSeek = false) {
-    toeTimelineProgress = toeClamp(progress || 0, 0, 1);
-    const duration = toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration)
-      ? toeSourceMedia.duration
-      : 8;
-    toeScheduleTimelinePaint(toeTimelineProgress, duration * toeTimelineProgress);
-    toeSeekSourceToProgress(toeTimelineProgress, forceSeek);
-  }
-
-  function toeNormalizeTextTiming(item) {
-    if (!item) return;
-    item.startTime = toeClamp(Number(item.startTime ?? 0), 0, 0.96);
-    item.endTime = toeClamp(Number(item.endTime ?? 1), item.startTime + 0.04, 1);
-  }
-
-  function toeDefaultTextTiming() {
-    const segment = 0.35;
-    const start = toeClamp(toeTimelineProgress || 0, 0, 1 - segment);
-    return { startTime: start, endTime: start + segment };
-  }
-
-  function toeGetTimelineRangeWidth() {
-    const area = document.getElementById('toeTrackArea');
-    if (!area) return 1;
-    return Math.max(1, area.getBoundingClientRect().width - 84);
-  }
-
-  function toeUpdateTimelineTextTrack() {
-    const track = document.getElementById('toeTextTrack');
-    if (!track) return;
-    const item = toeGetActiveItem() || toeTextElements[0];
-    if (!item) {
-      track.style.display = 'none';
-      track.classList.add('is-hidden');
-      return;
-    }
-    toeNormalizeTextTiming(item);
-    const rangeWidth = toeGetTimelineRangeWidth();
-    const duration = toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration) && toeSourceMedia.duration > 0
-      ? toeSourceMedia.duration
-      : 8;
-    track.style.display = '';
-    track.classList.remove('is-hidden');
-    track.style.marginLeft = `${42 + item.startTime * rangeWidth}px`;
-    track.style.width = `${Math.max(44, (item.endTime - item.startTime) * rangeWidth)}px`;
-    track.setAttribute('aria-valuemin', toeFormatTime(item.startTime * duration));
-    track.setAttribute('aria-valuemax', toeFormatTime(item.endTime * duration));
-    track.title = 'Drag to move text timing. Drag either edge to trim start or end.';
-    const label = track.querySelector('.toe-track-label-text');
-    if (label) label.textContent = `T  ${toeTransformText(item.text || 'Text', item.caseMode).replace(/\s+/g, ' ').trim() || 'Text'}`;
-  }
-
-  function toeIsTextVisibleAtProgress(item, progress = toeTimelineProgress) {
-    if (toeSourceMedia?.tagName !== 'VIDEO') return true;
-    toeNormalizeTextTiming(item);
-    return progress >= item.startTime && progress <= item.endTime;
-  }
-
-  function toeUpdatePreviewVisibility() {
-    toeTextElements.forEach(item => {
-      const el = toeGetEl(item.id);
-      if (!el) return;
-      const visible = toeIsTextVisibleAtProgress(item);
-      el.classList.toggle('toe-out-of-time', !visible);
-      el.contentEditable = 'false';
-    });
-  }
-
-  function toeSyncTimelineDuration() {
-    const durationLabel = document.getElementById('toeDurationTime');
-    const duration = toeSourceMedia?.tagName === 'VIDEO' && Number.isFinite(toeSourceMedia.duration) && toeSourceMedia.duration > 0
-      ? toeSourceMedia.duration
-      : 8;
-    if (durationLabel) durationLabel.textContent = toeFormatTime(duration);
-  }
-
-  function toeFitMediaSize(width, height, maxWidth = 1080, maxHeight = 1920) {
-    const safeWidth = Math.max(1, width || maxWidth);
-    const safeHeight = Math.max(1, height || maxHeight);
-    const scale = Math.min(1, maxWidth / safeWidth, maxHeight / safeHeight);
-    return {
-      width: Math.max(1, Math.round(safeWidth * scale)),
-      height: Math.max(1, Math.round(safeHeight * scale)),
-    };
-  }
-
-  function toeRenderFontOptions(force = false) {
-    const fontSelect = document.getElementById('toeFontSelect');
-    if (!fontSelect) return;
-    const keys = Object.keys(TOE_FONTS);
-    if (!keys.includes(toeFont)) toeFont = keys[0] || 'classic';
-    if (toeFontOptionsReady && !force) {
-      fontSelect.value = toeFont;
-      return;
-    }
-    fontSelect.innerHTML = TOE_FONT_CATEGORIES.map(category => {
-      const categoryKeys = category.key === 'all'
-        ? keys
-        : keys.filter(key => TOE_FONTS[key].category === category.key);
-      if (!categoryKeys.length) return '';
-      const options = categoryKeys.map(key => {
-        const font = TOE_FONTS[key];
-        return `<option value="${key}" style="font-family:${font.family};font-weight:${font.weight || 500};">${font.label}</option>`;
-      }).join('');
-      return `<optgroup label="${category.label}">${options}</optgroup>`;
-    }).join('');
-    fontSelect.value = toeFont;
-    toeFontOptionsReady = true;
-  }
-
-  function toeLoadFavoritePresets() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(TOE_FAVORITES_KEY) || '[]');
-      return Array.isArray(saved) ? saved : [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  function toeSaveFavoritePresets(items) {
-    try { localStorage.setItem(TOE_FAVORITES_KEY, JSON.stringify(items.slice(0, 40))); }
-    catch (_) {}
-  }
-
-  function toePresetFavoriteId(category, preset) {
-    return preset.favoriteId || `${category}:${preset.originalKey || preset.key}`;
-  }
-
-  function toeIsFavoritePreset(category, preset) {
-    const id = toePresetFavoriteId(category, preset);
-    return toeLoadFavoritePresets().some(item => item.favoriteId === id);
-  }
-
-  function toeToggleFavoritePreset(renderedKey) {
-    const preset = toeRenderedPresets.get(renderedKey);
-    if (!preset || preset.key === 'none') return;
-    const favoriteId = toePresetFavoriteId(preset.sourceCategory || toePresetCategory, preset);
-    const saved = toeLoadFavoritePresets();
-    const exists = saved.some(item => item.favoriteId === favoriteId);
-    const next = exists
-      ? saved.filter(item => item.favoriteId !== favoriteId)
-      : [{ ...preset, key: preset.originalKey || preset.key, favoriteId, sourceCategory: preset.sourceCategory || toePresetCategory }, ...saved];
-    toeSaveFavoritePresets(next);
-    toeRenderPresetGrids(true);
+  function toeActiveItem() { return toeItems.find(t => t.id === toeActiveId); }
+  function toeGetEl(id) { return document.getElementById('toe2-el-' + id); }
+  function toeFmt(s) {
+    s = Math.max(0, Math.floor(s || 0));
+    const m = Math.floor(s / 60), ss = s % 60;
+    return m + ':' + String(ss).padStart(2, '0');
   }
 
   function toeApplyStyle(el, item) {
-    if (!el) return;
-    const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
-    el.style.fontFamily = fontConf.family;
-    el.style.fontWeight = fontConf.weight || 500;
-    el.style.fontSize   = item.size + 'px';
-    el.style.color      = item.color;
-    el.style.textAlign  = item.align;
-    el.style.left       = item.x + '%';
-    el.style.top        = item.y + '%';
-    el.style.width      = (item.width || 24) + '%';
-    el.style.textShadow = toeComposeTextShadow(item);
-    el.style.webkitTextStroke = item.stroke ? `${toeStrokePixels(item)}px ${item.stroke}` : '';
-    el.style.opacity = item.opacity == null ? '1' : String(item.opacity);
-    el.style.lineHeight = String(1 + ((item.lineHeight ?? 20) / 100));
-    el.style.letterSpacing = `${((item.letterSpacing ?? 0) / 100) * item.size}px`;
-    // Background
-    el.classList.remove('toe-bg-none','toe-bg-semi','toe-bg-solid');
-    el.classList.add('toe-bg-' + (item.bg || 'none'));
-    if (item.bg === 'none') {
-      el.style.background = 'transparent';
-    } else if (item.bgColor) {
-      el.style.background = item.bg === 'semi' ? toeHexToRgba(item.bgColor, item.bgOpacity ?? 0.62) : item.bgColor;
-    } else {
-      el.style.background = '';
-    }
-    el.style.borderRadius = `${item.bgRadius ?? 2}px`;
-    el.style.border = item.bgBorderWidth
-      ? `${item.bgBorderWidth}px solid ${item.bgBorderColor || item.stroke || item.color || '#ffffff'}`
-      : '0';
-    // Font class
-    Object.values(TOE_FONTS).forEach(f => el.classList.remove(f.cls));
-    el.classList.add(fontConf.cls);
+    el.style.fontFamily = TOE_FONTS[item.font] || TOE_FONTS.classic;
+    el.style.fontSize = item.size + 'px';
+    el.style.color = item.color;
+    el.style.textAlign = item.align;
+    el.style.left = item.xPct + '%';
+    el.style.top = item.yPct + '%';
+    el.style.textShadow = item.font === 'neon'
+      ? `0 0 8px ${item.color}, 0 0 16px ${item.color}` : 'none';
+    if (item.bg === 'dark') { el.style.background = 'rgba(0,0,0,0.55)'; el.style.padding = '4px 10px'; el.style.borderRadius = '6px'; }
+    else if (item.bg === 'solid') { el.style.background = '#000'; el.style.padding = '4px 10px'; el.style.borderRadius = '6px'; }
+    else { el.style.background = 'transparent'; el.style.padding = '2px 4px'; el.style.borderRadius = '0'; }
   }
 
-  function toeResizeTextElement(item, handle, start, event) {
-    if (!toeStage || !item) return;
+  function toeStartDrag(item, e) {
+    if (e.target.classList.contains('toe2-el-del')) return;
+    e.preventDefault();
+    toeActivate(item.id);
+    const pt = e.touches?.[0] || e;
     const rect = toeStage.getBoundingClientRect();
-    const dxPct = ((event.clientX - start.x) / rect.width) * 100;
-    const dyPx = event.clientY - start.y;
-    let nextWidth = start.width;
-    let nextX = start.itemX;
-    if (handle === 'r') {
-      nextWidth = start.width + dxPct;
-      nextX = start.itemX + dxPct / 2;
-    } else if (handle === 'l') {
-      nextWidth = start.width - dxPct;
-      nextX = start.itemX + dxPct / 2;
-    } else if (handle === 'b') {
-      item.size = toeClamp(Math.round(start.size + dyPx * 0.18), 12, 120);
-      toeSize = item.size;
-      toeApplyStyle(toeGetEl(item.id), item);
-      return;
-    }
-    const clampedWidth = toeClamp(nextWidth, 8, 88);
-    if (clampedWidth !== nextWidth) {
-      nextX += (nextWidth - clampedWidth) / (handle === 'r' ? -2 : 2);
-    }
-    item.width = clampedWidth;
-    item.x = toeClamp(nextX, 5, 95);
-    toeApplyStyle(toeGetEl(item.id), item);
-  }
-
-  function toeCreateResizeHandle(item, handle) {
-    const btn = document.createElement('button');
-    btn.className = `toe-resize-handle toe-resize-${handle}`;
-    btn.type = 'button';
-    btn.dataset.resizeHandle = handle;
-    btn.setAttribute('aria-label', handle === 'b' ? 'Resize text size' : 'Resize text width');
-    const startResize = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const point = e.touches?.[0] || e;
-      toeActiveId = item.id;
-      const start = {
-        x: point.clientX,
-        y: point.clientY,
-        width: item.width || 24,
-        itemX: item.x,
-        size: item.size || toeSize
-      };
-      const onMove = (mv) => {
-        const movePoint = mv.touches?.[0] || mv;
-        toeResizeTextElement(item, handle, start, movePoint);
-      };
-      const onUp = () => {
-        toeUpdateToolbarToActive();
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        document.removeEventListener('touchmove', onMove);
-        document.removeEventListener('touchend', onUp);
-        window.removeEventListener('mouseup', onUp);
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-      document.addEventListener('touchmove', onMove, { passive: false });
-      document.addEventListener('touchend', onUp);
-      window.addEventListener('mouseup', onUp);
+    const startX = pt.clientX, startY = pt.clientY;
+    const baseX = item.xPct, baseY = item.yPct;
+    const move = (mv) => {
+      const p = mv.touches?.[0] || mv;
+      item.xPct = Math.max(3, Math.min(97, baseX + ((p.clientX - startX) / rect.width) * 100));
+      item.yPct = Math.max(3, Math.min(97, baseY + ((p.clientY - startY) / rect.height) * 100));
+      const el = toeGetEl(item.id);
+      if (el) { el.style.left = item.xPct + '%'; el.style.top = item.yPct + '%'; }
     };
-    btn.addEventListener('mousedown', startResize);
-    btn.addEventListener('touchstart', startResize, { passive: false });
-    return btn;
+    const up = () => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
   }
 
-  function toeRenderAll() {
+  function toeMakeEl(item) {
+    const el = document.createElement('div');
+    el.className = 'toe2-el';
+    el.id = 'toe2-el-' + item.id;
+    el.contentEditable = 'true';
+    el.spellcheck = false;
+    el.textContent = item.text;
+    toeApplyStyle(el, item);
+
+    const del = document.createElement('button');
+    del.className = 'toe2-el-del';
+    del.type = 'button';
+    del.textContent = '×';
+    del.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      toeItems = toeItems.filter(t => t.id !== item.id);
+      if (toeActiveId === item.id) toeActiveId = toeItems[0]?.id ?? null;
+      toeRender();
+      toeSyncTrack();
+    });
+    el.appendChild(del);
+
+    el.addEventListener('pointerdown', (e) => toeStartDrag(item, e));
+    el.addEventListener('input', () => {
+      // first child text node holds the text; keep the delete button intact
+      item.text = (el.childNodes[0]?.nodeType === 3 ? el.childNodes[0].textContent : el.innerText).replace(/\n+$/, '');
+      toeSyncTrack();
+    });
+    el.addEventListener('focus', () => toeActivate(item.id));
+    return el;
+  }
+
+  function toeRender() {
     toeTextLayer.innerHTML = '';
-    toeTextElements.forEach(item => {
-      const wrap = document.createElement('div');
-      wrap.className = 'toe-text-el' + (item.id === toeActiveId ? ' active-text' : '');
-      wrap.id = 'toe-el-' + item.id;
-      wrap.contentEditable = 'false';
-      wrap.draggable = false;
-      toeApplyStyle(wrap, item);
-      toeSyncTextContent(wrap, item);
-      wrap.classList.toggle('toe-out-of-time', !toeIsTextVisibleAtProgress(item));
-
-      // Delete button
-      const del = document.createElement('button');
-      del.className = 'toe-delete-btn';
-      del.innerHTML = '×';
-      const deleteTextItem = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toeTextElements = toeTextElements.filter(t => t.id !== item.id);
-        if (toeActiveId === item.id) toeActiveId = null;
-        toeRenderAll();
-        toeUpdateTimelineTextTrack();
-      };
-      del.addEventListener('mousedown', deleteTextItem);
-      del.addEventListener('click', deleteTextItem);
-      del.addEventListener('touchstart', deleteTextItem, { passive: false });
-      wrap.appendChild(del);
-
-      if (item.id === toeActiveId) {
-        ['l', 'r', 'b'].forEach(handle => {
-          wrap.appendChild(toeCreateResizeHandle(item, handle));
-        });
-      }
-
-      // Click to activate
-      const startTextDrag = (e) => {
-        if (e.target.classList.contains('toe-delete-btn') || e.target.closest('.toe-resize-handle')) return;
-        e.preventDefault();
-        const wasActive = toeActiveId === item.id;
-        toeActiveId = item.id;
-        toeUpdateToolbarToActive();
-        toeUpdateTimelineTextTrack();
-        if (!wasActive) {
-          toeRenderAll();
-          return;
-        }
-        // Begin drag
-        const point = e.touches?.[0] || e;
-        const startX = point.clientX;
-        const startY = point.clientY;
-        const startPX = item.x;
-        const startPY = item.y;
-        const rect = toeStage.getBoundingClientRect();
-        toeSetCenterGuides(Math.abs(item.y - 50) <= 1, Math.abs(item.x - 50) <= 1);
-        const onMove = (mv) => {
-          const movePoint = mv.touches?.[0] || mv;
-          const dx = ((movePoint.clientX - startX) / rect.width)  * 100;
-          const dy = ((movePoint.clientY - startY) / rect.height) * 100;
-          let nextX = Math.max(5, Math.min(95, startPX + dx));
-          let nextY = Math.max(5, Math.min(95, startPY + dy));
-          const nearX = Math.abs(nextX - 50) <= 2;
-          const nearY = Math.abs(nextY - 50) <= 2;
-          if (nearX) nextX = 50;
-          if (nearY) nextY = 50;
-          item.x = nextX;
-          item.y = nextY;
-          toeSetCenterGuides(nearY, nearX);
-          const el2 = toeGetEl(item.id);
-          if (el2) { el2.style.left = item.x + '%'; el2.style.top = item.y + '%'; }
-        };
-        const onUp = () => {
-          toeSetCenterGuides(Math.abs(item.y - 50) <= 1, Math.abs(item.x - 50) <= 1);
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
-          document.removeEventListener('touchmove', onMove);
-          document.removeEventListener('touchend', onUp);
-          window.removeEventListener('mouseup', onUp);
-        };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-        document.addEventListener('touchmove', onMove, { passive: false });
-        document.addEventListener('touchend', onUp);
-        window.addEventListener('mouseup', onUp);
-      };
-      wrap.addEventListener('mousedown', startTextDrag);
-      wrap.addEventListener('touchstart', startTextDrag, { passive: false });
-
-      // Save text on input
-      toeTextLayer.appendChild(wrap);
+    toeItems.forEach(item => {
+      const el = toeMakeEl(item);
+      el.classList.toggle('toe2-active', item.id === toeActiveId);
+      toeTextLayer.appendChild(el);
     });
-    toeUpdatePreviewVisibility();
+    toeSyncVisibility();
   }
 
-  function toeUpdateToolbarToActive() {
-    const item = toeGetActiveItem();
-    if (!item) return;
-    toeFont  = item.font;
-    toeColor = item.color;
-    toeSize  = item.size;
-    toeBg    = item.bg;
-    toeAlign = item.align;
-    // Update UI
-    toeRenderFontOptions();
-    document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.toggle('active', b.dataset.color === toeColor));
-    document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === toeAlign));
-    const sizeSlider = document.getElementById('toeSizeSlider');
-    const sizeSelect = document.getElementById('toeSizeSelect');
-    const inspector = document.getElementById('toeInspectorText');
-    const opacityRange = document.querySelector('.toe-opacity-row input');
-    const opacityLabel = document.querySelector('.toe-opacity-row span');
-    const lineSlider = document.getElementById('toeLineHeightSlider');
-    const lineValue = document.getElementById('toeLineHeightValue');
-    const letterSlider = document.getElementById('toeLetterSpacingSlider');
-    const letterValue = document.getElementById('toeLetterSpacingValue');
-    if (sizeSlider) sizeSlider.value = toeSize;
-    if (sizeSelect) sizeSelect.value = String(toeSize);
-    if (inspector && inspector.value !== item.text) inspector.value = item.text;
-    if (opacityRange) opacityRange.value = Math.round((item.opacity == null ? 1 : item.opacity) * 100);
-    if (opacityLabel) opacityLabel.textContent = `${Math.round((item.opacity == null ? 1 : item.opacity) * 100)}%`;
-    if (lineSlider) lineSlider.value = item.lineHeight ?? 20;
-    if (lineValue) lineValue.value = item.lineHeight ?? 20;
-    if (letterSlider) letterSlider.value = item.letterSpacing ?? 0;
-    if (letterValue) letterValue.value = item.letterSpacing ?? 0;
-    document.querySelectorAll('[data-case-mode]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.caseMode === (item.caseMode || 'normal'));
-    });
-    toeUpdateStylePreviewButtons(item);
-    toeUpdateTimelineTextTrack();
-  }
-
-  function toeAddTextElement() {
-    const id = Date.now();
-    const timing = toeDefaultTextTiming();
-    toeTextElements.push({
-      id,
-      text: 'Text',
-      font: toeFont,
-      color: toeColor,
-      size: toeSize,
-      bg: toeBg,
-      align: toeAlign,
-      x: 50,
-      y: 12,
-      width: 24,
-      lineHeight: 20,
-      letterSpacing: 0,
-      caseMode: 'normal',
-      startTime: timing.startTime,
-      endTime: timing.endTime,
-      strokeWidth: 36,
-      bgOpacity: 1,
-      bgRadius: 0,
-      bgBorderWidth: 0,
-      bgBorderColor: '#ffffff',
-      shadowOpacity: 80,
-      shadowBlur: 25,
-      shadowDistance: 4,
-      shadowAngle: 45
-    });
+  function toeActivate(id) {
+    if (toeActiveId === id) return;
     toeActiveId = id;
-    toeRenderAll();
-    toeUpdateToolbarToActive();
-    toeUpdateTimelineTextTrack(); // ensure the new text element shows on the timeline immediately
-    // Focus for editing
-    setTimeout(() => {
-      const el = toeGetEl(id);
-      if (el) { el.focus(); document.execCommand('selectAll', false, null); }
-    }, 50);
+    toeTextLayer.querySelectorAll('.toe2-el').forEach(el => {
+      el.classList.toggle('toe2-active', el.id === 'toe2-el-' + id);
+    });
+    toeSyncToolbar();
+    toeSyncTrack();
+  }
+
+  function toeSyncToolbar() {
+    const item = toeActiveItem();
+    if (!item) return;
+    toeFont = item.font; toeColor = item.color; toeSize = item.size; toeAlign = item.align; toeBg = item.bg;
+    const fontSel = document.getElementById('toeFontSelect');
+    if (fontSel) fontSel.value = toeFont;
+    const sizeSl = document.getElementById('toeSizeSlider');
+    if (sizeSl) sizeSl.value = toeSize;
+    document.querySelectorAll('.toe2-sw').forEach(b => b.classList.toggle('active', b.dataset.color === toeColor));
+    document.querySelectorAll('.toe2-al').forEach(b => b.classList.toggle('active', b.dataset.align === toeAlign));
+    const bgBtn = document.getElementById('toeBgBtn');
+    if (bgBtn) bgBtn.textContent = toeBg === 'none' ? 'Bg: Off' : toeBg === 'dark' ? 'Bg: Dark' : 'Bg: Solid';
   }
 
   function toeUpdateActive(prop, val) {
-    const item = toeGetActiveItem();
+    const item = toeActiveItem();
     if (!item) return;
     item[prop] = val;
-    toeUpdateTextDom(item);
+    const el = toeGetEl(item.id);
+    if (el) toeApplyStyle(el, item);
+    if (prop === 'text') toeSyncTrack();
   }
 
-  function toeApplyPreset(preset) {
-    if (!preset) return;
-    let item = toeGetActiveItem();
-    if (!item) {
-      toeAddTextElement();
-      item = toeGetActiveItem();
-    }
-    if (!item) return;
-    if (preset.key === 'none') {
-      Object.assign(item, { color:'#ffffff', bg:'none', bgColor:'', shadow:'', shadowColor:'', stroke:'', font:'classic' });
-    } else {
-      Object.assign(item, preset.style || {});
-    }
-    toeFont = item.font || toeFont;
-    toeColor = item.color || toeColor;
-    toeBg = item.bg || toeBg;
-    toeUpdateTextDom(item);
-    toeUpdateToolbarToActive();
+  function toeAddText() {
+    const id = Date.now();
+    toeItems.push({ id, text: 'Your text', font: toeFont, color: toeColor, size: toeSize, align: toeAlign, bg: toeBg, xPct: 50, yPct: 25, start: 0, end: 1 });
+    toeActiveId = id;
+    toeRender();
+    toeSyncToolbar();
+    toeSyncTrack();
+    setTimeout(() => { const el = toeGetEl(id); if (el) el.focus(); }, 40);
   }
 
-  function toePresetTileMarkup(preset, renderedKey) {
-    const label = preset.label || 'ART';
-    const isFavorite = preset.key !== 'none' && toeIsFavoritePreset(preset.sourceCategory || toePresetCategory, preset);
-    const star = isFavorite ? '★' : '☆';
-    const favoriteClass = isFavorite ? ' is-favorite' : '';
-    return `<button class="toe-preset-tile ${preset.cls || ''}" type="button" data-preset-key="${renderedKey}">
-      <span class="toe-preset-word">${label}</span>
-      ${preset.key === 'none' ? '' : `<span class="toe-preset-star${favoriteClass}" data-favorite-preset="${renderedKey}" data-tooltip="${isFavorite ? 'Remove favorite' : 'Add favorite'}">${star}</span>`}
-    </button>`;
+  // ---- Timeline text track (shows active text, draggable + trimmable) ----
+  function toeSyncTrack() {
+    if (!toeTextTrack) return;
+    const item = toeActiveItem() || toeItems[0];
+    if (!item || !toeIsVideo) { toeTextTrack.style.display = toeIsVideo ? 'flex' : 'none'; if (item && toeTrackLabel) toeTrackLabel.textContent = item.text || 'Text'; return; }
+    toeTextTrack.style.display = 'flex';
+    toeTextTrack.style.left = (item.start * 100) + '%';
+    toeTextTrack.style.width = Math.max(8, (item.end - item.start) * 100) + '%';
+    if (toeTrackLabel) toeTrackLabel.textContent = (item.text || 'Text').replace(/\s+/g, ' ').trim() || 'Text';
   }
 
-  function toeSetPresetGridPlaceholder() {
-    toeRenderedPresets = new Map();
-    const html = '<div class="toe-empty-favorites toe-preset-deferred">Open Presets to load style presets.</div>';
-    const left = document.getElementById('toeLeftPresetGrid');
-    const right = document.getElementById('toeRightPresetGrid');
-    if (left) left.innerHTML = html;
-    if (right) right.innerHTML = html;
-  }
-
-  function toeRenderPresetGrids(force = false) {
-    if (toePresetGridsReady && !force) {
-      document.querySelectorAll('.toe-preset-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.preset === toePresetCategory);
-      });
+  function toeSyncVisibility() {
+    if (!toeIsVideo || !toeMediaEl) {
+      toeItems.forEach(it => { const el = toeGetEl(it.id); if (el) el.classList.remove('toe2-hidden'); });
       return;
     }
-    toeRenderedPresets = new Map();
-    const basePresets = toePresetCategory === 'favorite'
-      ? toeLoadFavoritePresets()
-      : (TOE_PRESET_LIBRARY[toePresetCategory] || TOE_PRESET_LIBRARY.trending);
-    // Lightweight: render each preset once (no 5x duplication), capped at 12.
-    const presets = toePresetCategory === 'favorite'
-      ? basePresets
-      : basePresets.slice(0, 12);
-    const html = presets.length
-      ? presets.map((preset, index) => {
-          const originalKey = preset.originalKey || preset.key;
-          const sourceCategory = preset.sourceCategory || toePresetCategory;
-          const renderedKey = `${sourceCategory}:${originalKey}:${index}`;
-          const renderedPreset = { ...preset, key: originalKey, originalKey, sourceCategory };
-          toeRenderedPresets.set(renderedKey, renderedPreset);
-          return toePresetTileMarkup(renderedPreset, renderedKey);
-        }).join('')
-      : '<div class="toe-empty-favorites">Tap a star on any preset to save it here.</div>';
-    const left = document.getElementById('toeLeftPresetGrid');
-    const right = document.getElementById('toeRightPresetGrid');
-    if (left) left.innerHTML = html;
-    if (right) right.innerHTML = html;
-    document.querySelectorAll('.toe-preset-tab').forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.preset === toePresetCategory);
+    const dur = toeMediaEl.duration || 0;
+    const frac = dur ? (toeMediaEl.currentTime / dur) : 0;
+    toeItems.forEach(it => {
+      const el = toeGetEl(it.id);
+      if (el) el.classList.toggle('toe2-hidden', !(frac >= (it.start ?? 0) && frac <= (it.end ?? 1)));
     });
-    toePresetGridsReady = true;
   }
 
-  function toeFindPresetByRenderedKey(renderedKey) {
-    return toeRenderedPresets.get(renderedKey);
+  function toeBindTrackDrag() {
+    if (!toeTextTrack) return;
+    const onDown = (e) => {
+      const item = toeActiveItem() || toeItems[0];
+      if (!item) return;
+      e.preventDefault();
+      const edge = e.target.dataset?.edge;
+      const railRect = toeTextTrack.parentElement.getBoundingClientRect();
+      const baseStart = item.start, baseEnd = item.end;
+      const startX = (e.touches?.[0] || e).clientX;
+      const move = (mv) => {
+        const p = mv.touches?.[0] || mv;
+        const d = (p.clientX - startX) / railRect.width;
+        if (edge === 'start') item.start = Math.max(0, Math.min(item.end - 0.05, baseStart + d));
+        else if (edge === 'end') item.end = Math.min(1, Math.max(item.start + 0.05, baseEnd + d));
+        else { const w = baseEnd - baseStart; let ns = Math.max(0, Math.min(1 - w, baseStart + d)); item.start = ns; item.end = ns + w; }
+        toeSyncTrack();
+        toeSyncVisibility();
+      };
+      const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); };
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    };
+    toeTextTrack.addEventListener('pointerdown', onDown);
   }
 
-  function toeSetRightPane(name) {
-    document.querySelectorAll('.toe-right-pane').forEach(pane => {
-      pane.classList.toggle('active', pane.dataset.pane === name);
-    });
-    document.querySelectorAll('.toe-inspector-tab').forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.paneTarget === name);
-    });
-    if (name === 'presets') toeRenderPresetGrids(true);
+  // ---- Video playback controls ----
+  function toeWireVideo(vid) {
+    toePlayBtn.textContent = '▶';
+    const updatePlay = () => { toePlayBtn.textContent = vid.paused ? '▶' : '❚❚'; };
+    toePlayBtn.onclick = () => { if (vid.paused) vid.play().catch(()=>{}); else vid.pause(); };
+    vid.onplay = updatePlay;
+    vid.onpause = updatePlay;
+    vid.onended = () => { toePlayBtn.textContent = '▶'; };
+    vid.ontimeupdate = () => {
+      const dur = vid.duration || 0;
+      if (toeSeek) toeSeek.value = dur ? String(Math.round((vid.currentTime / dur) * 1000)) : '0';
+      if (toeTimeLabel) toeTimeLabel.textContent = toeFmt(vid.currentTime) + ' / ' + toeFmt(dur);
+      toeSyncVisibility();
+    };
+    vid.onloadedmetadata = () => {
+      if (toeTimeLabel) toeTimeLabel.textContent = '0:00 / ' + toeFmt(vid.duration);
+    };
+    if (toeSeek) toeSeek.oninput = () => {
+      const dur = vid.duration || 0;
+      if (dur) { vid.currentTime = (Number(toeSeek.value) / 1000) * dur; toeSyncVisibility(); }
+    };
   }
 
-  function toeRenderTimelineThumbs(mediaEl) {
-    const track = document.getElementById('toeTimelineThumbs');
-    if (!track) return;
-    const isVid = mediaEl?.tagName === 'VIDEO';
-    const source = !isVid ? mediaEl?.src : '';
-    // Lightweight: 8 filmstrip cells instead of 24 (cuts paint/memory ~3x).
-    track.innerHTML = Array.from({ length: 8 }).map(() => {
-      const style = source ? ` style="background-image:url('${source.replace(/'/g, "\\'")}')"` : '';
-      return `<span class="toe-media-thumb${isVid ? ' is-video' : ''}"${style}></span>`;
-    }).join('');
-  }
-
+  // ---- Open / Close ----
   function toeOpen(mediaFile) {
-    toeRemoveLegacyEditors();
-    toePauseBackgroundMedia();
-    const editableMediaFile = mediaFile?._toeSourceFile || mediaFile;
-    const restoredTextElements = Array.isArray(mediaFile?._toeTextElements)
-      ? JSON.parse(JSON.stringify(mediaFile._toeTextElements))
-      : [];
-    toeEditingSourceFile = editableMediaFile;
-    // Clear previous state
-    toeTextElements = [];
-    toeActiveId = null;
-    toeFont = 'classic'; toeColor = '#ffffff'; toeSize = 32; toeBg = 'none'; toeAlign = 'center';
-    toePresetCategory = 'trending';
-    toePresetGridsReady = false;
-    toeTextLayer.innerHTML = '';
-    if (toeProcessing) toeProcessing.style.display = 'none';
-    if (toeProcLabel) toeProcLabel.textContent = 'Processing video...';
-    toeSetTheme(toeGetSavedTheme());
-    toeOverlay?.classList.add('toe-performance-mode');
-    toeSetStageZoom(100);
-    toeSetTimelineZoom(25);
-    toeSourceMedia = null;
-    toeSetTimelineProgress(0);
-    toeSetTimelineHeight(176);
+    const editable = mediaFile?._toeSourceFile || mediaFile;
+    toeSourceFile = editable;
+    toeItems = Array.isArray(mediaFile?._toeTextElements)
+      ? JSON.parse(JSON.stringify(mediaFile._toeTextElements)) : [];
+    toeActiveId = toeItems[0]?.id ?? null;
+    toeFont = 'classic'; toeColor = '#ffffff'; toeSize = 40; toeAlign = 'center'; toeBg = 'none';
 
-    // Remove old media from stage
-    toeStage.querySelectorAll('img,video').forEach(e => e.remove());
+    toeStage.querySelectorAll('img,video').forEach(e => { try { URL.revokeObjectURL(e.src); } catch(_){} e.remove(); });
+    toeIsVideo = editable.type?.startsWith('video/') || editable._isVideo || false;
 
-    // Add media preview to stage
-    const isVid = editableMediaFile.type?.startsWith('video/') || editableMediaFile._isVideo;
-    if (isVid) {
+    if (toeIsVideo) {
       const vid = document.createElement('video');
-      vid.src = URL.createObjectURL(editableMediaFile);
-      vid.controls = true;
-      vid.muted = false;
-      vid.loop = false;
-      vid.preload = 'metadata';
-      vid.playsInline = true;
-      vid.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
+      vid.src = URL.createObjectURL(editable);
+      vid.playsInline = true; vid.preload = 'metadata'; vid.controls = false;
+      vid.className = 'toe2-media';
       toeStage.insertBefore(vid, toeTextLayer);
-      toeSourceMedia = vid;
-      toeRenderTimelineThumbs(vid);
-      vid.addEventListener('loadedmetadata', toeSyncTimelineDuration, { once: true });
-      vid.addEventListener('timeupdate', () => {
-        if (Number.isFinite(vid.duration) && vid.duration > 0) {
-          toeTimelineProgress = toeClamp(vid.currentTime / vid.duration, 0, 1);
-          toeScheduleTimelinePaint(toeTimelineProgress, vid.currentTime);
-        }
-      });
+      toeMediaEl = vid;
+      toeVideoBar.style.display = 'flex';
+      toeWireVideo(vid);
     } else {
       const img = document.createElement('img');
-      img.src = URL.createObjectURL(editableMediaFile);
-      img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
+      img.src = URL.createObjectURL(editable);
+      img.className = 'toe2-media';
       toeStage.insertBefore(img, toeTextLayer);
-      toeSourceMedia = img;
-      toeRenderTimelineThumbs(img);
-      toeSyncTimelineDuration();
+      toeMediaEl = img;
+      toeVideoBar.style.display = 'none';
     }
 
-    // Reset toolbar UI
-    toeRenderFontOptions();
-    document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.toggle('active', b.dataset.color === '#ffffff'));
-    document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === 'center'));
-    const sizeSlider = document.getElementById('toeSizeSlider');
-    const sizeSelect = document.getElementById('toeSizeSelect');
-    const inspector = document.getElementById('toeInspectorText');
-    const colorPopover = document.getElementById('toeColorPopover');
-    if (sizeSlider) sizeSlider.value = 32;
-    if (sizeSelect) sizeSelect.value = '32';
-    if (inspector) inspector.value = 'Text';
-    if (colorPopover) colorPopover.classList.remove('active');
-    toeStyleTarget = 'fill';
-    toeSetRightPane('basic');
-    toeSetPresetGridPlaceholder();
-
+    if (toeProcessing) toeProcessing.style.display = 'none';
     toeOverlay.style.display = 'flex';
-    toeOverlay.style.flexDirection = 'column';
-
-    if (restoredTextElements.length) {
-      toeTextElements = restoredTextElements.map(item => {
-        toeNormalizeTextTiming(item);
-        return item;
-      });
-      toeActiveId = toeTextElements[0].id;
-      toeRenderAll();
-      toeUpdateToolbarToActive();
-    } else {
-      toeRenderAll();
-      toeUpdateTimelineTextTrack();
-      toeUpdatePreviewVisibility();
-    }
-    toeUpdateTimelineTextTrack();
+    toeRender();
+    toeSyncToolbar();
+    toeSyncTrack();
   }
 
   function toeClose() {
-    if (toeTimelinePaintRaf) {
-      cancelAnimationFrame(toeTimelinePaintRaf);
-      toeTimelinePaintRaf = null;
-    }
+    if (toeMediaEl?.tagName === 'VIDEO') { try { toeMediaEl.pause(); } catch(_){} }
+    toeStage.querySelectorAll('img,video').forEach(e => { try { URL.revokeObjectURL(e.src); } catch(_){} e.remove(); });
+    toeMediaEl = null;
     toeOverlay.style.display = 'none';
-    toeOverlay?.classList.remove('toe-performance-mode');
-    toeStage.querySelectorAll('img,video').forEach(e => { URL.revokeObjectURL(e.src); e.remove(); });
   }
 
-  function toeHexToRgba(hex, alpha) {
-    const clean = String(hex || '#000000').replace('#', '');
-    const value = clean.length === 3
-      ? clean.split('').map(ch => ch + ch).join('')
-      : clean.padEnd(6, '0').slice(0, 6);
-    const r = parseInt(value.slice(0, 2), 16);
-    const g = parseInt(value.slice(2, 4), 16);
-    const b = parseInt(value.slice(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  }
-
-  function toeStrokePixels(item) {
-    return Math.max(1, Math.round((item.strokeWidth ?? 36) / 12));
-  }
-
-  function toeBuildStrokeShadow(color, widthPx) {
-    if (!color || !widthPx) return '';
-    const radius = Math.max(1, Math.min(8, Math.round(widthPx)));
-    const shadows = [];
-    for (let step = 1; step <= radius; step += 1) {
-      shadows.push(
-        `${step}px 0 0 ${color}`,
-        `${-step}px 0 0 ${color}`,
-        `0 ${step}px 0 ${color}`,
-        `0 ${-step}px 0 ${color}`,
-        `${step}px ${step}px 0 ${color}`,
-        `${-step}px ${step}px 0 ${color}`,
-        `${step}px ${-step}px 0 ${color}`,
-        `${-step}px ${-step}px 0 ${color}`
-      );
-    }
-    return shadows.join(', ');
-  }
-
-  function toeComposeTextShadow(item) {
-    return item.shadow || '';
-  }
-
-  function toeUpdateStylePreviewButtons(item = toeGetActiveItem()) {
-    if (!item) return;
-    const fillBtn = document.querySelector('[data-style-popover="fill"]');
-    const strokeBtn = document.querySelector('[data-style-popover="stroke"]');
-    const bgMoreBtn = document.querySelector('[data-style-popover="background"]');
-    const shadowBtn = document.querySelector('[data-style-popover="shadow"]');
-    if (fillBtn) {
-      fillBtn.textContent = item.color && item.color !== '#ffffff' ? '' : '+';
-      fillBtn.style.background = item.color && item.color !== '#ffffff' ? item.color : '';
-      fillBtn.classList.toggle('has-color', !!(item.color && item.color !== '#ffffff'));
-    }
-    if (strokeBtn) {
-      strokeBtn.textContent = item.stroke ? '' : '+';
-      strokeBtn.style.background = item.stroke || '';
-      strokeBtn.classList.toggle('has-color', !!item.stroke);
-    }
-    if (bgMoreBtn) {
-      bgMoreBtn.textContent = item.bgColor ? '' : '+';
-      bgMoreBtn.style.background = item.bgColor || '';
-      bgMoreBtn.classList.toggle('has-color', !!item.bgColor);
-    }
-    if (shadowBtn) {
-      shadowBtn.textContent = item.shadowColor ? '' : '+';
-      shadowBtn.style.background = item.shadowColor || '';
-      shadowBtn.classList.toggle('has-color', !!item.shadowColor);
-    }
-  }
-
-  function toeOpenStylePicker(target) {
-    toeStyleTarget = target || 'fill';
-    const popover = document.getElementById('toeColorPopover');
-    const title = document.getElementById('toeColorPopoverTitle');
-    const hint = document.getElementById('toeColorPopoverHint');
-    if (!popover) return;
-    const labels = {
-      fill: ['Select color', 'Fill'],
-      stroke: ['Select color', 'Stroke'],
-      background: ['Select color', 'Background'],
-      shadow: ['Select color', 'Shadow'],
-    };
-    const [label, help] = labels[toeStyleTarget] || labels.fill;
-    if (title) title.textContent = label;
-    if (hint) hint.textContent = help;
-    popover.classList.add('active');
-  }
-
-  function toeApplyStyleColor(color) {
-    let item = toeGetActiveItem();
-    if (!item) {
-      toeAddTextElement();
-      item = toeGetActiveItem();
-    }
-    if (!item) return;
-    if (toeStyleTarget === 'stroke') {
-      item.stroke = color;
-      if (!item.strokeWidth || item.strokeWidth <= 1) item.strokeWidth = 36;
-    } else if (toeStyleTarget === 'background') {
-      item.bg = item.bg === 'none' ? 'solid' : item.bg;
-      item.bgColor = color;
-      toeBg = item.bg;
-    } else if (toeStyleTarget === 'shadow') {
-      item.shadowColor = color;
-      toeUpdateShadowStyle(item);
-    } else {
-      item.color = color;
-      toeColor = color;
-    }
-    toeUpdateTextDom(item);
-    toeUpdateToolbarToActive();
-    toeUpdateStylePreviewButtons(item);
-  }
-
-  function toeUpdateShadowStyle(item) {
-    if (!item) return;
-    const distance = item.shadowDistance ?? 4;
-    const angle = ((item.shadowAngle ?? 45) * Math.PI) / 180;
-    const x = Math.round(Math.cos(angle) * distance);
-    const y = Math.round(Math.sin(angle) * distance);
-    const blur = item.shadowBlur ?? 25;
-    const alpha = (item.shadowOpacity ?? 80) / 100;
-    item.shadow = `${x}px ${y}px ${blur}px ${toeHexToRgba(item.shadowColor || '#000000', alpha)}`;
-  }
-
-  function toeUpdateStyleOption(prop, value) {
-    const item = toeGetActiveItem();
-    if (!item) return;
-    if (prop === 'bgBorderColor') {
-      item.bgBorderColor = value || '#ffffff';
-      toeApplyStyle(toeGetEl(item.id), item);
-      toeUpdateToolbarToActive();
-      return;
-    }
-    let next = Number(value);
-    if (!Number.isFinite(next)) next = 0;
-    item[prop] = prop === 'bgOpacity' ? next / 100 : next;
-    if (prop.startsWith('shadow')) toeUpdateShadowStyle(item);
-    toeApplyStyle(toeGetEl(item.id), item);
-    toeUpdateToolbarToActive();
-  }
-
-  function toeOptionControl(label, prop, value, min, max, suffix = '%') {
-    return `<label class="toe-option-control">
-      <span>${label}</span>
-      <div class="toe-option-control-row">
-        <input type="range" min="${min}" max="${max}" value="${value}" data-style-option-prop="${prop}">
-        <div class="toe-number-suffix">
-          <input type="number" min="${min}" max="${max}" value="${value}" data-style-option-prop="${prop}">
-          ${suffix ? `<span>${suffix}</span>` : ''}
-        </div>
-      </div>
-    </label>`;
-  }
-
-  function toeColorOptionControl(label, prop, value) {
-    return `<label class="toe-option-control toe-option-color-control">
-      <span>${label}</span>
-      <input type="color" value="${value || '#ffffff'}" data-style-option-prop="${prop}">
-    </label>`;
-  }
-
-  function toeOpenStyleOptions(target) {
-    const popover = document.getElementById('toeStyleOptionsPopover');
-    const item = toeGetActiveItem();
-    if (!popover || !item) return;
-    const content = {
-      stroke: toeOptionControl('Width', 'strokeWidth', item.strokeWidth ?? 1, 1, 100),
-      background: [
-        toeOptionControl('Opacity', 'bgOpacity', Math.round((item.bgOpacity ?? 1) * 100), 0, 100),
-        toeOptionControl('Rounding', 'bgRadius', item.bgRadius ?? 0, 0, 36, ''),
-        toeOptionControl('Border', 'bgBorderWidth', item.bgBorderWidth ?? 0, 0, 24, ''),
-        toeColorOptionControl('Border color', 'bgBorderColor', item.bgBorderColor || item.stroke || item.color || '#ffffff')
-      ].join(''),
-      shadow: [
-        toeOptionControl('Opacity', 'shadowOpacity', item.shadowOpacity ?? 80, 0, 100),
-        toeOptionControl('Blur', 'shadowBlur', item.shadowBlur ?? 25, 0, 80),
-        toeOptionControl('Distance', 'shadowDistance', item.shadowDistance ?? 4, 0, 60, ''),
-        toeOptionControl('Angle', 'shadowAngle', item.shadowAngle ?? 45, 0, 360, '')
-      ].join('')
-    }[target];
-    popover.dataset.optionsTarget = target;
-    popover.innerHTML = content || '';
-    popover.classList.add('active');
-    document.getElementById('toeColorPopover')?.classList.remove('active');
-  }
-
-  function toeDrawTextItems(ctx, canvasWidth, canvasHeight, currentTime = null, duration = null) {
-    toeTextElements.forEach(item => {
-      toeNormalizeTextTiming(item);
-      if (currentTime != null && Number.isFinite(duration) && duration > 0) {
-        const pct = toeClamp(currentTime / duration, 0, 1);
-        if (pct < item.startTime || pct > item.endTime) return;
-      }
-      const fontConf = TOE_FONTS[item.font] || TOE_FONTS.modern;
-      ctx.font = `${fontConf.weight || 500} ${item.size * 2}px ${fontConf.family}`;
-      ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
-      ctx.textBaseline = 'alphabetic';
-      const x = (item.x / 100) * canvasWidth;
-      const y = (item.y / 100) * canvasHeight;
-      const lines = toeTransformText(item.text, item.caseMode).split('\n');
-      const letterGap = ((item.letterSpacing ?? 0) / 100) * item.size * 2;
-      const lineH = item.size * 2 * (1 + ((item.lineHeight ?? 20) / 100));
-      const measureLine = (line) => {
-        if (!line) return 0;
-        return ctx.measureText(line).width + Math.max(0, line.length - 1) * letterGap;
-      };
-      const drawLine = (method, line, tx, ty) => {
-        if (!letterGap) {
-          ctx[method](line, tx, ty);
-          return;
-        }
-        const total = measureLine(line);
-        let cursor = item.align === 'center' ? tx - total / 2 : item.align === 'right' ? tx - total : tx;
-        ctx.textAlign = 'left';
-        Array.from(line).forEach(char => {
-          ctx[method](char, cursor, ty);
-          cursor += ctx.measureText(char).width + letterGap;
-        });
-        ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
-      };
-      if (item.bg !== 'none') {
-        ctx.fillStyle = item.bgColor
-          ? (item.bg === 'semi' ? toeHexToRgba(item.bgColor, item.bgOpacity ?? 0.62) : toeHexToRgba(item.bgColor, item.bgOpacity ?? 1))
-          : (item.bg === 'solid' ? '#000' : 'rgba(0,0,0,0.55)');
-        const widest = Math.max(...lines.map(measureLine), item.size * 2);
-        const boxWidth = Math.max(widest + 24, ((item.width || 24) / 100) * canvasWidth);
-        const boxHeight = lines.length * lineH + 14;
-        const bx = item.align === 'left' ? x - 12 : item.align === 'right' ? x - boxWidth + 12 : x - boxWidth / 2;
-        const by = y - item.size * 2 - 8;
-        const radius = Math.min(item.bgRadius ?? 0, boxHeight / 2, boxWidth / 2);
-        if (radius && ctx.roundRect) {
-          ctx.beginPath();
-          ctx.roundRect(bx, by, boxWidth, boxHeight, radius);
-          ctx.fill();
-          if (item.bgBorderWidth) {
-            ctx.strokeStyle = item.bgBorderColor || item.stroke || item.color || '#ffffff';
-            ctx.lineWidth = Math.max(1, item.bgBorderWidth * 2);
-            ctx.stroke();
-          }
-        } else {
-          ctx.fillRect(bx, by, boxWidth, boxHeight);
-          if (item.bgBorderWidth) {
-            ctx.strokeStyle = item.bgBorderColor || item.stroke || item.color || '#ffffff';
-            ctx.lineWidth = Math.max(1, item.bgBorderWidth * 2);
-            ctx.strokeRect(bx, by, boxWidth, boxHeight);
-          }
-        }
-      }
-      if (item.font === 'neon' || item.shadow) {
-        ctx.shadowColor = item.shadowColor || item.color;
-        ctx.shadowBlur = item.font === 'neon' ? 20 : 12;
-      } else {
-        ctx.shadowBlur = 0;
-      }
-      if (item.stroke) {
-        ctx.lineJoin = 'round';
-        ctx.miterLimit = 2;
-        ctx.lineWidth = Math.max(2, toeStrokePixels(item) * 2);
-        ctx.strokeStyle = item.stroke;
-        lines.forEach((line, i) => drawLine('strokeText', line, x, y + i * lineH));
-      }
-      ctx.fillStyle = item.color;
-      lines.forEach((line, i) => drawLine('fillText', line, x, y + i * lineH));
-      ctx.shadowBlur = 0;
-    });
-  }
-
-  // Burn text onto image → returns a Blob
+  // ---- Burn text onto an image (high quality canvas) ----
   async function toeBurnImage(imgEl) {
     return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
       const img = new Image();
-      img.crossOrigin = 'anonymous';
       img.onload = () => {
-        const fitted = toeFitMediaSize(img.naturalWidth || img.width || 1080, img.naturalHeight || img.height || 1350);
-        canvas.width = fitted.width;
-        canvas.height = fitted.height;
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || 1080;
+        canvas.height = img.naturalHeight || 1350;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        toeDrawTextItems(ctx, canvas.width, canvas.height);
-        canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.86);
+        const scale = canvas.width / toeStage.querySelector('.toe2-media').clientWidth;
+        toeItems.forEach(item => {
+          const fpx = item.size * scale;
+          ctx.font = `${fpx}px ${TOE_FONTS[item.font] || TOE_FONTS.classic}`;
+          ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
+          ctx.textBaseline = 'middle';
+          const x = (item.xPct / 100) * canvas.width;
+          const y = (item.yPct / 100) * canvas.height;
+          const lines = (item.text || '').split('\n');
+          const lh = fpx * 1.25;
+          lines.forEach((line, i) => {
+            const ly = y + (i - (lines.length - 1) / 2) * lh;
+            if (item.bg !== 'none') {
+              const tw = ctx.measureText(line).width;
+              const bx = item.align === 'center' ? x - tw / 2 - 10 : item.align === 'right' ? x - tw - 10 : x - 10;
+              ctx.fillStyle = item.bg === 'solid' ? '#000' : 'rgba(0,0,0,0.55)';
+              ctx.fillRect(bx, ly - lh / 2, tw + 20, lh);
+            }
+            if (item.font === 'neon') { ctx.shadowColor = item.color; ctx.shadowBlur = fpx * 0.4; } else { ctx.shadowBlur = 0; }
+            ctx.fillStyle = item.color;
+            ctx.fillText(line, x, ly);
+            ctx.shadowBlur = 0;
+          });
+        });
+        canvas.toBlob(b => resolve(b), 'image/jpeg', 0.92);
       };
       img.src = imgEl.src;
     });
   }
 
-  // Burn text onto video → returns a Blob via MediaRecorder
-  async function toeBurnVideo(vidEl) {
-    return new Promise((resolve, reject) => {
-      const start = async () => {
-        vidEl.pause();
-        vidEl.loop = false;
-        vidEl.currentTime = 0;
-        await new Promise((done) => {
-          if (vidEl.readyState >= 1) done();
-          else vidEl.addEventListener('loadedmetadata', done, { once: true });
-        });
-
-        const canvas = document.createElement('canvas');
-        const fitted = toeFitMediaSize(vidEl.videoWidth || 1080, vidEl.videoHeight || 1920);
-        canvas.width = fitted.width;
-        canvas.height = fitted.height;
-        const ctx = canvas.getContext('2d');
-        const exportFps = 30;
-        const stream = canvas.captureStream(exportFps);
-        const mediaStream = typeof vidEl.captureStream === 'function' ? vidEl.captureStream() : null;
-        mediaStream?.getAudioTracks().forEach(track => stream.addTrack(track));
-        const mimeType = [
-          'video/mp4;codecs=avc1.42E01E',
-          'video/mp4',
-          'video/webm;codecs=vp8',
-          'video/webm;codecs=vp9',
-          'video/webm'
-        ].find(type => MediaRecorder.isTypeSupported(type)) || 'video/webm';
-        const pixels = canvas.width * canvas.height;
-        const videoBitsPerSecond = pixels >= 1600000 ? 12000000 : pixels >= 900000 ? 8000000 : 5000000;
-        const recorder = new MediaRecorder(stream, {
-          mimeType,
-          videoBitsPerSecond,
-          audioBitsPerSecond: 160000
-        });
-        const chunks = [];
-        const durationMs = Number.isFinite(vidEl.duration) && vidEl.duration > 0
-          ? Math.min(vidEl.duration * 1000, 30000)
-          : 8000;
-        let rafId = null;
-        let stopTimer = null;
-        let stopped = false;
-        const previousMuted = vidEl.muted;
-        const previousVolume = vidEl.volume;
-
-        const cleanupTracks = () => {
-          stream.getTracks().forEach(track => {
-            if (track.readyState !== 'ended') track.stop();
-          });
-          vidEl.muted = previousMuted;
-          vidEl.volume = previousVolume;
-        };
-
-        const stopRecording = () => {
-          if (stopped) return;
-          stopped = true;
-          if (rafId) cancelAnimationFrame(rafId);
-          if (stopTimer) clearTimeout(stopTimer);
-          vidEl.pause();
-          if (recorder.state !== 'inactive') recorder.stop();
-        };
-
-        recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-        recorder.onerror = (event) => {
-          cleanupTracks();
-          reject(event.error || new Error('Video recorder failed.'));
-        };
-        recorder.onstop = () => {
-          cleanupTracks();
-          resolve(new Blob(chunks, { type: mimeType.split(';')[0] || 'video/webm' }));
-        };
-
-        const drawFrame = () => {
-          ctx.drawImage(vidEl, 0, 0, canvas.width, canvas.height);
-          toeDrawTextItems(ctx, canvas.width, canvas.height, vidEl.currentTime, vidEl.duration);
-          if (Number.isFinite(vidEl.duration) && vidEl.currentTime >= vidEl.duration - 0.05) {
-            stopRecording();
-            return;
-          }
-          if (!vidEl.paused && !vidEl.ended && !stopped) rafId = requestAnimationFrame(drawFrame);
-        };
-
-        vidEl.onended = stopRecording;
-        recorder.start(1000);
-        stopTimer = setTimeout(stopRecording, durationMs + 1250);
-        vidEl.muted = false;
-        vidEl.volume = 1;
-        await vidEl.play();
-        rafId = requestAnimationFrame(drawFrame);
-      };
-
-      start().catch(reject);
-    });
-  }
-
-  // Wire up toolbar events
-  toeRenderFontOptions();
-
-  const toeFontSelect = document.getElementById('toeFontSelect');
-  if (toeFontSelect) {
-    toeFontSelect.addEventListener('change', () => {
-      toeFont = toeFontSelect.value || 'classic';
-      toeUpdateActive('font', toeFont);
-    });
-  }
-
-  function toeSelectPopoverColor(color, swatchBtn = null) {
-    if (!color) return;
-    toeColor = color;
-    if (toeColorPicker) toeColorPicker.value = color;
-    document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.remove('active'));
-    swatchBtn?.classList.add('active');
-    toeApplyStyleColor(color);
-  }
-
-  document.querySelectorAll('.toe-color-swatch').forEach(btn => {
-    if (!btn.dataset.color) return;
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      toeSelectPopoverColor(btn.dataset.color, btn);
-    });
-  });
-
-  const toeColorPopover = document.getElementById('toeColorPopover');
-  if (toeColorPopover) {
-    toeColorPopover.addEventListener('click', (e) => {
-      const swatch = e.target.closest('.toe-color-swatch');
-      if (!swatch?.dataset.color) return;
-      e.preventDefault();
-      e.stopPropagation();
-      toeSelectPopoverColor(swatch.dataset.color, swatch);
-    });
-  }
-
-  const toeColorPicker = document.getElementById('toeColorPicker');
-  if (toeColorPicker) {
-    toeColorPicker.addEventListener('input', () => {
-      toeColor = toeColorPicker.value;
-      document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.remove('active'));
-      document.getElementById('toeColorCustom').classList.add('active');
-      toeApplyStyleColor(toeColor);
-    });
-  }
-
-  const toeEyedropperBtn = document.getElementById('toeEyedropperBtn');
-  if (toeEyedropperBtn) {
-    toeEyedropperBtn.addEventListener('click', async () => {
-      if ('EyeDropper' in window) {
-        try {
-          const result = await new EyeDropper().open();
-          if (result?.sRGBHex) {
-            toeColor = result.sRGBHex;
-            if (toeColorPicker) toeColorPicker.value = toeColor;
-            document.querySelectorAll('.toe-color-swatch').forEach(b => b.classList.remove('active'));
-            toeEyedropperBtn.classList.add('active');
-            toeApplyStyleColor(toeColor);
-          }
-        } catch (_) {}
-      } else {
-        toeColorPicker?.click();
-      }
-    });
-  }
-
-  const toeSizeSlider = document.getElementById('toeSizeSlider');
-  if (toeSizeSlider) {
-    toeSizeSlider.addEventListener('input', () => {
-      toeSize = parseInt(toeSizeSlider.value);
-      const sizeSelect = document.getElementById('toeSizeSelect');
-      if (sizeSelect) sizeSelect.value = String(toeSize);
-      toeUpdateActive('size', toeSize);
-    });
-  }
-
-  const toeSizeSelect = document.getElementById('toeSizeSelect');
-  if (toeSizeSelect) {
-    toeSizeSelect.addEventListener('change', () => {
-      toeSize = parseInt(toeSizeSelect.value, 10) || 32;
-      if (toeSizeSlider) toeSizeSlider.value = toeSize;
-      toeUpdateActive('size', toeSize);
-    });
-  }
-
-  const toeInspectorText = document.getElementById('toeInspectorText');
-  if (toeInspectorText) {
-    toeInspectorText.addEventListener('input', () => {
-      const item = toeGetActiveItem();
-      if (!item) return;
-      item.text = toeInspectorText.value;
-      toeUpdateTextDom(item);
-    });
-  }
-
-  const toeOpacityRange = document.querySelector('.toe-opacity-row input');
-  const toeOpacityLabel = document.querySelector('.toe-opacity-row span');
-  if (toeOpacityRange) {
-    toeOpacityRange.addEventListener('input', () => {
-      const value = parseInt(toeOpacityRange.value, 10);
-      const opacity = Math.max(0, Math.min(1, value / 100));
-      if (toeOpacityLabel) toeOpacityLabel.textContent = `${value}%`;
-      toeUpdateActive('opacity', opacity);
-    });
-  }
-
-  document.querySelectorAll('.toe-align-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      toeAlign = btn.dataset.align;
-      document.querySelectorAll('.toe-align-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      toeUpdateActive('align', toeAlign);
-    });
-  });
-
-  function toeToggleFormatPopover(popoverId) {
-    const popover = document.getElementById(popoverId);
-    if (!popover) return;
-    document.querySelectorAll('.toe-format-popover').forEach(panel => {
-      if (panel !== popover) panel.classList.remove('active');
-    });
-    const colorPopover = document.getElementById('toeColorPopover');
-    if (colorPopover) colorPopover.classList.remove('active');
-    popover.classList.toggle('active');
-  }
-
-  document.getElementById('toeCaseBtn')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toeToggleFormatPopover('toeCasePopover');
-  });
-
-  document.getElementById('toeSpacingBtn')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toeToggleFormatPopover('toeSpacingPopover');
-  });
-
-  document.querySelectorAll('[data-case-mode]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      toeUpdateActive('caseMode', btn.dataset.caseMode || 'normal');
-      toeUpdateToolbarToActive();
-    });
-  });
-
-  function toeBindSpacingControl(sliderId, inputId, prop) {
-    const slider = document.getElementById(sliderId);
-    const input = document.getElementById(inputId);
-    const update = (value) => {
-      const next = Math.max(0, Math.min(prop === 'lineHeight' ? 80 : 100, parseInt(value, 10) || 0));
-      if (slider) slider.value = next;
-      if (input) input.value = next;
-      toeUpdateActive(prop, next);
-    };
-    slider?.addEventListener('input', () => update(slider.value));
-    input?.addEventListener('input', () => update(input.value));
-  }
-
-  toeBindSpacingControl('toeLineHeightSlider', 'toeLineHeightValue', 'lineHeight');
-  toeBindSpacingControl('toeLetterSpacingSlider', 'toeLetterSpacingValue', 'letterSpacing');
-
-  document.querySelectorAll('[data-preset-tabs]').forEach(tabGroup => {
-    tabGroup.addEventListener('click', (e) => {
-      const tab = e.target.closest('.toe-preset-tab');
-      if (!tab) return;
-      toePresetCategory = tab.dataset.preset || 'trending';
-      toeRenderPresetGrids(true);
-    });
-  });
-
-  document.querySelectorAll('.toe-preset-grid').forEach(grid => {
-    grid.addEventListener('click', (e) => {
-      const favoriteBtn = e.target.closest('[data-favorite-preset]');
-      if (favoriteBtn) {
-        e.stopPropagation();
-        toeToggleFavoritePreset(favoriteBtn.dataset.favoritePreset);
-        return;
-      }
-      const tile = e.target.closest('.toe-preset-tile');
-      if (!tile) return;
-      document.querySelectorAll('.toe-preset-tile').forEach(t => t.classList.remove('active'));
-      tile.classList.add('active');
-      toeApplyPreset(toeFindPresetByRenderedKey(tile.dataset.presetKey));
-    });
-  });
-
-  document.querySelectorAll('.toe-inspector-tab').forEach(tab => {
-    tab.addEventListener('click', () => toeSetRightPane(tab.dataset.paneTarget || 'basic'));
-  });
-
-  document.querySelectorAll('[data-toe-theme]').forEach(btn => {
-    btn.addEventListener('click', () => toeSetTheme(btn.dataset.toeTheme || 'brand'));
-  });
-
-  document.getElementById('toeCanvasZoomRange')?.addEventListener('input', (e) => {
-    toeSetStageZoom(parseInt(e.target.value, 10) || 100);
-  });
-
-  document.querySelectorAll('[data-toe-zoom]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const value = btn.dataset.toeZoom;
-      toeSetStageZoom(value === 'fit' ? 100 : parseInt(value, 10));
-    });
-  });
-
-  document.getElementById('toeTimelineZoomRange')?.addEventListener('input', (e) => {
-    toeSetTimelineZoom(parseInt(e.target.value, 10) || 0);
-  });
-
-  document.getElementById('toeTimelineZoomOut')?.addEventListener('click', () => {
-    toeSetTimelineZoom(toeTimelineZoom - 10);
-  });
-
-  document.getElementById('toeTimelineZoomIn')?.addEventListener('click', () => {
-    toeSetTimelineZoom(toeTimelineZoom + 10);
-  });
-
-  toeSetTheme(toeGetSavedTheme());
-  toeSetStageZoom(100);
-  toeSetTimelineZoom(25);
-
-  function toeSetTimelineHeight(height) {
-    if (!toeOverlay) return;
-    const next = Math.max(52, Math.min(220, height));
-    toeOverlay.style.setProperty('--toe-timeline-height', `${next}px`);
-    const zoomBoost = toeClamp(Math.round((176 - next) * 0.52), 0, 70);
-    toeSetStageZoom(100 + zoomBoost);
-    const collapsed = next <= 70;
-    toeOverlay.classList.toggle('timeline-collapsed', collapsed);
-    const handle = document.getElementById('toeTimelineDragHandle');
-    if (handle) handle.dataset.tooltip = collapsed ? 'Show timeline' : 'Drag timeline';
-    const hideBtn = document.getElementById('toeTimelineHideBtn');
-    if (hideBtn) {
-      hideBtn.dataset.tooltip = collapsed ? 'Show timeline' : 'Hide timeline';
-      hideBtn.setAttribute('aria-label', collapsed ? 'Show timeline' : 'Hide timeline');
-    }
-  }
-
-  function toeSetTimelineCollapsed(collapsed) {
-    if (!toeOverlay) return;
-    toeSetTimelineHeight(collapsed ? 52 : 176);
-  }
-
-  document.getElementById('toeTimelineHideBtn')?.addEventListener('click', () => {
-    toeSetTimelineCollapsed(!toeOverlay.classList.contains('timeline-collapsed'));
-  });
-
-  const toeTimelineDragHandle = document.getElementById('toeTimelineDragHandle');
-  if (toeTimelineDragHandle) {
-    toeTimelineDragHandle.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      const startY = e.clientY;
-      const timeline = document.querySelector('.toe-timeline');
-      const startHeight = timeline?.getBoundingClientRect().height || 176;
-      const onMove = (mv) => toeSetTimelineHeight(startHeight - (mv.clientY - startY));
-      const onUp = () => {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-    });
-  }
-
-  const toeTrackArea = document.getElementById('toeTrackArea');
-  if (toeTrackArea) {
-    const setScrubX = (event) => {
-      const rect = toeTrackArea.getBoundingClientRect();
-      const pct = toeClamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100);
-      toeTrackArea.style.setProperty('--toe-scrub-x', `${pct}%`);
-      return pct / 100;
-    };
-    toeTrackArea.addEventListener('mousemove', setScrubX);
-    toeTrackArea.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return;
-      if (e.target.closest('#toeTextTrack')) return;
-      e.preventDefault();
-      toeTrackArea.classList.add('is-scrubbing');
-      toeSetTimelineProgress(setScrubX(e));
-      const onMove = (mv) => toeSetTimelineProgress(setScrubX(mv));
-      const onUp = () => {
-        toeSetTimelineProgress(toeTimelineProgress, true);
-        toeTrackArea.classList.remove('is-scrubbing');
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        window.removeEventListener('mouseup', onUp);
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-      window.addEventListener('mouseup', onUp);
-    });
-  }
-
-  const toeTextTrack = document.getElementById('toeTextTrack');
-  if (toeTextTrack && toeTrackArea) {
-    const getTrackPoint = (event) => event.touches?.[0] || event;
-
-    const getTrackPct = (event) => {
-      const point = getTrackPoint(event);
-      const rect = toeTrackArea.getBoundingClientRect();
-      const range = Math.max(1, rect.width - 84);
-      return toeClamp((point.clientX - rect.left - 42) / range, 0, 1);
-    };
-
-    const beginTextTimingEdit = (e, forcedEdge) => {
-      if (e.type === 'mousedown' && e.button !== 0) return;
-      const item = toeGetActiveItem() || toeTextElements[0];
-      if (!item) return;
-      e.preventDefault();
-      e.stopPropagation();
-      toeActiveId = item.id;
-      toeNormalizeTextTiming(item);
-      const edge = forcedEdge || e.target.closest('[data-trim-edge]')?.dataset.trimEdge || 'move';
-      const startX = getTrackPct(e);
-      const startStart = item.startTime;
-      const startEnd = item.endTime;
-      const trackRect = toeTrackArea.getBoundingClientRect();
-      const trackRange = Math.max(1, trackRect.width - 84);
-      const minLen = 0.04;
-      let moveLength = startEnd - startStart;
-      let moveStart = startStart;
-      if (edge === 'move' && moveLength > 0.96) {
-        moveLength = 0.35;
-        moveStart = toeClamp(startX - moveLength / 2, 0, 1 - moveLength);
-        item.startTime = moveStart;
-        item.endTime = moveStart + moveLength;
-        toeUpdateTimelineTextTrack();
-      }
-      toeTextTrack.classList.add('is-editing');
-      const applyTrackPosition = () => {
-        toeTextTrack.style.marginLeft = `${42 + item.startTime * trackRange}px`;
-        toeTextTrack.style.width = `${Math.max(44, (item.endTime - item.startTime) * trackRange)}px`;
-      };
-
-      const onMove = (mv) => {
-        const point = getTrackPoint(mv);
-        const pct = toeClamp((point.clientX - trackRect.left - 42) / trackRange, 0, 1);
-        const delta = pct - startX;
-        if (edge === 'start') {
-          item.startTime = toeClamp(startStart + delta, 0, startEnd - minLen);
-        } else if (edge === 'end') {
-          item.endTime = toeClamp(startEnd + delta, startStart + minLen, 1);
-        } else {
-          const length = moveLength;
-          const nextStart = toeClamp(moveStart + delta, 0, 1 - length);
-          item.startTime = nextStart;
-          item.endTime = nextStart + length;
-        }
-        applyTrackPosition();
-        toeUpdatePreviewVisibility();
-      };
-      const onUp = () => {
-        toeTextTrack.classList.remove('is-editing');
-        toeUpdateTimelineTextTrack();
-        toeUpdatePreviewVisibility();
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        document.removeEventListener('touchmove', onMove);
-        document.removeEventListener('touchend', onUp);
-        window.removeEventListener('mouseup', onUp);
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-      document.addEventListener('touchmove', onMove, { passive: false });
-      document.addEventListener('touchend', onUp);
-      window.addEventListener('mouseup', onUp);
-    };
-
-    toeTextTrack.addEventListener('mousedown', (e) => {
-      if (e.target.closest('[data-trim-edge]')) return;
-      beginTextTimingEdit(e, 'move');
-    });
-
-    toeTextTrack.querySelectorAll('[data-trim-edge]').forEach(handle => {
-      handle.addEventListener('mousedown', (e) => {
-        beginTextTimingEdit(e, handle.dataset.trimEdge);
-      });
-      handle.addEventListener('touchstart', (e) => {
-        beginTextTimingEdit(e, handle.dataset.trimEdge);
-      }, { passive: false });
-    });
-  }
-
-  document.querySelectorAll('[data-style-popover]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const target = btn.dataset.stylePopover || 'fill';
-      const popover = document.getElementById('toeColorPopover');
-      document.getElementById('toeStyleOptionsPopover')?.classList.remove('active');
-      document.querySelectorAll('[data-style-options]').forEach(optionBtn => optionBtn.classList.remove('active'));
-      if (popover?.classList.contains('active') && toeStyleTarget === target) {
-        popover.classList.remove('active');
-        return;
-      }
-      toeOpenStylePicker(target);
-    });
-  });
-
-  document.querySelectorAll('[data-style-options]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const target = btn.dataset.styleOptions;
-      const popover = document.getElementById('toeStyleOptionsPopover');
-      const isSameOpen = popover?.classList.contains('active') && popover.dataset.optionsTarget === target;
-      document.querySelectorAll('[data-style-options]').forEach(optionBtn => optionBtn.classList.remove('active'));
-      if (isSameOpen) {
-        popover.classList.remove('active');
-        return;
-      }
-      btn.classList.add('active');
-      toeOpenStyleOptions(target);
-    });
-  });
-
-  document.getElementById('toeStyleOptionsPopover')?.addEventListener('input', (e) => {
-    const control = e.target.closest('[data-style-option-prop]');
-    if (!control) return;
-    const prop = control.dataset.styleOptionProp;
-    document.querySelectorAll(`[data-style-option-prop="${prop}"]`).forEach(input => {
-      if (input !== control) input.value = control.value;
-    });
-    toeUpdateStyleOption(prop, control.value);
-  });
-
-  document.addEventListener('click', (e) => {
-    const popover = document.getElementById('toeColorPopover');
-    const optionsPopover = document.getElementById('toeStyleOptionsPopover');
-    if (!popover || !toeOverlay || toeOverlay.style.display === 'none') return;
-    if (e.target.closest('#toeColorPopover') || e.target.closest('[data-style-popover]')) return;
-    if (e.target.closest('#toeStyleOptionsPopover') || e.target.closest('[data-style-options]')) return;
-    popover.classList.remove('active');
-    optionsPopover?.classList.remove('active');
-    document.querySelectorAll('[data-style-options]').forEach(btn => btn.classList.remove('active'));
-    if (e.target.closest('.toe-format-popover') || e.target.closest('#toeCaseBtn') || e.target.closest('#toeSpacingBtn')) return;
-    document.querySelectorAll('.toe-format-popover').forEach(panel => panel.classList.remove('active'));
-  });
-
-  document.getElementById('toeAddTextBtn')?.addEventListener('click', toeAddTextElement);
-  document.getElementById('toeTextToolBtn')?.addEventListener('click', () => {
-    if (!toeTextElements.length) toeAddTextElement();
-  });
-  document.getElementById('toeCancelBtn')?.addEventListener('click', toeClose);
-  document.getElementById('toeCancelBtnSecondary')?.addEventListener('click', toeClose);
-
-  toeStage?.addEventListener('mousedown', (e) => {
-    if (e.target.closest('.toe-text-el')) return;
-    if (!e.target.closest('#toeStage')) return;
-    toeActiveId = null;
-    toeSetCenterGuides(false, false);
-    toeRenderAll();
-  });
-
-  document.getElementById('toeDoneBtn')?.addEventListener('click', async () => {
-    if (toeTextElements.length === 0) { toeClose(); return; }
-    const isVid = toeSourceMedia?.tagName === 'VIDEO';
+  // ---- Save ----
+  async function toeSave() {
+    if (toeItems.length === 0) { toeClose(); return; }
     toeProcessing.style.display = 'flex';
-    toeProcLabel.textContent = isVid ? 'Saving text timing without re-encoding video...' : 'Processing image...';
+
+    if (toeIsVideo) {
+      // Lightweight: store the text spec on the file. The posted video keeps
+      // full original quality; text burn-in happens in the high-quality export step.
+      toeProcLabel.textContent = 'Saving text...';
+      const src = toeSourceFile || uploadedFile;
+      src._isVideo = true;
+      src._toeSourceFile = src;
+      src._toeTextElements = JSON.parse(JSON.stringify(toeItems));
+      src._hasTextOverlay = true;
+      src._uploadError = false;
+      uploadedFile = src;
+
+      const v = els.uploadZone.querySelector('video') || document.createElement('video');
+      v.src = URL.createObjectURL(src);
+      v.controls = true; v.muted = false; v.preload = 'metadata'; v.playsInline = true;
+      v.style.cssText = 'max-width:100%;border-radius:12px;';
+      els.uploadZone.querySelectorAll('video').forEach(o => { if (o !== v) o.remove(); });
+      if (!v.parentElement) els.uploadZone.appendChild(v);
+      els.uploadPreview.style.display = 'none';
+
+      setAddTextButtonState(true); setEditMediaButtonState(true); setReturnToEditorButtonState(true);
+      if (els.addTextBtn) { els.addTextBtn.classList.add('has-overlay'); els.addTextBtn.textContent = 'Edit Text'; }
+      showToast('Text saved to your video.');
+      toeClose(); validateForm();
+      return;
+    }
+
+    // Image: burn now (instant, full quality)
+    toeProcLabel.textContent = 'Applying text...';
     try {
-      if (isVid) {
-        const sourceFile = toeEditingSourceFile || uploadedFile;
-        if (!sourceFile) throw new Error('Missing source video file.');
-        const savedTextElements = JSON.parse(JSON.stringify(toeTextElements));
-        sourceFile._isVideo = true;
-        sourceFile._toeSourceFile = sourceFile;
-        sourceFile._toeTextElements = savedTextElements;
-        sourceFile._hasTextOverlay = savedTextElements.length > 0;
-        sourceFile._uploadError = false;
-        uploadedFile = sourceFile;
-
-        const videoEl = els.uploadZone.querySelector('video') || document.createElement('video');
-        videoEl.src = URL.createObjectURL(sourceFile);
-        videoEl.controls = true;
-        videoEl.muted = false;
-        videoEl.preload = 'metadata';
-        videoEl.playsInline = true;
-        videoEl.style.cssText = 'max-width:100%;border-radius:12px;';
-        els.uploadZone.querySelectorAll('video').forEach(v => {
-          if (v !== videoEl) v.remove();
-        });
-        if (!videoEl.parentElement) els.uploadZone.appendChild(videoEl);
-        els.uploadPreview.style.display = 'none';
-
-        setAddTextButtonState(true);
-        setEditMediaButtonState(true);
-        if (els.addTextBtn) {
-          els.addTextBtn.classList.add('has-overlay');
-          els.addTextBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit Text';
-          els.addTextBtn.title = 'Return to text overlay editor';
-        }
-        setReturnToEditorButtonState(true);
-        showToast('Text timing saved. Original video quality preserved.');
-        toeClose();
-        validateForm();
-        return;
-      }
-
-      let blob;
-      blob = await toeBurnImage(toeSourceMedia);
-      // Create a new File object from the blob
-      const ext = blob.type.includes('png') ? 'png' : 'jpg';
-      const newFile = new File([blob], `overlay_${Date.now()}.${ext}`, { type: blob.type });
-      newFile._isVideo = isVid;
-      newFile._toeSourceFile = toeEditingSourceFile || uploadedFile;
-      newFile._toeTextElements = JSON.parse(JSON.stringify(toeTextElements));
-      // Replace uploadedFile and trigger re-upload
+      const mediaEl = toeStage.querySelector('.toe2-media');
+      const blob = await toeBurnImage(mediaEl);
+      const newFile = new File([blob], `overlay_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      newFile._isVideo = false;
+      newFile._toeSourceFile = toeSourceFile || uploadedFile;
+      newFile._toeTextElements = JSON.parse(JSON.stringify(toeItems));
+      newFile._hasTextOverlay = true;
       uploadedFile = newFile;
       uploadedFile._uploading = true;
       uploadedFile._uploadError = false;
-      uploadedFile._hasTextOverlay = true;
-      // Show in upload zone
-      if (isVid) {
-        const videoEl = els.uploadZone.querySelector('video') || document.createElement('video');
-        videoEl.src = URL.createObjectURL(blob);
-        videoEl.controls = true; videoEl.muted = false; videoEl.preload = 'metadata'; videoEl.playsInline = true;
-        videoEl.style.cssText = 'max-width:100%;border-radius:12px;';
-        els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
-        els.uploadZone.appendChild(videoEl);
-        els.uploadPreview.style.display = 'none';
-      } else {
-        els.uploadPreview.src = URL.createObjectURL(blob);
-        els.uploadPreview.classList.add('visible');
-        els.uploadPreview.style.display = '';
-      }
-      setAddTextButtonState(true);
-      setEditMediaButtonState(true);
-      if (els.addTextBtn) {
-        els.addTextBtn.classList.add('has-overlay');
-        els.addTextBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:14px;height:14px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Edit Text';
-        els.addTextBtn.title = 'Return to text overlay editor';
-      }
-      setReturnToEditorButtonState(true);
-      // Upload to Supabase
-      const overlayUploadTarget = uploadedFile;
+
+      els.uploadPreview.src = URL.createObjectURL(blob);
+      els.uploadPreview.classList.add('visible');
+      els.uploadPreview.style.display = '';
+
+      setAddTextButtonState(true); setEditMediaButtonState(true); setReturnToEditorButtonState(true);
+      if (els.addTextBtn) { els.addTextBtn.classList.add('has-overlay'); els.addTextBtn.textContent = 'Edit Text'; }
+
+      const target = uploadedFile;
       uploadedFile._uploadPromise = uploadMediaToSupabase(newFile).then(url => {
-        if (uploadedFile !== overlayUploadTarget) return url;
-        overlayUploadTarget._uploading = false;
-        const indicator = document.getElementById('uploadProgressIndicator');
-        if (indicator) indicator.remove();
-        if (url) {
-          overlayUploadTarget._uploadError = false;
-          overlayUploadTarget._supabaseUrl = url;
-          showToast('Text overlay applied!');
-          validateForm();
-        } else {
-          overlayUploadTarget._uploadError = true;
-          showToast('Upload failed — tap Retry Media Upload.');
-          validateForm();
-        }
-        return url;
-      }).catch(err => {
-        console.error('Overlay upload failed:', err);
-        if (uploadedFile === overlayUploadTarget) {
-          overlayUploadTarget._uploading = false;
-          overlayUploadTarget._uploadError = true;
-        }
-        const indicator = document.getElementById('uploadProgressIndicator');
-        if (indicator) indicator.remove();
-        showToast('Media upload timed out — please try again.');
+        if (uploadedFile !== target) return url;
+        target._uploading = false;
+        if (url) { target._supabaseUrl = url; showToast('Text overlay applied!'); }
+        else { target._uploadError = true; showToast('Upload failed — tap Retry Media Upload.'); }
         validateForm();
-        return null;
-      });
-      toeClose();
-      validateForm();
+        return url;
+      }).catch(() => { if (uploadedFile === target) { target._uploading = false; target._uploadError = true; } validateForm(); return null; });
+
+      toeClose(); validateForm();
     } catch (err) {
       console.error('Text burn error:', err);
       showToast('Error applying text — try again.');
       toeProcessing.style.display = 'none';
     }
-  });
+  }
 
+  // ---- Wire toolbar ----
+  document.getElementById('toeAddTextBtn')?.addEventListener('click', toeAddText);
+  document.getElementById('toeDeleteBtn')?.addEventListener('click', () => {
+    if (toeActiveId == null) return;
+    toeItems = toeItems.filter(t => t.id !== toeActiveId);
+    toeActiveId = toeItems[0]?.id ?? null;
+    toeRender(); toeSyncTrack();
+  });
+  document.getElementById('toeFontSelect')?.addEventListener('change', (e) => { toeFont = e.target.value; toeUpdateActive('font', toeFont); });
+  document.getElementById('toeSizeSlider')?.addEventListener('input', (e) => { toeSize = Number(e.target.value); toeUpdateActive('size', toeSize); });
+  document.querySelectorAll('.toe2-sw').forEach(b => {
+    if (!b.dataset.color) return;
+    b.addEventListener('click', () => { toeColor = b.dataset.color; document.querySelectorAll('.toe2-sw').forEach(x => x.classList.remove('active')); b.classList.add('active'); toeUpdateActive('color', toeColor); });
+  });
+  document.getElementById('toeColorPicker')?.addEventListener('input', (e) => { toeColor = e.target.value; document.querySelectorAll('.toe2-sw').forEach(x => x.classList.remove('active')); toeUpdateActive('color', toeColor); });
+  document.querySelectorAll('.toe2-al').forEach(b => {
+    b.addEventListener('click', () => { toeAlign = b.dataset.align; document.querySelectorAll('.toe2-al').forEach(x => x.classList.remove('active')); b.classList.add('active'); toeUpdateActive('align', toeAlign); });
+  });
+  document.getElementById('toeBgBtn')?.addEventListener('click', () => {
+    const modes = ['none', 'dark', 'solid'];
+    toeBg = modes[(modes.indexOf(toeBg) + 1) % modes.length];
+    document.getElementById('toeBgBtn').textContent = toeBg === 'none' ? 'Bg: Off' : toeBg === 'dark' ? 'Bg: Dark' : 'Bg: Solid';
+    toeUpdateActive('bg', toeBg);
+  });
+  document.getElementById('toeCancelBtn')?.addEventListener('click', toeClose);
+  document.getElementById('toeDoneBtn')?.addEventListener('click', toeSave);
+  toeBindTrackDrag();
   // ========== SCHEDULER MODAL ==========
   let selectedType = 'post';
   let uploadedFile = null;
@@ -3952,7 +2477,7 @@
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       if (state.currentPage === 'analytics') drawChart();
-      toeUpdateTimelineTextTrack();
+      if (typeof toeSyncTrack === 'function') toeSyncTrack();
     }, 150);
   });
 
