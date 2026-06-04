@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&family=Montserrat:wght@500;600;700&family=Bebas+Neue&family=Special+Elite&family=Anton&family=Caveat:wght@500;600;700&family=Pacifico&family=Permanent+Marker&family=Bangers&family=Comic+Neue:wght@400;700&family=Chewy&family=Fredoka:wght@400;500;600;700&family=Luckiest+Guy&family=Rubik+Bubbles&family=Oswald:wght@500;600;700&family=Dancing+Script:wght@600;700&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="index.css?v=36" />
+    <link rel="stylesheet" href="index.css?v=37" />
 </head>
 
 <body class="paywall-checking">
@@ -924,6 +924,8 @@
       </header>
 
       <div class="toe2-stage" id="toeStage">
+        <div class="toe2-guide toe2-guide-v" id="toeGuideV"></div>
+        <div class="toe2-guide toe2-guide-h" id="toeGuideH"></div>
         <div class="toe2-textlayer" id="toeTextLayer"></div>
         <div class="toe2-processing" id="toeProcessing" style="display:none;">
           <div class="toe2-spinner"></div>
@@ -932,44 +934,57 @@
       </div>
 
       <div class="toe2-videobar" id="toeVideoBar" style="display:none;">
-        <button class="toe2-play" id="toePlayBtn" type="button" aria-label="Play / Pause">&#9654;</button>
-        <span class="toe2-time" id="toeTimeLabel">0:00 / 0:00</span>
-        <input class="toe2-seek" id="toeSeek" type="range" min="0" max="1000" value="0" aria-label="Seek">
-        <div class="toe2-trackrail">
-          <div class="toe2-texttrack" id="toeTextTrack" title="Drag to move when text appears; drag edges to trim">
-            <span class="toe2-trim" data-edge="start"></span>
-            <span class="toe2-track-label" id="toeTrackLabel">Text</span>
-            <span class="toe2-trim" data-edge="end"></span>
+        <div class="toe2-pbrow">
+          <button class="toe2-play" id="toePlayBtn" type="button" title="Play / Pause" aria-label="Play / Pause">&#9654;</button>
+          <span class="toe2-time" id="toeTimeLabel">0:00 / 0:00</span>
+          <input class="toe2-seek" id="toeSeek" type="range" min="0" max="1000" value="0" title="Scrub through the video" aria-label="Seek">
+        </div>
+        <div class="toe2-tracks">
+          <div class="toe2-lane">
+            <span class="toe2-lane-label">Video</span>
+            <div class="toe2-lane-rail toe2-video-rail" id="toeVideoRail" title="Your video timeline">
+              <div class="toe2-playhead" id="toePlayhead"></div>
+            </div>
+          </div>
+          <div class="toe2-lane">
+            <span class="toe2-lane-label">Text</span>
+            <div class="toe2-lane-rail" id="toeTextRail">
+              <div class="toe2-texttrack" id="toeTextTrack" title="Drag to move when the text appears; drag the edges to trim its start and end">
+                <span class="toe2-trim" data-edge="start" title="Drag to set when the text starts"></span>
+                <span class="toe2-track-label" id="toeTrackLabel">Text</span>
+                <span class="toe2-trim" data-edge="end" title="Drag to set when the text ends"></span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="toe2-toolbar">
-        <button class="toe2-add" id="toeAddTextBtn" type="button">+ Add Text</button>
-        <select class="toe2-select" id="toeFontSelect" aria-label="Font">
+        <button class="toe2-add" id="toeAddTextBtn" type="button" title="Add a new text box to your media">+ Add Text</button>
+        <select class="toe2-select" id="toeFontSelect" aria-label="Font" title="Choose a font style">
           <option value="classic">Classic</option>
           <option value="modern">Modern</option>
           <option value="strong">Strong</option>
           <option value="neon">Neon</option>
           <option value="type">Typewriter</option>
         </select>
-        <input class="toe2-sizeslider" id="toeSizeSlider" type="range" min="14" max="120" value="40" aria-label="Text size">
+        <input class="toe2-sizeslider" id="toeSizeSlider" type="range" min="14" max="120" value="40" aria-label="Text size" title="Text size">
         <div class="toe2-colors">
-          <button class="toe2-sw active" data-color="#ffffff" style="background:#ffffff;" title="White"></button>
-          <button class="toe2-sw" data-color="#000000" style="background:#000000;" title="Black"></button>
-          <button class="toe2-sw" data-color="#E1306C" style="background:#E1306C;" title="Pink"></button>
-          <button class="toe2-sw" data-color="#FFD700" style="background:#FFD700;" title="Gold"></button>
-          <button class="toe2-sw" data-color="#00CED1" style="background:#00CED1;" title="Cyan"></button>
-          <button class="toe2-sw" data-color="#22C55E" style="background:#22C55E;" title="Green"></button>
-          <label class="toe2-sw toe2-sw-custom" title="Custom color"><input type="color" id="toeColorPicker" value="#ffffff"></label>
+          <button class="toe2-sw active" data-color="#ffffff" style="background:#ffffff;" title="White text"></button>
+          <button class="toe2-sw" data-color="#000000" style="background:#000000;" title="Black text"></button>
+          <button class="toe2-sw" data-color="#E1306C" style="background:#E1306C;" title="Pink text"></button>
+          <button class="toe2-sw" data-color="#FFD700" style="background:#FFD700;" title="Gold text"></button>
+          <button class="toe2-sw" data-color="#00CED1" style="background:#00CED1;" title="Cyan text"></button>
+          <button class="toe2-sw" data-color="#22C55E" style="background:#22C55E;" title="Green text"></button>
+          <label class="toe2-sw toe2-sw-custom" title="Pick any custom color"><input type="color" id="toeColorPicker" value="#ffffff"></label>
         </div>
         <div class="toe2-align" id="toeAlign">
-          <button class="toe2-al" data-align="left" type="button" title="Left">&#8676;</button>
-          <button class="toe2-al active" data-align="center" type="button" title="Center">&#8801;</button>
-          <button class="toe2-al" data-align="right" type="button" title="Right">&#8677;</button>
+          <button class="toe2-al" data-align="left" type="button" title="Align text left">&#8676;</button>
+          <button class="toe2-al active" data-align="center" type="button" title="Align text center">&#8801;</button>
+          <button class="toe2-al" data-align="right" type="button" title="Align text right">&#8677;</button>
         </div>
-        <button class="toe2-bg" id="toeBgBtn" type="button">Bg: Off</button>
-        <button class="toe2-del" id="toeDeleteBtn" type="button">Delete</button>
+        <button class="toe2-bg" id="toeBgBtn" type="button" title="Text background: Off, Dark highlight, or Solid block">Bg: Off</button>
+        <button class="toe2-del" id="toeDeleteBtn" type="button" title="Delete the selected text box">Delete</button>
       </div>
     </div>
     <!-- Supabase CDN -->
@@ -977,7 +992,7 @@
     <script src="supabase.js"></script>
     <script src="auth.js"></script>
     <script src="instagram-oauth.js"></script>
-    <script src="app.js?v=36"></script>
+    <script src="app.js?v=37"></script>
 </body>
 
 </html>

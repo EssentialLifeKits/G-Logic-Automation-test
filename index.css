@@ -4215,17 +4215,26 @@ body.howto-open {
 
 /* Video bar */
 .toe2-videobar {
-  display: none; align-items: center; gap: 12px;
+  display: none; flex-direction: column; gap: 10px;
   padding: 10px 18px; background: #131316; border-top: 1px solid #232329; flex-shrink: 0;
 }
+.toe2-pbrow { display: flex; align-items: center; gap: 12px; }
 .toe2-play {
   width: 36px; height: 36px; border-radius: 50%; border: none;
   background: #2a2a32; color: #fff; cursor: pointer; font-size: 0.85rem; flex-shrink: 0;
 }
 .toe2-play:hover { background: #3a3a44; }
 .toe2-time { font-size: 0.78rem; color: #b6b6be; white-space: nowrap; min-width: 92px; }
-.toe2-seek { flex: 0 0 180px; accent-color: #E1306C; cursor: pointer; }
-.toe2-trackrail { position: relative; flex: 1; height: 30px; background: #1c1c22; border-radius: 6px; overflow: hidden; }
+.toe2-seek { flex: 1; accent-color: #E1306C; cursor: pointer; }
+
+/* Two-lane timeline: Video lane + Text lane, shared time scale */
+.toe2-tracks { display: flex; flex-direction: column; gap: 6px; }
+.toe2-lane { display: flex; align-items: center; gap: 10px; }
+.toe2-lane-label { width: 44px; flex-shrink: 0; font-size: 0.7rem; color: #8a8a92; text-align: right; }
+.toe2-lane-rail { position: relative; flex: 1; height: 30px; background: #1c1c22; border-radius: 6px; overflow: hidden; }
+.toe2-video-rail { display: flex; }
+.toe2-thumb { flex: 1; background-size: cover; background-position: center; border-right: 1px solid rgba(0,0,0,0.35); }
+.toe2-playhead { position: absolute; top: -2px; bottom: -2px; left: 0; width: 2px; background: #57f0a4; box-shadow: 0 0 4px #57f0a4; pointer-events: none; z-index: 3; }
 .toe2-texttrack {
   position: absolute; top: 0; bottom: 0; left: 0; width: 100%;
   background: linear-gradient(90deg, #E1306C, #833AB4); border-radius: 6px;
@@ -4234,6 +4243,12 @@ body.howto-open {
 }
 .toe2-track-label { pointer-events: none; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .toe2-trim { width: 8px; align-self: stretch; background: rgba(255,255,255,0.55); cursor: ew-resize; flex-shrink: 0; }
+
+/* Center alignment guides */
+.toe2-guide { position: absolute; background: #57f0a4; opacity: 0; pointer-events: none; z-index: 4; transition: opacity 0.08s; }
+.toe2-guide.on { opacity: 0.9; }
+.toe2-guide-v { top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%); }
+.toe2-guide-h { left: 0; right: 0; top: 50%; height: 1px; transform: translateY(-50%); }
 
 /* Toolbar */
 .toe2-toolbar {

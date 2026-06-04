@@ -985,6 +985,10 @@
   const toeSeek      = document.getElementById('toeSeek');
   const toeTextTrack = document.getElementById('toeTextTrack');
   const toeTrackLabel = document.getElementById('toeTrackLabel');
+  const toeGuideV    = document.getElementById('toeGuideV');
+  const toeGuideH    = document.getElementById('toeGuideH');
+  const toeVideoRail = document.getElementById('toeVideoRail');
+  const toePlayhead  = document.getElementById('toePlayhead');
 
   function toeActiveItem() { return toeItems.find(t => t.id === toeActiveId); }
   function toeGetEl(id) { return document.getElementById('toe2-el-' + id); }
@@ -1016,14 +1020,21 @@
     const rect = toeStage.getBoundingClientRect();
     const startX = pt.clientX, startY = pt.clientY;
     const baseX = item.xPct, baseY = item.yPct;
+    const SNAP = 1.8; // % distance to snap + show center guide
     const move = (mv) => {
       const p = mv.touches?.[0] || mv;
-      item.xPct = Math.max(3, Math.min(97, baseX + ((p.clientX - startX) / rect.width) * 100));
-      item.yPct = Math.max(3, Math.min(97, baseY + ((p.clientY - startY) / rect.height) * 100));
+      let nx = Math.max(3, Math.min(97, baseX + ((p.clientX - startX) / rect.width) * 100));
+      let ny = Math.max(3, Math.min(97, baseY + ((p.clientY - startY) / rect.height) * 100));
+      // Snap to center + show guide lines
+      if (Math.abs(nx - 50) < SNAP) { nx = 50; if (toeGuideV) toeGuideV.classList.add('on'); } else if (toeGuideV) toeGuideV.classList.remove('on');
+      if (Math.abs(ny - 50) < SNAP) { ny = 50; if (toeGuideH) toeGuideH.classList.add('on'); } else if (toeGuideH) toeGuideH.classList.remove('on');
+      item.xPct = nx; item.yPct = ny;
       const el = toeGetEl(item.id);
       if (el) { el.style.left = item.xPct + '%'; el.style.top = item.yPct + '%'; }
     };
     const up = () => {
+      if (toeGuideV) toeGuideV.classList.remove('on');
+      if (toeGuideH) toeGuideH.classList.remove('on');
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', up);
     };
@@ -1176,8 +1187,10 @@
     vid.onended = () => { toePlayBtn.textContent = '▶'; };
     vid.ontimeupdate = () => {
       const dur = vid.duration || 0;
-      if (toeSeek) toeSeek.value = dur ? String(Math.round((vid.currentTime / dur) * 1000)) : '0';
+      const frac = dur ? (vid.currentTime / dur) : 0;
+      if (toeSeek) toeSeek.value = String(Math.round(frac * 1000));
       if (toeTimeLabel) toeTimeLabel.textContent = toeFmt(vid.currentTime) + ' / ' + toeFmt(dur);
+      if (toePlayhead) toePlayhead.style.left = (frac * 100) + '%';
       toeSyncVisibility();
     };
     vid.onloadedmetadata = () => {
@@ -1187,6 +1200,42 @@
       const dur = vid.duration || 0;
       if (dur) { vid.currentTime = (Number(toeSeek.value) / 1000) * dur; toeSyncVisibility(); }
     };
+  }
+
+  // ---- Filmstrip: extract a few frames once (separate probe video, off the playback path) ----
+  function toeBuildFilmstrip(file) {
+    if (!toeVideoRail) return;
+    toeVideoRail.querySelectorAll('.toe2-thumb').forEach(t => t.remove());
+    let probe = document.createElement('video');
+    probe.muted = true; probe.preload = 'auto'; probe.playsInline = true;
+    try { probe.src = URL.createObjectURL(file); } catch (_) { return; }
+    const COUNT = 6, shots = [];
+    let idx = 0;
+    const cleanup = () => { try { URL.revokeObjectURL(probe.src); } catch (_) {} try { probe.remove(); } catch (_) {} probe = null; };
+    probe.onloadedmetadata = () => {
+      const dur = probe.duration;
+      if (!dur || !isFinite(dur)) { cleanup(); return; }
+      const canvas = document.createElement('canvas');
+      const ratio = (probe.videoHeight && probe.videoWidth) ? probe.videoHeight / probe.videoWidth : 1.6;
+      canvas.width = 90; canvas.height = Math.round(90 * ratio);
+      const ctx = canvas.getContext('2d');
+      const render = () => shots.forEach(src => {
+        const t = document.createElement('span');
+        t.className = 'toe2-thumb';
+        t.style.backgroundImage = `url('${src}')`;
+        if (toePlayhead) toeVideoRail.insertBefore(t, toePlayhead); else toeVideoRail.appendChild(t);
+      });
+      const next = () => {
+        if (idx >= COUNT || !probe) { render(); cleanup(); return; }
+        try { probe.currentTime = Math.min(dur - 0.05, (idx + 0.5) * (dur / COUNT)); } catch (_) { render(); cleanup(); }
+      };
+      probe.onseeked = () => {
+        try { ctx.drawImage(probe, 0, 0, canvas.width, canvas.height); shots.push(canvas.toDataURL('image/jpeg', 0.6)); } catch (_) {}
+        idx++; next();
+      };
+      next();
+    };
+    probe.onerror = cleanup;
   }
 
   // ---- Open / Close ----
@@ -1204,12 +1253,13 @@
     if (toeIsVideo) {
       const vid = document.createElement('video');
       vid.src = URL.createObjectURL(editable);
-      vid.playsInline = true; vid.preload = 'metadata'; vid.controls = false;
+      vid.playsInline = true; vid.preload = 'auto'; vid.controls = false;
       vid.className = 'toe2-media';
       toeStage.insertBefore(vid, toeTextLayer);
       toeMediaEl = vid;
       toeVideoBar.style.display = 'flex';
       toeWireVideo(vid);
+      toeBuildFilmstrip(editable);
     } else {
       const img = document.createElement('img');
       img.src = URL.createObjectURL(editable);
