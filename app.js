@@ -1676,6 +1676,7 @@
     toeActiveId = id;
     toeRenderAll();
     toeUpdateToolbarToActive();
+    toeUpdateTimelineTextTrack(); // ensure the new text element shows on the timeline immediately
     // Focus for editing
     setTimeout(() => {
       const el = toeGetEl(id);
@@ -1741,9 +1742,10 @@
     const basePresets = toePresetCategory === 'favorite'
       ? toeLoadFavoritePresets()
       : (TOE_PRESET_LIBRARY[toePresetCategory] || TOE_PRESET_LIBRARY.trending);
+    // Lightweight: render each preset once (no 5x duplication), capped at 12.
     const presets = toePresetCategory === 'favorite'
       ? basePresets
-      : Array.from({ length: 5 }).flatMap(() => basePresets).slice(0, 60);
+      : basePresets.slice(0, 12);
     const html = presets.length
       ? presets.map((preset, index) => {
           const originalKey = preset.originalKey || preset.key;
@@ -1783,7 +1785,8 @@
     if (!track) return;
     const isVid = mediaEl?.tagName === 'VIDEO';
     const source = !isVid ? mediaEl?.src : '';
-    track.innerHTML = Array.from({ length: 24 }).map(() => {
+    // Lightweight: 8 filmstrip cells instead of 24 (cuts paint/memory ~3x).
+    track.innerHTML = Array.from({ length: 8 }).map(() => {
       const style = source ? ` style="background-image:url('${source.replace(/'/g, "\\'")}')"` : '';
       return `<span class="toe-media-thumb${isVid ? ' is-video' : ''}"${style}></span>`;
     }).join('');
