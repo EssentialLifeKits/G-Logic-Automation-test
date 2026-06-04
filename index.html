@@ -123,6 +123,13 @@
                 <span id="igStatusText">Connect Instagram</span>
                 <span class="ig-status-dot" id="igStatusDot"></span>
             </button>
+            <button class="connect-fb-btn" id="connectFacebookBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M14 8.3V6.9c0-.7.2-1.1 1.2-1.1h1.5V3.1c-.7-.1-1.4-.1-2.1-.1-2.1 0-3.6 1.3-3.6 3.6v1.7H8.6v3H11V21h3v-9.7h2.4l.4-3H14Z" />
+                </svg>
+                <span id="fbStatusText">Connect Facebook</span>
+                <span class="fb-status-dot" id="fbStatusDot"></span>
+            </button>
         </div>
     </aside>
 
@@ -766,6 +773,26 @@
                                 </button>
                             </div>
                             <input type="text" id="hashtagInput" placeholder="#photography #instagood #content" />
+                        </div>
+                        <div class="form-group">
+                            <label>Destination</label>
+                            <div class="platform-select" id="platformSelect">
+                                <button class="platform-btn active" data-platform="instagram" type="button">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <rect x="2" y="2" width="20" height="20" rx="5" />
+                                        <circle cx="12" cy="12" r="5" />
+                                        <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
+                                    </svg>
+                                    Instagram
+                                </button>
+                                <button class="platform-btn" data-platform="facebook" type="button">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M14 8.3V6.9c0-.7.2-1.1 1.2-1.1h1.5V3.1c-.7-.1-1.4-.1-2.1-.1-2.1 0-3.6 1.3-3.6 3.6v1.7H8.6v3H11V21h3v-9.7h2.4l.4-3H14Z" />
+                                    </svg>
+                                    Facebook
+                                </button>
+                            </div>
+                            <small class="platform-note" id="platformNote">Instagram supports posts, stories, reels, and carousel scheduling.</small>
                         </div>
                         <div class="form-group">
                             <label>Post Type</label>

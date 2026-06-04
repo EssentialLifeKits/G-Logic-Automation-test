@@ -26,3 +26,4 @@ myenv/
 dist/
 .cache/
 .vercel
+.claude/

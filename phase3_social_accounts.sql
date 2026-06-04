@@ -23,15 +23,18 @@ CREATE TABLE IF NOT EXISTS public.user_social_accounts (
   -- Foreign key to the logged-in G-Logic user
   user_id           UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
-  -- Platform identifier. Currently only 'instagram'. Future: 'tiktok', 'pinterest'
+  -- Platform identifier. Currently 'instagram' and 'facebook'. Future: 'tiktok', 'pinterest'
   provider          TEXT        NOT NULL DEFAULT 'instagram'
-                    CHECK (provider IN ('instagram', 'tiktok', 'pinterest')),
+                    CHECK (provider IN ('instagram', 'facebook', 'tiktok', 'pinterest')),
 
   -- The unique ID of this account on the platform (Instagram Business Account ID)
   provider_id       TEXT        NOT NULL,
 
   -- The Instagram handle of the connected account (@essentiallifekits)
   ig_username       TEXT,
+
+  -- The connected Facebook Page display name
+  facebook_page_name TEXT,
 
   -- Long-lived access token (Meta Graph API).
   -- ENCRYPTED at rest by pgcrypto using a server-side key.

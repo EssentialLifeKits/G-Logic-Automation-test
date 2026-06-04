@@ -64,7 +64,8 @@ Deno.serve(async (request) => {
         }
 
         // ===== PARSE BODY =====
-        const { code, redirect_uri } = await request.json();
+        const { code, redirect_uri, source } = await request.json();
+        const requestedSource = source === 'facebook' ? 'facebook' : 'instagram';
         if (!code || !redirect_uri) {
             return new Response(JSON.stringify({ error: 'Missing code or redirect_uri' }), {
                 status: 400,
@@ -187,7 +188,7 @@ Deno.serve(async (request) => {
             });
         }
 
-        if (!igData.instagram_business_account) {
+        if (!igData.instagram_business_account && requestedSource !== 'facebook') {
             return new Response(JSON.stringify({
                 error: `No Instagram Business account linked to Facebook Page "${page.name}".`,
                 debug_meta_response: igData,
@@ -198,13 +199,16 @@ Deno.serve(async (request) => {
             });
         }
 
-        const igUserId = igData.instagram_business_account.id;
+        const igUserId = igData.instagram_business_account?.id || null;
 
         // ===== STEP 5: Instagram username =====
-        const igProfile  = await (
-            await fetch(`https://graph.facebook.com/v21.0/${igUserId}?fields=username&access_token=${longLivedToken}`)
-        ).json();
-        const igUsername = igProfile.username || '';
+        let igUsername = '';
+        if (igUserId) {
+            const igProfile  = await (
+                await fetch(`https://graph.facebook.com/v21.0/${igUserId}?fields=username&access_token=${longLivedToken}`)
+            ).json();
+            igUsername = igProfile.username || '';
+        }
 
         // ===== STEP 6: Verify user JWT via Supabase Auth REST API =====
         const userRes  = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
@@ -225,16 +229,30 @@ Deno.serve(async (request) => {
         const userId = userData.id;
 
         // ===== STEP 7: Upsert into user_social_accounts =====
-        const accountData = {
-            user_id:          userId,
-            provider:         'instagram',
-            provider_id:      igUserId,
-            ig_username:      igUsername,
-            access_token:     longLivedToken,
-            token_expires_at: tokenExpiresAt,
-            is_active:        true,
-            updated_at:       new Date().toISOString(),
+        const facebookAccountData = {
+            user_id:            userId,
+            provider:           'facebook',
+            provider_id:        page.id,
+            facebook_page_name: page.name || '',
+            access_token:       page.access_token || longLivedToken,
+            token_expires_at:   tokenExpiresAt,
+            is_active:          true,
+            updated_at:         new Date().toISOString(),
         };
+
+        const accountRows = [facebookAccountData];
+        if (igUserId) {
+            accountRows.unshift({
+                user_id:          userId,
+                provider:         'instagram',
+                provider_id:      igUserId,
+                ig_username:      igUsername,
+                access_token:     longLivedToken,
+                token_expires_at: tokenExpiresAt,
+                is_active:        true,
+                updated_at:       new Date().toISOString(),
+            });
+        }
 
         const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/user_social_accounts`, {
             method:  'POST',
@@ -244,13 +262,13 @@ Deno.serve(async (request) => {
                 'apikey': SERVICE_ROLE_KEY,
                 'Prefer': 'resolution=merge-duplicates,return=minimal',
             },
-            body: JSON.stringify(accountData),
+            body: JSON.stringify(accountRows),
         });
 
         if (!upsertRes.ok) {
             const errBody = await upsertRes.text();
             console.error('Supabase upsert error:', errBody);
-            return new Response(JSON.stringify({ error: 'Failed to save Instagram account: ' + errBody }), {
+            return new Response(JSON.stringify({ error: 'Failed to save Meta accounts: ' + errBody }), {
                 status: 500,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
@@ -261,6 +279,8 @@ Deno.serve(async (request) => {
             success:     true,
             ig_username: igUsername,
             ig_user_id:  igUserId,
+            facebook_page_id: page.id,
+            facebook_page_name: page.name || '',
             expires_at:  tokenExpiresAt,
         }), {
             status: 200,

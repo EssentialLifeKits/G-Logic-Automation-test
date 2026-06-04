@@ -175,6 +175,53 @@ async function publishStory(igUserId, accessToken, mediaUrl, isVideo) {
     return publishData.id;
 }
 
+async function publishFacebookImage(pageId, accessToken, imageUrl, caption) {
+    console.log(`  📘 Publishing Facebook image for Page ${pageId}...`);
+    const res = await fetch(`${GRAPH_BASE}/${pageId}/photos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            url: imageUrl,
+            caption,
+            access_token: accessToken,
+        }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(`Facebook image publish failed: ${data.error.message}`);
+    return data.post_id || data.id;
+}
+
+async function publishFacebookVideo(pageId, accessToken, videoUrl, caption) {
+    console.log(`  📘 Publishing Facebook video for Page ${pageId}...`);
+    const res = await fetch(`${GRAPH_BASE}/${pageId}/videos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            file_url: videoUrl,
+            description: caption,
+            access_token: accessToken,
+        }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(`Facebook video publish failed: ${data.error.message}`);
+    return data.id;
+}
+
+async function publishFacebookText(pageId, accessToken, caption) {
+    console.log(`  📘 Publishing Facebook text post for Page ${pageId}...`);
+    const res = await fetch(`${GRAPH_BASE}/${pageId}/feed`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            message: caption,
+            access_token: accessToken,
+        }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(`Facebook text publish failed: ${data.error.message}`);
+    return data.id;
+}
+
 // ========== MAIN HANDLER ==========
 Deno.serve(async (_req) => {
     console.log('==============================================');
@@ -250,16 +297,21 @@ Deno.serve(async (_req) => {
         });
 
         try {
+            const platform = (post.platform || post.channel || 'instagram').toLowerCase();
+            if (!['instagram', 'facebook'].includes(platform)) {
+                throw new Error(`Unsupported publishing platform: ${platform}`);
+            }
+
             const account = await db.selectSingle('user_social_accounts', {
                 select: 'access_token,provider_id,token_expires_at',
                 user_id: `eq.${post.user_id}`,
-                provider: 'eq.instagram',
+                provider: `eq.${platform}`,
                 is_active: 'eq.true',
             });
 
-            if (!account) throw new Error('No active Instagram connection found for this user.');
+            if (!account) throw new Error(`No active ${platform === 'facebook' ? 'Facebook Page' : 'Instagram'} connection found for this user.`);
             if (new Date(account.token_expires_at) < new Date()) {
-                throw new Error('Instagram access token has expired. Please reconnect Instagram.');
+                throw new Error(`${platform === 'facebook' ? 'Facebook' : 'Instagram'} access token has expired. Please reconnect ${platform === 'facebook' ? 'Facebook' : 'Instagram'}.`);
             }
 
             let fullCaption = post.caption || '';
@@ -267,26 +319,42 @@ Deno.serve(async (_req) => {
 
             const mediaType = (post.media_type || 'IMAGE').toUpperCase();
             const postType = (post.post_type || '').toLowerCase();
-            let igMediaId;
+            let publishedMediaId;
 
-            if (postType === 'story') {
+            if (platform === 'facebook') {
+                if (postType !== 'post') {
+                    throw new Error('Facebook Page publishing currently supports standard posts only.');
+                }
+                if (mediaType === 'VIDEO' || post.video_url) {
+                    const videoUrl = post.video_url || post.image_url;
+                    if (!videoUrl) throw new Error('No video URL found for this Facebook post.');
+                    publishedMediaId = await publishFacebookVideo(account.provider_id, account.access_token, videoUrl, fullCaption);
+                } else if (post.image_url) {
+                    publishedMediaId = await publishFacebookImage(account.provider_id, account.access_token, post.image_url, fullCaption);
+                } else if (fullCaption.trim()) {
+                    publishedMediaId = await publishFacebookText(account.provider_id, account.access_token, fullCaption);
+                } else {
+                    throw new Error('Facebook post needs text, image, or video content.');
+                }
+            } else if (postType === 'story') {
                 const videoUrl = post.video_url || post.image_url;
                 const isStoryVideo = mediaType === 'VIDEO' || mediaType === 'STORY_VIDEO' || !!post.video_url;
                 const mediaUrl = isStoryVideo ? videoUrl : post.image_url;
                 if (!mediaUrl) throw new Error(`No ${isStoryVideo ? 'video' : 'image'} URL found for this story.`);
-                igMediaId = await publishStory(account.provider_id, account.access_token, mediaUrl, isStoryVideo);
+                publishedMediaId = await publishStory(account.provider_id, account.access_token, mediaUrl, isStoryVideo);
             } else if (mediaType === 'VIDEO') {
                 const videoUrl = post.video_url || post.image_url;
                 if (!videoUrl) throw new Error('No video URL found.');
-                igMediaId = await publishVideo(account.provider_id, account.access_token, videoUrl, fullCaption, post.image_url);
+                publishedMediaId = await publishVideo(account.provider_id, account.access_token, videoUrl, fullCaption, post.image_url);
             } else {
                 if (!post.image_url) throw new Error('No image URL found.');
-                igMediaId = await publishImage(account.provider_id, account.access_token, post.image_url, fullCaption);
+                publishedMediaId = await publishImage(account.provider_id, account.access_token, post.image_url, fullCaption);
             }
 
             await db.update('posts', post.id, {
                 status: 'published',
-                ig_media_id: igMediaId,
+                ig_media_id: platform === 'instagram' ? publishedMediaId : post.ig_media_id,
+                facebook_post_id: platform === 'facebook' ? publishedMediaId : post.facebook_post_id,
                 publish_error: null,
                 updated_at: new Date().toISOString(),
             });

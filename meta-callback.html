@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Connecting Instagram — G-Logic Automation</title>
+    <title>Connecting Meta Account — G-Logic Automation</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
@@ -95,7 +95,7 @@
     <div class="callback-page">
         <div class="callback-card">
             <div class="callback-icon loading" id="callbackIcon">⏳</div>
-            <h1 class="callback-title" id="callbackTitle">Connecting Instagram...</h1>
+            <h1 class="callback-title" id="callbackTitle">Connecting Meta account...</h1>
             <p class="callback-message" id="callbackMessage">
                 Please wait while we securely connect your account.
             </p>
@@ -123,8 +123,8 @@
             function showSuccess(msg) {
                 iconEl.className = 'callback-icon success';
                 iconEl.textContent = '✅';
-                titleEl.textContent = 'Instagram Connected!';
-                messageEl.textContent = msg || 'Your Instagram Business account is now linked to G-Logic Automation.';
+                titleEl.textContent = 'Account Connected!';
+                messageEl.textContent = msg || 'Your Meta account is now linked to G-Logic Automation.';
                 btnEl.style.display = 'inline-block';
             }
 
@@ -141,6 +141,12 @@
             const code = params.get('code');
             const error = params.get('error');
             const errorDesc = params.get('error_description');
+            const stateParam = params.get('state');
+            let source = 'instagram';
+            try {
+                const decodedState = JSON.parse(atob(stateParam || ''));
+                source = decodedState.source === 'facebook' ? 'facebook' : 'instagram';
+            } catch (_) { }
             console.log('[G-Logic] Callback URL params:', { code: code ? code.substring(0, 20) + '...' : null, error, errorDesc });
 
             if (error) {
@@ -175,6 +181,7 @@
                         body: JSON.stringify({
                             code: code,
                             redirect_uri: window.location.origin + '/meta-callback.html',
+                            source: source,
                         }),
                     }
                 );
@@ -192,7 +199,11 @@
                 console.log('[G-Logic] Edge function raw response:', rawText);
 
                 if (response.ok && result.success) {
-                    showSuccess(`Connected as @${result.ig_username || 'your account'}. You can now schedule posts for automatic publishing!`);
+                    const connectedParts = [];
+                    if (result.ig_username) connectedParts.push(`Instagram @${result.ig_username}`);
+                    if (result.facebook_page_name) connectedParts.push(`Facebook Page "${result.facebook_page_name}"`);
+                    const connectedLabel = connectedParts.length ? connectedParts.join(' and ') : 'your Meta account';
+                    showSuccess(`Connected ${connectedLabel}. You can now schedule posts for automatic publishing!`);
                 } else {
                     const errorMsg = result.error || `HTTP ${response.status}: ${rawText || 'Empty response from server.'}`;
                     console.error('[G-Logic] Connection failed. Full details:', JSON.stringify(result, null, 2));

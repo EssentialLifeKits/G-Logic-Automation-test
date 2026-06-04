@@ -2618,6 +2618,61 @@ body.howto-open {
   flex-wrap: wrap;
 }
 
+.platform-select {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.platform-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 9px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+}
+
+.platform-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.platform-btn:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.platform-btn.active[data-platform="instagram"] {
+  border-color: var(--accent-instagram);
+  background: rgba(221, 42, 123, 0.08);
+  color: var(--accent-instagram);
+  box-shadow: 0 0 12px rgba(221, 42, 123, 0.25);
+}
+
+.platform-btn.active[data-platform="facebook"] {
+  border-color: #1877f2;
+  background: rgba(24, 119, 242, 0.08);
+  color: #60a5fa;
+  box-shadow: 0 0 12px rgba(24, 119, 242, 0.24);
+}
+
+.platform-note {
+  display: block;
+  margin-top: 7px;
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
 .type-btn {
   flex: 1;
   min-width: 0;
@@ -2643,6 +2698,13 @@ body.howto-open {
 .type-btn:hover {
   border-color: var(--border-hover);
   color: var(--text-primary);
+}
+
+.type-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .type-btn[data-type="post"].active {
@@ -3951,8 +4013,9 @@ body.howto-open {
   flex-shrink: 0;
 }
 
-/* Connect to Instagram button in sidebar */
-.connect-ig-btn {
+/* Connect social buttons in sidebar */
+.connect-ig-btn,
+.connect-fb-btn {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -3970,25 +4033,46 @@ body.howto-open {
   position: relative;
 }
 
-.connect-ig-btn:hover {
+.connect-fb-btn {
+  background: rgba(24, 119, 242, 0.06);
+  border-color: rgba(24, 119, 242, 0.16);
+}
+
+.connect-ig-btn:hover,
+.connect-fb-btn:hover {
   background: rgba(221, 42, 123, 0.12);
   border-color: rgba(221, 42, 123, 0.3);
   color: var(--text-primary);
   transform: translateY(-1px);
 }
 
-.connect-ig-btn svg {
+.connect-fb-btn:hover {
+  background: rgba(24, 119, 242, 0.12);
+  border-color: rgba(24, 119, 242, 0.32);
+}
+
+.connect-ig-btn svg,
+.connect-fb-btn svg {
   width: 18px;
   height: 18px;
+}
+
+.connect-ig-btn svg {
   color: var(--accent-instagram);
 }
 
-.connect-ig-btn.connected {
+.connect-fb-btn svg {
+  color: #1877f2;
+}
+
+.connect-ig-btn.connected,
+.connect-fb-btn.connected {
   border-color: rgba(52, 211, 153, 0.3);
   background: rgba(52, 211, 153, 0.06);
 }
 
-.ig-status-dot {
+.ig-status-dot,
+.fb-status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -3997,12 +4081,14 @@ body.howto-open {
   flex-shrink: 0;
 }
 
-.ig-status-dot.connected {
+.ig-status-dot.connected,
+.fb-status-dot.connected {
   background: var(--success);
   box-shadow: 0 0 6px rgba(52, 211, 153, 0.5);
 }
 
-.ig-status-dot.expired {
+.ig-status-dot.expired,
+.fb-status-dot.expired {
   background: var(--warning, #f59e0b);
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
 }

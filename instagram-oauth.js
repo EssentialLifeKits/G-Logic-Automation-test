@@ -43,6 +43,7 @@
         'instagram_basic',             // Read basic IG profile info
         'pages_show_list',             // List Facebook Pages owned by user
         'pages_manage_metadata',       // Required for New Pages Experience page discovery
+        'pages_manage_posts',          // Publish to connected Facebook Pages
     ].join(',');
 
     // Meta Graph API version (update periodically)
@@ -55,6 +56,9 @@
     const connectBtn = document.getElementById('connectInstagramBtn');
     const statusDot = document.getElementById('igStatusDot');
     const statusText = document.getElementById('igStatusText');
+    const connectFacebookBtn = document.getElementById('connectFacebookBtn');
+    const fbStatusDot = document.getElementById('fbStatusDot');
+    const fbStatusText = document.getElementById('fbStatusText');
 
     // Guard: Only run on pages that have the connect button
     if (!connectBtn) return;
@@ -110,8 +114,51 @@
                 if (textSpan) textSpan.textContent = isExpired ? 'Reconnect Instagram' : displayName;
             }
 
+            await checkFacebookConnection(session.user.id);
+
         } catch (e) {
             console.warn('G-Logic: Error checking IG connection —', e);
+        }
+    }
+
+    async function checkFacebookConnection(userId) {
+        if (!connectFacebookBtn) return;
+
+        try {
+            const { data, error } = await supabase
+                .from(ACCOUNTS_TABLE)
+                .select('facebook_page_name, token_expires_at, is_active, provider_id')
+                .eq('user_id', userId)
+                .eq('provider', 'facebook')
+                .eq('is_active', true)
+                .maybeSingle();
+
+            if (!data || error) return;
+
+            const expiresAt = data.token_expires_at ? new Date(data.token_expires_at) : null;
+            const isExpired = expiresAt ? expiresAt < new Date() : false;
+            const daysLeft = expiresAt ? Math.ceil((expiresAt - new Date()) / (1000 * 60 * 60 * 24)) : null;
+            const displayName = data.facebook_page_name || 'Facebook Page';
+
+            if (!isExpired) {
+                if (fbStatusDot) fbStatusDot.classList.add('connected');
+                if (fbStatusText) fbStatusText.textContent = displayName;
+                connectFacebookBtn.classList.add('connected');
+                connectFacebookBtn.title = daysLeft
+                    ? `Page token expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`
+                    : 'Facebook Page connected';
+
+                if (daysLeft !== null && daysLeft <= 7) {
+                    if (fbStatusDot) fbStatusDot.classList.add('expiring');
+                    connectFacebookBtn.title = `Token expires in ${daysLeft} days — click to refresh`;
+                }
+            } else {
+                if (fbStatusDot) fbStatusDot.classList.add('expired');
+                if (fbStatusText) fbStatusText.textContent = 'Token Expired — Reconnect';
+                connectFacebookBtn.classList.add('expired');
+            }
+        } catch (e) {
+            console.warn('G-Logic: Error checking Facebook connection —', e);
         }
     }
 
@@ -204,6 +251,98 @@
         }
     }
 
+    async function saveFacebookToken({ token, providerId, pageName, expiresAt }) {
+        if (!token || !providerId) {
+            console.error('G-Logic: saveFacebookToken requires token and providerId');
+            return { success: false, error: 'Missing required fields' };
+        }
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                return { success: false, error: 'Not authenticated — please sign in first' };
+            }
+
+            const { error } = await supabase
+                .from(ACCOUNTS_TABLE)
+                .upsert({
+                    user_id: session.user.id,
+                    provider: 'facebook',
+                    provider_id: providerId,
+                    facebook_page_name: pageName || '',
+                    access_token: token,
+                    token_expires_at: expiresAt || new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+                    is_active: true,
+                    updated_at: new Date().toISOString(),
+                }, {
+                    onConflict: 'user_id,provider',
+                    ignoreDuplicates: false,
+                });
+
+            if (error) {
+                console.error('G-Logic: Supabase Facebook upsert error —', error.message);
+                return { success: false, error: error.message };
+            }
+
+            await checkConnection();
+            return { success: true };
+        } catch (err) {
+            console.error('G-Logic: saveFacebookToken error —', err);
+            return { success: false, error: err.message };
+        }
+    }
+
+    async function disconnectFacebook() {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return { success: false, error: 'Not authenticated' };
+
+            const { error } = await supabase
+                .from(ACCOUNTS_TABLE)
+                .update({ is_active: false, updated_at: new Date().toISOString() })
+                .eq('user_id', session.user.id)
+                .eq('provider', 'facebook');
+
+            if (error) throw error;
+
+            if (fbStatusDot) { fbStatusDot.className = 'fb-status-dot'; }
+            if (fbStatusText) { fbStatusText.textContent = 'Connect Facebook'; }
+            if (connectFacebookBtn) connectFacebookBtn.classList.remove('connected', 'expired');
+            console.log('✅ G-Logic: Facebook disconnected.');
+            return { success: true };
+        } catch (err) {
+            console.error('G-Logic: disconnectFacebook error —', err);
+            return { success: false, error: err.message };
+        }
+    }
+
+    function beginMetaOAuth(source) {
+        if (META_APP_ID === 'YOUR_META_APP_ID_HERE') {
+            alert(
+                '⚠️ Setup Required\n\n' +
+                'Open instagram-oauth.js and replace:\n' +
+                '  const META_APP_ID = "YOUR_META_APP_ID_HERE"\n\n' +
+                'Get your App ID from developers.facebook.com → Your App → Settings → Basic.'
+            );
+            return;
+        }
+
+        const statePayload = btoa(JSON.stringify({
+            source: source || 'instagram',
+            nonce: crypto.randomUUID(),
+        }));
+
+        const authUrl =
+            `https://www.facebook.com/${API_VERSION}/dialog/oauth` +
+            `?client_id=${META_APP_ID}` +
+            `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+            `&scope=${encodeURIComponent(SCOPES)}` +
+            `&response_type=code` +
+            `&state=${encodeURIComponent(statePayload)}`;
+
+        window.location.href = authUrl;
+    }
+
     // ========== INITIATE OAUTH FLOW ==========
     connectBtn.addEventListener('click', () => {
 
@@ -221,23 +360,19 @@
             return;
         }
 
-        // Build the Facebook OAuth URL
-        const authUrl =
-            `https://www.facebook.com/${API_VERSION}/dialog/oauth` +
-            `?client_id=${META_APP_ID}` +
-            `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-            `&scope=${encodeURIComponent(SCOPES)}` +
-            `&response_type=code` +
-            `&state=${crypto.randomUUID()}`; // CSRF protection
-
-        // Redirect to Meta login
-        window.location.href = authUrl;
+        beginMetaOAuth('instagram');
     });
+
+    if (connectFacebookBtn) {
+        connectFacebookBtn.addEventListener('click', () => beginMetaOAuth('facebook'));
+    }
 
     // ========== EXPOSE HELPERS GLOBALLY (for console testing) ==========
     window.GLogic = window.GLogic || {};
     window.GLogic.saveInstagramToken = saveInstagramToken;
+    window.GLogic.saveFacebookToken = saveFacebookToken;
     window.GLogic.disconnectInstagram = disconnectInstagram;
+    window.GLogic.disconnectFacebook = disconnectFacebook;
     window.GLogic.checkConnection = checkConnection;
 
     // ========== INIT ==========

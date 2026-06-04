@@ -41,6 +41,8 @@
         image_url: row.image_url || '',
         video_url: row.video_url || '',
         media_type: row.media_type || 'IMAGE',
+        platform: row.platform || row.channel || 'instagram',
+        facebook_post_id: row.facebook_post_id || '',
         publish_error: row.publish_error || '',
         retry_count: row.retry_count || 0,
       }));
@@ -98,6 +100,7 @@
           image_url: postData.image_url || '',
           media_type: postData.media_type || 'IMAGE',
           video_url: postData.video_url || '',
+          platform: postData.platform || 'instagram',
         }])
         .select();
       if (error) { console.error('Insert error:', error); throw error; }
@@ -124,6 +127,23 @@
     carousel: { label: 'Carousel', color: '#515BD4', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="15" height="18" rx="2"/><path d="M20 7v14a2 2 0 01-2 2H7"/></svg>' },
     live: { label: 'Live', color: '#F58529', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' },
   };
+
+  const PLATFORMS = {
+    instagram: { label: 'Instagram', color: '#DD2A7B' },
+    facebook: { label: 'Facebook', color: '#1877F2' },
+  };
+
+  function getPostPlatform(post) {
+    return (post?.platform || post?.channel || 'instagram').toLowerCase();
+  }
+
+  function getPlatformConfig(platform) {
+    return PLATFORMS[platform] || PLATFORMS.instagram;
+  }
+
+  function getDestinationLabel(post) {
+    return getPlatformConfig(getPostPlatform(post)).label;
+  }
 
   function normalizeDbMediaType(postType, isVideo) {
     if (postType === 'live') return 'NONE';
@@ -308,6 +328,8 @@
     typeButtons: null, // set after DOM ready
     schedulePostBtn: $('#schedulePostBtn'),
     saveDraftBtn: $('#saveDraftBtn'),
+    platformSelect: $('#platformSelect'),
+    platformNote: $('#platformNote'),
     modalTimesList: $('#modalTimesList'),
     toast: $('#toast'),
     toastMessage: $('#toastMessage'),
@@ -456,8 +478,9 @@
     if (posts.length > 0) {
       const barItems = posts.slice().sort((a, b) => (a.time || '').localeCompare(b.time || '')).map(post => {
         const typeConf = POST_TYPES[post.type] || POST_TYPES.post;
-        const label = `${formatTime12(post.time)} ${typeConf.label}`;
-        return `<div class="cal-bar cal-bar-${post.type}" data-post-id="${post.id}" style="background:${typeConf.color};" title="${escapeHtml(label)}"></div>`;
+        const platformConf = getPlatformConfig(getPostPlatform(post));
+        const label = `${formatTime12(post.time)} ${platformConf.label} ${typeConf.label}`;
+        return `<div class="cal-bar cal-bar-${post.type}" data-post-id="${post.id}" style="background:${platformConf.color || typeConf.color};" title="${escapeHtml(label)}"></div>`;
       }).join('');
       barsHtml = `<div class="cal-post-bars">${barItems}</div>`;
     }
@@ -466,7 +489,7 @@
     const visibleEntries = posts.slice(0, maxVisible);
     let entriesHtml = visibleEntries.map(p => {
       const typeConf = POST_TYPES[p.type] || POST_TYPES.post;
-      return `<div class="cal-post cal-post-type-${p.type}" data-post-id="${p.id}" title="${escapeHtml(p.caption)}">${formatTime12(p.time)} ${typeConf.label}</div>`;
+      return `<div class="cal-post cal-post-type-${p.type}" data-post-id="${p.id}" title="${escapeHtml(p.caption)}">${formatTime12(p.time)} ${getDestinationLabel(p)} ${typeConf.label}</div>`;
     }).join('');
 
     if (posts.length > maxVisible) {
@@ -511,7 +534,7 @@
     // Replace entries with all posts — include data-post-id so clicks open edit
     postsContainer.innerHTML = posts.map(p => {
       const typeConf = POST_TYPES[p.type] || POST_TYPES.post;
-      return `<div class="cal-post cal-post-type-${p.type}" data-post-id="${p.id}" title="${escapeHtml(p.caption)}">${formatTime12(p.time)} ${typeConf.label}</div>`;
+      return `<div class="cal-post cal-post-type-${p.type}" data-post-id="${p.id}" title="${escapeHtml(p.caption)}">${formatTime12(p.time)} ${getDestinationLabel(p)} ${typeConf.label}</div>`;
     }).join('');
   }
 
@@ -580,6 +603,7 @@
 
   function renderDashboardPostItem(post, compact = false) {
     const typeConf = POST_TYPES[post.type] || POST_TYPES.post;
+    const platformLabel = getDestinationLabel(post);
     const statusStr = getStatusClass(post.status);
     const statusLabel = getStatusLabel(post.status);
     const thumbContent = post.image_url
@@ -590,7 +614,7 @@
         <span class="dashboard-feed-thumb" style="border-left-color:${typeConf.color};">${thumbContent}</span>
         <span class="dashboard-feed-copy">
           <strong>${escapeHtml(post.caption || 'Untitled')}</strong>
-          <small>${compact ? '' : `${formatDisplayDate(post.date)} · `}${formatTime12(post.time)} · ${typeConf.label}</small>
+          <small>${compact ? '' : `${formatDisplayDate(post.date)} · `}${formatTime12(post.time)} · ${platformLabel} · ${typeConf.label}</small>
         </span>
         <span class="upcoming-status status-${statusStr}">${statusLabel}</span>
       </button>`;
@@ -651,7 +675,7 @@
     }
     if (els.dashboardHeroMeta) {
       els.dashboardHeroMeta.textContent = nextPost
-        ? `Next: ${formatDisplayDate(nextPost.date)} at ${formatTime12(nextPost.time)} · ${(POST_TYPES[nextPost.type] || POST_TYPES.post).label}`
+        ? `Next: ${formatDisplayDate(nextPost.date)} at ${formatTime12(nextPost.time)} · ${getDestinationLabel(nextPost)} · ${(POST_TYPES[nextPost.type] || POST_TYPES.post).label}`
         : 'No upcoming posts queued.';
     }
 
@@ -679,7 +703,7 @@
             const typeConf = POST_TYPES[p.type] || POST_TYPES.post;
             return `<button class="dashboard-activity-item" data-post-id="${p.id}" type="button">
               <span class="dashboard-activity-dot" style="background:${typeConf.color};"></span>
-              <span><strong>${typeConf.label}</strong><small>${formatDisplayDate(p.date)} · ${formatTime12(p.time)} · ${getStatusLabel(p.status)}</small></span>
+              <span><strong>${getDestinationLabel(p)} ${typeConf.label}</strong><small>${formatDisplayDate(p.date)} · ${formatTime12(p.time)} · ${getStatusLabel(p.status)}</small></span>
             </button>`;
           }).join('')
         : '<p class="dashboard-empty">No recent activity yet.</p>';
@@ -891,6 +915,8 @@
               <span>${formatDisplayDate(p.date)}</span>
               <span>·</span>
               <span>${formatTime12(p.time)}</span>
+              <span>·</span>
+              <span>${getDestinationLabel(p)}</span>
               <span class="upcoming-type-badge" style="background:${typeConf.color}22;color:${typeConf.color};">${typeConf.label}</span>
             </div>
           </div>
@@ -2789,6 +2815,7 @@
 
   // ========== SCHEDULER MODAL ==========
   let selectedType = 'post';
+  let selectedPlatform = 'instagram';
   let uploadedFile = null;
   let editingPostId = null; // Track which post is being edited
   let userSelectedThumbnail = ''; // User's manually captured thumbnail
@@ -2813,6 +2840,36 @@
     els.editMediaBtn.style.display = visible ? '' : 'none';
     els.editMediaBtn.classList.toggle('is-disabled', disabled);
     els.editMediaBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+  }
+
+  function applyPlatformSelection(platform) {
+    selectedPlatform = platform === 'facebook' ? 'facebook' : 'instagram';
+
+    if (els.platformSelect) {
+      els.platformSelect.querySelectorAll('.platform-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.platform === selectedPlatform);
+      });
+    }
+
+    if (els.platformNote) {
+      els.platformNote.textContent = selectedPlatform === 'facebook'
+        ? 'Facebook Page posting supports standard image and video posts.'
+        : 'Instagram supports posts, stories, reels, and carousel scheduling.';
+    }
+
+    const typeButtons = document.querySelectorAll('.type-btn');
+    typeButtons.forEach(btn => {
+      const isFacebookBlocked = selectedPlatform === 'facebook' && btn.dataset.type !== 'post';
+      btn.disabled = isFacebookBlocked;
+      btn.title = isFacebookBlocked ? 'Facebook Page posting supports standard posts in this release.' : '';
+    });
+
+    if (selectedPlatform === 'facebook' && selectedType !== 'post') {
+      selectedType = 'post';
+      typeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.type === 'post'));
+      const uploadSection = els.uploadZone.closest('.upload-section');
+      if (uploadSection) uploadSection.style.display = '';
+    }
   }
 
   function setReturnToEditorButtonState(visible) {
@@ -2844,11 +2901,12 @@
     els.uploadZone.querySelectorAll('video').forEach(v => v.remove());
     uploadedFile = null;
     selectedType = 'post';
+    applyPlatformSelection('instagram');
     // Reset type buttons
     els.typeButtons = $$('.type-btn');
     els.typeButtons.forEach(b => b.classList.toggle('active', b.dataset.type === 'post'));
     els.modalTitle.textContent = 'Schedule New Post';
-    els.schedulePostBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> Schedule Post`;
+    restoreScheduleButtonLabel();
     // Show upload section for non-live types
     const uploadSection = els.uploadZone.closest('.upload-section');
     if (uploadSection) uploadSection.style.display = '';
@@ -2925,11 +2983,12 @@
 
     // Set type
     selectedType = post.type || 'post';
+    applyPlatformSelection(getPostPlatform(post));
     els.typeButtons = $$('.type-btn');
     els.typeButtons.forEach(b => b.classList.toggle('active', b.dataset.type === selectedType));
 
     // Dynamic title based on post type
-    const typeLabel = (POST_TYPES[post.type] || POST_TYPES.post).label;
+    const typeLabel = (POST_TYPES[selectedType] || POST_TYPES.post).label;
     if (post.type === 'live') {
       els.modalTitle.textContent = 'Edit Schedule Live';
       // Hide upload section for live
@@ -2969,6 +3028,7 @@
           image_url: updatedData.image_url || '',
           video_url: updatedData.video_url || '',
           media_type: updatedData.media_type || 'IMAGE',
+          platform: updatedData.platform || 'instagram',
         }).eq('id', postId);
         if (error) throw error;
       } catch (e) {
@@ -3011,11 +3071,12 @@
     uploadedFile = null;
     userSelectedThumbnail = '';
     selectedType = 'post';
+    applyPlatformSelection('instagram');
     els.typeButtons = $$('.type-btn');
     els.typeButtons.forEach(b => b.classList.toggle('active', b.dataset.type === 'post'));
     els.timeInput.value = '09:00';
     els.modalTitle.textContent = 'Schedule New Post';
-    els.schedulePostBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> Schedule Post`;
+    restoreScheduleButtonLabel();
     const uploadSection = els.uploadZone.closest('.upload-section');
     if (uploadSection) uploadSection.style.display = '';
     // Keep date the same for convenience
@@ -3044,7 +3105,8 @@
   // ========== FORM VALIDATION ==========
   function restoreScheduleButtonLabel() {
     const typeLabel = (POST_TYPES[selectedType] || POST_TYPES.post).label;
-    const actionLabel = editingPostId ? `Update ${typeLabel}` : 'Schedule Post';
+    const platformLabel = getPlatformConfig(selectedPlatform).label;
+    const actionLabel = editingPostId ? `Update ${typeLabel}` : `Schedule ${platformLabel} Post`;
     els.schedulePostBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> ${actionLabel}`;
   }
 
@@ -3084,7 +3146,7 @@
       els.schedulePostBtn.innerHTML = '<span style="display:inline-block;margin-right:6px;">⏳</span> Preparing media...';
     } else if (hasUploadError) {
       els.schedulePostBtn.innerHTML = '<span style="display:inline-block;margin-right:6px;">↻</span> Retry Media Upload';
-    } else if (!els.schedulePostBtn.innerHTML.includes('Schedule Post') && !els.schedulePostBtn.innerHTML.includes('Update ')) {
+    } else if (!els.schedulePostBtn.innerHTML.includes('Schedule ') && !els.schedulePostBtn.innerHTML.includes('Update ')) {
       restoreScheduleButtonLabel();
     }
   }
@@ -3097,10 +3159,22 @@
   els.dateInput.addEventListener('change', validateForm);
   els.timeInput.addEventListener('change', validateForm);
 
+  els.platformSelect?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.platform-btn');
+    if (!btn) return;
+    applyPlatformSelection(btn.dataset.platform);
+    restoreScheduleButtonLabel();
+    validateForm();
+  });
+
   // Type buttons (use event delegation since buttons are in HTML)
   document.querySelector('.post-type-select')?.addEventListener('click', (e) => {
     const btn = e.target.closest('.type-btn');
     if (!btn) return;
+    if (btn.disabled) {
+      showToast('Facebook supports standard posts in this release.');
+      return;
+    }
     selectedType = btn.dataset.type;
     document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b === btn));
     // Toggle upload section visibility for live type
@@ -3504,6 +3578,7 @@
         image_url: isLive ? '' : (thumbnailUrl || supabaseUrl || existingPost?.image_url || ''),
         video_url: isLive ? '' : (isVideo ? (supabaseUrl || existingPost?.video_url || '') : ''),
         media_type: normalizeDbMediaType(selectedType, isVideo),
+        platform: selectedPlatform,
       };
       const updated = await updatePost(editingPostId, updatedData);
       if (!updated) {
@@ -3531,6 +3606,7 @@
         image_url: isLive ? '' : (isVideo ? thumbnailUrl : supabaseUrl),
         video_url: isLive ? '' : (isVideo ? supabaseUrl : ''),
         media_type: normalizeDbMediaType(selectedType, isVideo),
+        platform: selectedPlatform,
       };
 
       // Insert to Supabase
@@ -3580,6 +3656,7 @@
       image_url: isVideo ? '' : supabaseUrl,
       video_url: isVideo ? supabaseUrl : '',
       media_type: isVideo ? 'VIDEO' : 'IMAGE',
+      platform: selectedPlatform,
     };
 
     // Insert to Supabase
@@ -3784,7 +3861,7 @@
         <div class="top-post-thumb" style="border-left: 3px solid ${typeConf.color};">${thumbHtml}</div>
         <div class="top-post-info">
           <div class="top-post-caption">${escapeHtml(p.caption || 'Untitled')}</div>
-          <div class="top-post-date">${formatDisplayDate(p.date)} · ${formatTime12(p.time)} · ${typeConf.label}</div>
+          <div class="top-post-date">${formatDisplayDate(p.date)} · ${formatTime12(p.time)} · ${getDestinationLabel(p)} · ${typeConf.label}</div>
         </div>
         <span class="upcoming-status status-${statusStr}">${statusLabel}</span>
       </div>`;
@@ -4059,6 +4136,8 @@
               <span>${displayDate}</span>
               <span>·</span>
               <span>${formatTime12(p.time)}</span>
+              <span>·</span>
+              <span>${getDestinationLabel(p)}</span>
               <span class="actions-entry-type-badge" style="background:${typeConf.color}22;color:${typeConf.color};">${typeConf.label}</span>
             </div>
           </div>

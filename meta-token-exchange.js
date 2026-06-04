@@ -61,7 +61,8 @@ module.exports = async function (request) {
         }
 
         // Parse request body
-        const { code, redirect_uri } = await request.json();
+        const { code, redirect_uri, source } = await request.json();
+        const requestedSource = source === 'facebook' ? 'facebook' : 'instagram';
 
         if (!code || !redirect_uri) {
             return new Response(JSON.stringify({ error: 'Missing code or redirect_uri' }), {
@@ -139,7 +140,7 @@ module.exports = async function (request) {
         );
         const igData = await igRes.json();
 
-        if (!igData.instagram_business_account) {
+        if (!igData.instagram_business_account && requestedSource !== 'facebook') {
             return new Response(JSON.stringify({
                 error: 'No Instagram Business account linked to this Facebook Page. Please convert your Instagram to a Business or Creator account first.',
             }), {
@@ -148,14 +149,17 @@ module.exports = async function (request) {
             });
         }
 
-        const igUserId = igData.instagram_business_account.id;
+        const igUserId = igData.instagram_business_account?.id || null;
 
         // ========== STEP 5: Get Instagram username ==========
-        const igProfileRes = await fetch(
-            `https://graph.facebook.com/v21.0/${igUserId}?fields=username&access_token=${longLivedToken}`
-        );
-        const igProfile = await igProfileRes.json();
-        const igUsername = igProfile.username || '';
+        let igUsername = '';
+        if (igUserId) {
+            const igProfileRes = await fetch(
+                `https://graph.facebook.com/v21.0/${igUserId}?fields=username&access_token=${longLivedToken}`
+            );
+            const igProfile = await igProfileRes.json();
+            igUsername = igProfile.username || '';
+        }
 
         // ========== STEP 6: Get the Supabase user from JWT ==========
         // Import Supabase client inside the function
@@ -174,9 +178,20 @@ module.exports = async function (request) {
         }
 
         // ========== STEP 7: Upsert into user_social_accounts table ==========
-        const { error: upsertError } = await supabaseAdmin
-            .from('user_social_accounts')
-            .upsert({
+        const accountRows = [
+            {
+                user_id: user.id,
+                provider: 'facebook',
+                provider_id: page.id,
+                facebook_page_name: page.name || '',
+                access_token: pageAccessToken || longLivedToken,
+                token_expires_at: tokenExpiresAt,
+                is_active: true,
+                updated_at: new Date().toISOString(),
+            },
+        ];
+        if (igUserId) {
+            accountRows.unshift({
                 user_id: user.id,
                 provider: 'instagram',
                 provider_id: igUserId,
@@ -185,44 +200,36 @@ module.exports = async function (request) {
                 token_expires_at: tokenExpiresAt,
                 is_active: true,
                 updated_at: new Date().toISOString(),
-            }, {
+            });
+        }
+
+        const { error: upsertError } = await supabaseAdmin
+            .from('user_social_accounts')
+            .upsert(accountRows, {
                 onConflict: 'user_id,provider',
                 ignoreDuplicates: false,
             });
 
         if (upsertError) {
-            // If upsert fails due to no unique constraint, try insert/update separately
-            const { data: existing } = await supabaseAdmin
-                .from('user_social_accounts')
-                .select('id')
-                .eq('user_id', user.id)
-                .eq('provider', 'instagram')
-                .single();
+            // If upsert fails due to no unique constraint, try insert/update separately.
+            for (const row of accountRows) {
+                const { data: existing } = await supabaseAdmin
+                    .from('user_social_accounts')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .eq('provider', row.provider)
+                    .maybeSingle();
 
-            if (existing) {
-                await supabaseAdmin
-                    .from('user_social_accounts')
-                    .update({
-                        access_token: longLivedToken,
-                        token_expires_at: tokenExpiresAt,
-                        provider_id: igUserId,
-                        ig_username: igUsername,
-                        is_active: true,
-                        updated_at: new Date().toISOString(),
-                    })
-                    .eq('id', existing.id);
-            } else {
-                await supabaseAdmin
-                    .from('user_social_accounts')
-                    .insert({
-                        user_id: user.id,
-                        provider: 'instagram',
-                        provider_id: igUserId,
-                        ig_username: igUsername,
-                        access_token: longLivedToken,
-                        token_expires_at: tokenExpiresAt,
-                        is_active: true,
-                    });
+                if (existing) {
+                    await supabaseAdmin
+                        .from('user_social_accounts')
+                        .update(row)
+                        .eq('id', existing.id);
+                } else {
+                    await supabaseAdmin
+                        .from('user_social_accounts')
+                        .insert(row);
+                }
             }
         }
 
@@ -231,6 +238,8 @@ module.exports = async function (request) {
             success: true,
             ig_username: igUsername,
             ig_user_id: igUserId,
+            facebook_page_id: page.id,
+            facebook_page_name: page.name || '',
             expires_at: tokenExpiresAt,
         }), {
             status: 200,
