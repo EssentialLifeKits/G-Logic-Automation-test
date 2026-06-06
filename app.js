@@ -1284,6 +1284,39 @@
   }
 
   // ---- Burn text onto an image (high quality canvas) ----
+  // Shared: draw one text item onto a canvas context (used by image + video bake)
+  function toeDrawText(ctx, item, cw, ch, scale) {
+    const fpx = item.size * scale;
+    ctx.font = `${fpx}px ${TOE_FONTS[item.font] || TOE_FONTS.classic}`;
+    ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
+    ctx.textBaseline = 'middle';
+    const x = (item.xPct / 100) * cw;
+    const y = (item.yPct / 100) * ch;
+    const lines = (item.text || '').split('\n');
+    const lh = fpx * 1.25;
+    lines.forEach((line, i) => {
+      const ly = y + (i - (lines.length - 1) / 2) * lh;
+      if (item.bg !== 'none') {
+        const tw = ctx.measureText(line).width;
+        const bx = item.align === 'center' ? x - tw / 2 - 10 : item.align === 'right' ? x - tw - 10 : x - 10;
+        ctx.fillStyle = item.bg === 'solid' ? '#000' : 'rgba(0,0,0,0.55)';
+        ctx.fillRect(bx, ly - lh / 2, tw + 20, lh);
+      }
+      if (item.font === 'neon') { ctx.shadowColor = item.color; ctx.shadowBlur = fpx * 0.4; } else { ctx.shadowBlur = 0; }
+      ctx.fillStyle = item.color;
+      ctx.fillText(line, x, ly);
+      ctx.shadowBlur = 0;
+    });
+  }
+
+  function toePickVideoMime() {
+    const opts = ['video/mp4;codecs=h264', 'video/mp4', 'video/webm;codecs=h264', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported) {
+      for (const m of opts) { if (MediaRecorder.isTypeSupported(m)) return m; }
+    }
+    return 'video/webm';
+  }
+
   async function toeBurnImage(imgEl) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -1293,33 +1326,62 @@
         canvas.height = img.naturalHeight || 1350;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const scale = canvas.width / toeStage.querySelector('.toe2-media').clientWidth;
-        toeItems.forEach(item => {
-          const fpx = item.size * scale;
-          ctx.font = `${fpx}px ${TOE_FONTS[item.font] || TOE_FONTS.classic}`;
-          ctx.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
-          ctx.textBaseline = 'middle';
-          const x = (item.xPct / 100) * canvas.width;
-          const y = (item.yPct / 100) * canvas.height;
-          const lines = (item.text || '').split('\n');
-          const lh = fpx * 1.25;
-          lines.forEach((line, i) => {
-            const ly = y + (i - (lines.length - 1) / 2) * lh;
-            if (item.bg !== 'none') {
-              const tw = ctx.measureText(line).width;
-              const bx = item.align === 'center' ? x - tw / 2 - 10 : item.align === 'right' ? x - tw - 10 : x - 10;
-              ctx.fillStyle = item.bg === 'solid' ? '#000' : 'rgba(0,0,0,0.55)';
-              ctx.fillRect(bx, ly - lh / 2, tw + 20, lh);
-            }
-            if (item.font === 'neon') { ctx.shadowColor = item.color; ctx.shadowBlur = fpx * 0.4; } else { ctx.shadowBlur = 0; }
-            ctx.fillStyle = item.color;
-            ctx.fillText(line, x, ly);
-            ctx.shadowBlur = 0;
-          });
-        });
+        const scale = canvas.width / (toeStage.querySelector('.toe2-media')?.clientWidth || canvas.width);
+        toeItems.forEach(item => toeDrawText(ctx, item, canvas.width, canvas.height, scale));
         canvas.toBlob(b => resolve(b), 'image/jpeg', 0.92);
       };
       img.src = imgEl.src;
+    });
+  }
+
+  // Bake text into the video, in-browser, at high bitrate. Audio preserved. Free — runs on the user's machine.
+  async function toeBurnVideo(file) {
+    return new Promise((resolve, reject) => {
+      const displayW = toeStage.querySelector('.toe2-media')?.clientWidth || 1080;
+      const v = document.createElement('video');
+      v.src = URL.createObjectURL(file);
+      v.playsInline = true; v.preload = 'auto';
+      v.onloadedmetadata = () => {
+        const W = v.videoWidth || 1080, H = v.videoHeight || 1920;
+        const dur = v.duration || 0;
+        const scale = W / displayW;
+        const canvas = document.createElement('canvas');
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        const fps = 30;
+        const stream = canvas.captureStream(fps);
+        // Carry the original audio track into the output
+        try {
+          const vStream = v.captureStream ? v.captureStream() : (v.mozCaptureStream ? v.mozCaptureStream() : null);
+          if (vStream) vStream.getAudioTracks().forEach(t => stream.addTrack(t));
+        } catch (_) {}
+        const mime = toePickVideoMime();
+        let recorder;
+        try { recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 10000000 }); }
+        catch (_) { try { recorder = new MediaRecorder(stream); } catch (e) { reject(e); return; } }
+        const chunks = [];
+        let raf;
+        recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+        recorder.onstop = () => {
+          cancelAnimationFrame(raf);
+          try { URL.revokeObjectURL(v.src); } catch (_) {}
+          resolve({ blob: new Blob(chunks, { type: (mime.split(';')[0] || 'video/webm') }), mime });
+        };
+        const draw = () => {
+          ctx.drawImage(v, 0, 0, W, H);
+          const frac = dur ? (v.currentTime / dur) : 0;
+          toeItems.forEach(item => {
+            if (frac >= (item.start ?? 0) && frac <= (item.end ?? 1)) toeDrawText(ctx, item, W, H, scale);
+          });
+          if (toeProcLabel && dur) toeProcLabel.textContent = `Rendering video... ${Math.round(frac * 100)}%`;
+          if (!v.paused && !v.ended) raf = requestAnimationFrame(draw);
+        };
+        v.onended = () => { if (recorder.state !== 'inactive') recorder.stop(); };
+        recorder.start(250);
+        v.currentTime = 0;
+        v.play().then(() => { raf = requestAnimationFrame(draw); }).catch(reject);
+      };
+      v.onerror = () => reject(new Error('Could not load video for rendering.'));
     });
   }
 
@@ -1329,29 +1391,48 @@
     toeProcessing.style.display = 'flex';
 
     if (toeIsVideo) {
-      // Lightweight: store the text spec on the file. The posted video keeps
-      // full original quality; text burn-in happens in the high-quality export step.
-      toeProcLabel.textContent = 'Saving text...';
-      const src = toeSourceFile || uploadedFile;
-      src._isVideo = true;
-      src._toeSourceFile = src;
-      src._toeTextElements = JSON.parse(JSON.stringify(toeItems));
-      src._hasTextOverlay = true;
-      src._uploadError = false;
-      uploadedFile = src;
+      // Bake text into the video in-browser (high bitrate, audio preserved). Free.
+      toeProcLabel.textContent = 'Rendering video... 0%';
+      try {
+        const source = toeSourceFile || uploadedFile;
+        const { blob, mime } = await toeBurnVideo(source);
+        const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+        const newFile = new File([blob], `overlay_${Date.now()}.${ext}`, { type: blob.type });
+        newFile._isVideo = true;
+        newFile._toeSourceFile = source;                 // keep ORIGINAL for re-editing
+        newFile._toeTextElements = JSON.parse(JSON.stringify(toeItems));
+        newFile._hasTextOverlay = true;
+        uploadedFile = newFile;
+        uploadedFile._uploading = true;
+        uploadedFile._uploadError = false;
 
-      const v = els.uploadZone.querySelector('video') || document.createElement('video');
-      v.src = URL.createObjectURL(src);
-      v.controls = true; v.muted = false; v.preload = 'metadata'; v.playsInline = true;
-      v.style.cssText = 'max-width:100%;border-radius:12px;';
-      els.uploadZone.querySelectorAll('video').forEach(o => { if (o !== v) o.remove(); });
-      if (!v.parentElement) els.uploadZone.appendChild(v);
-      els.uploadPreview.style.display = 'none';
+        const v = els.uploadZone.querySelector('video') || document.createElement('video');
+        v.src = URL.createObjectURL(blob);
+        v.controls = true; v.muted = false; v.preload = 'metadata'; v.playsInline = true;
+        v.style.cssText = 'max-width:100%;border-radius:12px;';
+        els.uploadZone.querySelectorAll('video').forEach(o => { if (o !== v) o.remove(); });
+        if (!v.parentElement) els.uploadZone.appendChild(v);
+        els.uploadPreview.style.display = 'none';
 
-      setAddTextButtonState(true); setEditMediaButtonState(true); setReturnToEditorButtonState(true);
-      if (els.addTextBtn) { els.addTextBtn.classList.add('has-overlay'); els.addTextBtn.textContent = 'Edit Text'; }
-      showToast('Text saved to your video.');
-      toeClose(); validateForm();
+        setAddTextButtonState(true); setEditMediaButtonState(true); setReturnToEditorButtonState(true);
+        if (els.addTextBtn) { els.addTextBtn.classList.add('has-overlay'); els.addTextBtn.textContent = 'Edit Text'; }
+
+        const target = uploadedFile;
+        uploadedFile._uploadPromise = uploadMediaToSupabase(newFile).then(url => {
+          if (uploadedFile !== target) return url;
+          target._uploading = false;
+          if (url) { target._supabaseUrl = url; showToast('Text added to your video!'); }
+          else { target._uploadError = true; showToast('Upload failed — tap Retry Media Upload.'); }
+          validateForm();
+          return url;
+        }).catch(() => { if (uploadedFile === target) { target._uploading = false; target._uploadError = true; } validateForm(); return null; });
+
+        toeClose(); validateForm();
+      } catch (err) {
+        console.error('Video burn error:', err);
+        showToast('Could not render the video — please try again.');
+        toeProcessing.style.display = 'none';
+      }
       return;
     }
 
